@@ -1,0 +1,3251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMT/PTH TOOL CONTROL — Sistema Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #040608;
+    --bg-deep: #080c10;
+    --bg-panel: #0c1218;
+    --bg-card: #101820;
+    --bg-card2: #141f28;
+    --accent-primary: #00d4ff;
+    --accent-secondary: #00ff88;
+    --accent-warn: #ffaa00;
+    --accent-danger: #ff3355;
+    --accent-purple: #aa55ff;
+    --text-bright: #e8f4ff;
+    --text-mid: #8aa8c0;
+    --text-dim: #4a6278;
+    --border-glow: rgba(0,212,255,0.2);
+    --border-subtle: rgba(255,255,255,0.06);
+    --grid-line: rgba(0,212,255,0.05);
+    --shadow-glow: 0 0 20px rgba(0,212,255,0.15);
+    --shadow-deep: 0 8px 32px rgba(0,0,0,0.6);
+    --font-display: 'Orbitron', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-bright);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center;
+  }
+
+  /* ═══════════════════════════ SCROLLBAR ══════════════════════════ */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 2px; }
+
+  /* ═══════════════════════════ LOGIN ═════════════════════════════ */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #061220 0%, #020508 100%);
+    animation: fadeIn 0.5s ease;
+  }
+
+  .login-box {
+    width: 420px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glow);
+    border-radius: 4px;
+    padding: 48px;
+    box-shadow: var(--shadow-glow), var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    animation: scanline 3s linear infinite;
+  }
+
+  @keyframes scanline { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .login-logo .brand {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--accent-primary);
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.7;
+  }
+
+  .login-logo .system-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+
+  .login-logo .system-name span { color: var(--accent-primary); }
+
+  .login-badge {
+    display: inline-block;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 2px;
+    padding: 3px 10px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent-primary);
+    margin-top: 10px;
+    font-family: var(--font-mono);
+  }
+
+  .field-group { margin-bottom: 20px; }
+
+  .field-group label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-mid);
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+  }
+
+  .field-group input, .field-group select {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-glow);
+    border-radius: 2px;
+    padding: 12px 16px;
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .field-group input:focus, .field-group select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
+  }
+
+  .field-group select option { background: var(--bg-deep); }
+
+  .btn-login {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+    border: 1px solid var(--accent-primary);
+    border-radius: 2px;
+    padding: 14px;
+    color: var(--accent-primary);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .btn-login:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,212,255,0.1));
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-login:active { transform: scale(0.98); }
+
+  .login-status {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-secondary);
+    margin-right: 6px;
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ═══════════════════════════ MAIN LAYOUT ═══════════════════════ */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  #app.active { display: flex; }
+
+  /* ═══════════════════════════ TOPBAR ════════════════════════════ */
+  .topbar {
+    height: 56px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-glow);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    position: sticky; top: 0; z-index: 100;
+    gap: 24px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  }
+
+  .topbar-logo {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--text-bright);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .topbar-logo span { color: var(--accent-primary); }
+
+  .topbar-divider { width: 1px; height: 28px; background: var(--border-subtle); flex-shrink: 0; }
+
+  .topbar-kpi {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .kpi-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    padding: 6px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .kpi-chip .label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+
+  .kpi-chip .value {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .kpi-chip.ok .value { color: var(--accent-secondary); }
+  .kpi-chip.warn .value { color: var(--accent-warn); }
+  .kpi-chip.danger .value { color: var(--accent-danger); }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .topbar-time {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-mid);
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 2px;
+    padding: 6px 12px;
+  }
+
+  .user-badge .avatar {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #000;
+  }
+
+  .user-badge .info { line-height: 1.2; }
+  .user-badge .name { font-size: 12px; font-weight: 600; color: var(--text-bright); }
+  .user-badge .role { font-size: 10px; color: var(--accent-primary); font-family: var(--font-mono); }
+
+  .btn-logout {
+    background: transparent;
+    border: 1px solid rgba(255,51,85,0.4);
+    border-radius: 2px;
+    padding: 6px 12px;
+    color: var(--accent-danger);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover { background: rgba(255,51,85,0.1); }
+
+  /* ═══════════════════════════ SIDEBAR NAV ════════════════════════ */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 220px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-subtle);
+    padding: 16px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+
+  .nav-section-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    padding: 0 20px;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-mid);
+    letter-spacing: 0.5px;
+  }
+
+  .nav-item:hover { background: rgba(0,212,255,0.05); color: var(--text-bright); }
+
+  .nav-item.active {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent-primary);
+    border-right: 2px solid var(--accent-primary);
+  }
+
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent-danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+  }
+
+  .nav-badge.warn { background: var(--accent-warn); color: #000; }
+
+  /* ═══════════════════════════ MAIN CONTENT ═══════════════════════ */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ═══════════════════════════ PAGE HEADER ════════════════════════ */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-bright);
+  }
+
+  .page-title span { color: var(--accent-primary); }
+
+  .page-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.08));
+    border: 1px solid var(--accent-primary);
+    border-radius: 2px;
+    padding: 10px 20px;
+    color: var(--accent-primary);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { box-shadow: 0 0 16px rgba(0,212,255,0.3); background: rgba(0,212,255,0.2); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-glow);
+    border-radius: 2px;
+    padding: 10px 20px;
+    color: var(--text-mid);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--text-mid); color: var(--text-bright); }
+
+  .btn-success {
+    background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,255,136,0.08));
+    border: 1px solid var(--accent-secondary);
+    border-radius: 2px;
+    padding: 10px 20px;
+    color: var(--accent-secondary);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-success:hover { box-shadow: 0 0 16px rgba(0,255,136,0.3); }
+
+  .btn-danger {
+    background: linear-gradient(135deg, rgba(255,51,85,0.2), rgba(255,51,85,0.08));
+    border: 1px solid var(--accent-danger);
+    border-radius: 2px;
+    padding: 10px 20px;
+    color: var(--accent-danger);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  /* ═══════════════════════════ CARDS / PANELS ══════════════════════ */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--accent-primary);
+    font-weight: 700;
+  }
+
+  .card-body { padding: 20px; }
+
+  /* ═══════════════════════════ KPI GRID ══════════════════════════ */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .kpi-card:hover { border-color: rgba(0,212,255,0.2); transform: translateY(-1px); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-color, var(--accent-primary));
+    opacity: 0.5;
+  }
+
+  .kpi-card.green { --accent-color: var(--accent-secondary); }
+  .kpi-card.warn { --accent-color: var(--accent-warn); }
+  .kpi-card.danger { --accent-color: var(--accent-danger); }
+  .kpi-card.purple { --accent-color: var(--accent-purple); }
+
+  .kpi-card .k-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .kpi-card .k-value {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent-color, var(--accent-primary));
+  }
+
+  .kpi-card .k-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    font-family: var(--font-mono);
+  }
+
+  .kpi-card .k-icon {
+    position: absolute;
+    right: 16px; top: 16px;
+    font-size: 24px;
+    opacity: 0.15;
+  }
+
+  /* ═══════════════════════════ STATUS BADGES ══════════════════════ */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .badge::before { content: '●'; font-size: 8px; }
+
+  .badge.disponivel { background: rgba(0,255,136,0.1); color: var(--accent-secondary); border: 1px solid rgba(0,255,136,0.2); }
+  .badge.em-uso { background: rgba(0,212,255,0.1); color: var(--accent-primary); border: 1px solid rgba(0,212,255,0.2); }
+  .badge.inspecao { background: rgba(255,170,0,0.1); color: var(--accent-warn); border: 1px solid rgba(255,170,0,0.2); }
+  .badge.manutencao { background: rgba(170,85,255,0.1); color: var(--accent-purple); border: 1px solid rgba(170,85,255,0.2); }
+  .badge.bloqueado { background: rgba(255,51,85,0.1); color: var(--accent-danger); border: 1px solid rgba(255,51,85,0.2); }
+  .badge.descartado { background: rgba(74,98,120,0.2); color: var(--text-dim); border: 1px solid var(--border-subtle); }
+
+  /* ═══════════════════════════ TABLE ══════════════════════════════ */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-deep);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-mid);
+    transition: all 0.15s;
+    vertical-align: middle;
+  }
+
+  .data-table tr:hover td { background: rgba(0,212,255,0.02); color: var(--text-bright); }
+
+  .data-table td.highlight { color: var(--text-bright); font-weight: 600; }
+
+  .data-table .mono { font-family: var(--font-mono); font-size: 12px; }
+
+  /* ═══════════════════════════ PROGRESS BAR ═══════════════════════ */
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-deep);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-secondary);
+    transition: width 0.5s ease;
+  }
+
+  .progress-fill.warn { background: var(--accent-warn); }
+  .progress-fill.danger { background: var(--accent-danger); }
+
+  .progress-pct {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════ ALERT STRIP ════════════════════════ */
+  .alert-strip {
+    background: rgba(255,51,85,0.08);
+    border: 1px solid rgba(255,51,85,0.25);
+    border-radius: 4px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .alert-strip .icon { font-size: 18px; flex-shrink: 0; }
+  .alert-strip .msg { color: var(--text-bright); }
+  .alert-strip .msg strong { color: var(--accent-danger); }
+  .alert-strip .time { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+
+  .alert-strip.warn { background: rgba(255,170,0,0.08); border-color: rgba(255,170,0,0.25); }
+  .alert-strip.warn .msg strong { color: var(--accent-warn); }
+
+  /* ═══════════════════════════ TABS ═══════════════════════════════ */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+
+  .tab:hover { color: var(--text-mid); }
+  .tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+
+  /* ═══════════════════════════ BIPAR MODAL ════════════════════════ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glow);
+    border-radius: 4px;
+    width: min(600px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-glow), var(--shadow-deep);
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--accent-primary);
+    font-weight: 700;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--text-bright); }
+
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px; justify-content: flex-end; }
+
+  /* ═══════════════════════════ SCANNER BOX ════════════════════════ */
+  .scanner-box {
+    background: var(--bg-deep);
+    border: 2px dashed var(--border-glow);
+    border-radius: 4px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scanner-box:hover, .scanner-box.active {
+    border-color: var(--accent-primary);
+    background: rgba(0,212,255,0.04);
+  }
+
+  .scanner-box .scan-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .scanner-box .scan-label { font-family: var(--font-display); font-size: 13px; letter-spacing: 3px; color: var(--accent-primary); margin-bottom: 8px; }
+  .scanner-box .scan-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+
+  .scanner-input {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-glow);
+    border-radius: 2px;
+    padding: 14px 16px;
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    letter-spacing: 3px;
+    text-align: center;
+    outline: none;
+    margin-top: 16px;
+    transition: all 0.2s;
+  }
+
+  .scanner-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+
+  /* ═══════════════════════════ FORM FIELDS ════════════════════════ */
+  .form-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .form-field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    padding: 10px 14px;
+    color: var(--text-bright);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.08);
+  }
+
+  .form-field select option { background: var(--bg-deep); }
+  .form-field textarea { min-height: 80px; resize: vertical; }
+
+  .form-divider {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 4px 0;
+  }
+
+  .form-section-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ═══════════════════════════ CHECKLIST ══════════════════════════ */
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .checklist-item:last-child { border-bottom: none; }
+
+  .checklist-item .item-name { flex: 1; font-size: 14px; color: var(--text-bright); }
+  .checklist-item .item-mat { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+
+  .radio-group { display: flex; gap: 8px; }
+
+  .radio-btn {
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    transition: all 0.2s;
+  }
+
+  .radio-btn.ok { border-color: rgba(0,255,136,0.3); color: var(--accent-secondary); }
+  .radio-btn.ok.selected, .radio-btn.ok:hover { background: rgba(0,255,136,0.15); }
+  .radio-btn.nok { border-color: rgba(255,51,85,0.3); color: var(--accent-danger); }
+  .radio-btn.nok.selected, .radio-btn.nok:hover { background: rgba(255,51,85,0.15); }
+  .radio-btn.na { border-color: var(--border-subtle); color: var(--text-dim); }
+  .radio-btn.na.selected, .radio-btn.na:hover { background: rgba(255,255,255,0.05); }
+
+  /* ═══════════════════════════ LINE PANELS ════════════════════════ */
+  .line-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .line-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .line-card:hover { border-color: rgba(0,212,255,0.2); }
+
+  .line-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .line-name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-bright);
+  }
+
+  .line-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+
+  .line-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-secondary);
+    animation: pulse 2s ease infinite;
+  }
+
+  .line-dot.warn { background: var(--accent-warn); }
+  .line-dot.off { background: var(--text-dim); animation: none; }
+
+  .line-body { padding: 14px 18px; }
+
+  .line-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .line-info-row .lk { color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; }
+  .line-info-row .lv { color: var(--text-bright); font-weight: 500; }
+
+  .line-tools {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .line-tools-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 8px;
+  }
+
+  .tool-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tool-chip {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 2px;
+    padding: 3px 8px;
+    font-size: 10px;
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+  }
+
+  /* ═══════════════════════════ IMPORT TRACKER ════════════════════ */
+  .import-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .import-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+
+  .import-step::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 50%; right: -50%;
+    height: 2px;
+    background: var(--border-subtle);
+    z-index: 0;
+  }
+
+  .import-step:last-child::before { display: none; }
+
+  .import-step.done::before { background: var(--accent-secondary); }
+  .import-step.active::before { background: linear-gradient(90deg, var(--accent-warn), var(--border-subtle)); }
+
+  .import-dot {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    border: 2px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 6px;
+    position: relative; z-index: 1;
+    font-size: 10px;
+    transition: all 0.3s;
+  }
+
+  .import-step.done .import-dot { background: var(--accent-secondary); border-color: var(--accent-secondary); color: #000; }
+  .import-step.active .import-dot { background: var(--accent-warn); border-color: var(--accent-warn); color: #000; animation: pulse 1.5s ease infinite; }
+
+  .import-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+
+  .import-step.done .import-label { color: var(--accent-secondary); }
+  .import-step.active .import-label { color: var(--accent-warn); }
+
+  /* ═══════════════════════════ NOTIFICATION ═══════════════════════ */
+  #toast-container {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glow);
+    border-radius: 4px;
+    padding: 14px 20px;
+    min-width: 280px;
+    box-shadow: var(--shadow-deep);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease;
+    font-size: 13px;
+    color: var(--text-bright);
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .toast.success { border-left: 3px solid var(--accent-secondary); }
+  .toast.error { border-left: 3px solid var(--accent-danger); }
+  .toast.warn { border-left: 3px solid var(--accent-warn); }
+  .toast.info { border-left: 3px solid var(--accent-primary); }
+
+  /* ═══════════════════════════ LOADING ════════════════════════════ */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ═══════════════════════════ PAGE VIEWS ════════════════════════ */
+  .page-view { display: none; animation: fadeIn 0.2s ease; }
+  .page-view.active { display: block; }
+
+  /* ═══════════════════════════ TOOL CARD (BIPAR) ═══════════════════ */
+  .tool-info-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border-glow);
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .tool-info-card.visible { display: block; animation: slideUp 0.3s ease; }
+
+  .tool-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .tool-info-row { display: flex; flex-direction: column; gap: 2px; }
+  .tool-info-row .tik { font-size: 10px; letter-spacing: 1px; color: var(--text-dim); font-family: var(--font-mono); }
+  .tool-info-row .tiv { font-size: 14px; color: var(--text-bright); font-weight: 600; }
+
+  /* ═══════════════════════════ RESPONSIVE ════════════════════════ */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
+    .topbar-kpi { display: none; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .line-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ═══════════════════════════ UTILS ═════════════════════════════ */
+  .flex { display: flex; }
+  .flex-col { display: flex; flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; }
+  .gap-20 { gap: 20px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .text-center { text-align: center; }
+  .text-right { text-align: right; }
+  .text-mono { font-family: var(--font-mono); }
+  .text-sm { font-size: 12px; }
+  .text-xs { font-size: 11px; }
+  .text-dim { color: var(--text-dim); }
+  .text-mid { color: var(--text-mid); }
+  .text-bright { color: var(--text-bright); }
+  .text-primary { color: var(--accent-primary); }
+  .text-success { color: var(--accent-secondary); }
+  .text-warn { color: var(--accent-warn); }
+  .text-danger { color: var(--accent-danger); }
+  .full-width { width: 100%; }
+  .hidden { display: none !important; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .empty-state .icon { font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.3; }
+
+  .inline-loader {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-dim); font-family: var(--font-mono); font-size: 12px;
+    padding: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ LOGIN ════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="brand">SISTEMA INDUSTRIAL v3.0</span>
+      <div class="system-name">SMT/PTH<br><span>TOOL</span> CONTROL</div>
+      <span class="login-badge">MES · RASTREABILIDADE · INDÚSTRIA 4.0</span>
+    </div>
+
+    <div class="field-group">
+      <label>IDENTIFICAÇÃO</label>
+      <input type="text" id="login-user" placeholder="matricula ou nome" autocomplete="off">
+    </div>
+
+    <div class="field-group">
+      <label>SENHA</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="off">
+    </div>
+
+    <div class="field-group">
+      <label>PERFIL DE ACESSO</label>
+      <select id="login-role">
+        <option value="operador">OPERADOR DE LINHA</option>
+        <option value="lider">LÍDER DE PRODUÇÃO</option>
+        <option value="manutencao">MANUTENÇÃO</option>
+        <option value="almoxarifado">ALMOXARIFADO</option>
+        <option value="compras">COMPRAS</option>
+        <option value="engenharia">ENGENHARIA</option>
+        <option value="admin" selected>ADMINISTRADOR</option>
+      </select>
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">ACESSAR SISTEMA</button>
+
+    <div class="login-status">
+      <span class="status-dot"></span>
+      SISTEMA ONLINE · CONECTADO AO GOOGLE SHEETS
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ APP ════════════════════════ -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">SMT/PTH <span>TOOL</span></div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-kpi">
+      <div class="kpi-chip ok">
+        <span class="label">DISPONÍVEL</span>
+        <span class="value" id="kpi-disponivel">—</span>
+      </div>
+      <div class="kpi-chip danger">
+        <span class="label">ALERTAS</span>
+        <span class="value" id="kpi-alertas">—</span>
+      </div>
+      <div class="kpi-chip warn">
+        <span class="label">EM USO</span>
+        <span class="value" id="kpi-em-uso">—</span>
+      </div>
+      <div class="kpi-chip">
+        <span class="label">IMPORTAÇÕES</span>
+        <span class="value" id="kpi-imports">—</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-time" id="clock">--:--:--</div>
+      <div class="user-badge">
+        <div class="avatar" id="user-avatar">?</div>
+        <div class="info">
+          <div class="name" id="user-name">—</div>
+          <div class="role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">SAIR</button>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="nav-section">
+        <div class="nav-section-label">VISÃO GERAL</div>
+        <div class="nav-item active" onclick="navigate('dashboard')">
+          <span class="icon">⬛</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="navigate('alertas')">
+          <span class="icon">🔴</span> Alertas
+          <span class="nav-badge" id="nav-badge-alertas">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">OPERAÇÃO</div>
+        <div class="nav-item" onclick="navigate('bipar')">
+          <span class="icon">📷</span> Bipar / Movimentar
+        </div>
+        <div class="nav-item" onclick="navigate('smtlines')">
+          <span class="icon">🟦</span> Linhas SMT
+        </div>
+        <div class="nav-item" onclick="navigate('pthlines')">
+          <span class="icon">🟩</span> Linhas PTH
+        </div>
+        <div class="nav-item" onclick="navigate('checklist')">
+          <span class="icon">✅</span> Checklist
+          <span class="nav-badge warn" id="nav-badge-check">0</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">FERRAMENTAS</div>
+        <div class="nav-item" onclick="navigate('ferramentas')">
+          <span class="icon">🔧</span> Controle
+        </div>
+        <div class="nav-item" onclick="navigate('cadastro')">
+          <span class="icon">➕</span> Cadastro
+        </div>
+        <div class="nav-item" onclick="navigate('historico')">
+          <span class="icon">📋</span> Histórico
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">SUPRIMENTOS</div>
+        <div class="nav-item" onclick="navigate('importacao')">
+          <span class="icon">🚢</span> Importação
+        </div>
+        <div class="nav-item" onclick="navigate('compras')">
+          <span class="icon">🛒</span> Compras
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">CONFIGURAÇÃO</div>
+        <div class="nav-item" onclick="navigate('checklists-cad')">
+          <span class="icon">📝</span> Checklists
+        </div>
+        <div class="nav-item" onclick="navigate('relatorios')">
+          <span class="icon">📊</span> Relatórios
+        </div>
+        <div class="nav-item" onclick="navigate('config')">
+          <span class="icon">⚙️</span> Configurações
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main" id="main-content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <div id="page-dashboard" class="page-view active">
+        <div class="page-header">
+          <div>
+            <div class="page-title">DASHBOARD <span>INDUSTRIAL</span></div>
+            <div class="page-sub text-mono">Visão consolidada em tempo real · atualizado agora</div>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn-secondary" onclick="loadDashboard()">⟳ ATUALIZAR</button>
+            <button class="btn-primary" onclick="navigate('bipar')">📷 BIPAR FERRAMENTA</button>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alerts-strip-container"></div>
+
+        <!-- KPI -->
+        <div class="kpi-grid" id="dash-kpis">
+          <div class="kpi-card">
+            <span class="k-label">TOTAL FERRAMENTAS</span>
+            <div class="k-value" id="dash-total">—</div>
+            <div class="k-sub">cadastradas no sistema</div>
+            <span class="k-icon">🔧</span>
+          </div>
+          <div class="kpi-card green">
+            <span class="k-label">DISPONÍVEIS</span>
+            <div class="k-value text-success" id="dash-disp">—</div>
+            <div class="k-sub">prontas para uso</div>
+            <span class="k-icon">✅</span>
+          </div>
+          <div class="kpi-card warn">
+            <span class="k-label">EM USO</span>
+            <div class="k-value text-warn" id="dash-uso">—</div>
+            <div class="k-sub">nas linhas agora</div>
+            <span class="k-icon">⚡</span>
+          </div>
+          <div class="kpi-card danger">
+            <span class="k-label">ALERTAS CRÍTICOS</span>
+            <div class="k-value text-danger" id="dash-alert">—</div>
+            <div class="k-sub">requerem atenção</div>
+            <span class="k-icon">🔴</span>
+          </div>
+          <div class="kpi-card purple">
+            <span class="k-label">MANUTENÇÃO</span>
+            <div class="k-value" style="color:var(--accent-purple)" id="dash-man">—</div>
+            <div class="k-sub">aguardando reparo</div>
+            <span class="k-icon">🔨</span>
+          </div>
+          <div class="kpi-card">
+            <span class="k-label">IMPORTAÇÕES ATIVAS</span>
+            <div class="k-value" id="dash-imp">—</div>
+            <div class="k-sub">em trânsito/alfândega</div>
+            <span class="k-icon">🚢</span>
+          </div>
+        </div>
+
+        <!-- Lines + Recent -->
+        <div class="flex gap-16" style="align-items:flex-start">
+          <div style="flex:1">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">STATUS DAS LINHAS</span>
+                <button class="btn-secondary" style="padding:4px 12px;font-size:11px" onclick="navigate('smtlines')">VER TODAS</button>
+              </div>
+              <div class="card-body">
+                <div id="dash-lines-grid" class="line-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:340px;flex-shrink:0">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">ÚLTIMAS MOVIMENTAÇÕES</span>
+              </div>
+              <div style="overflow:auto;max-height:340px">
+                <table class="data-table" id="dash-recent-table">
+                  <thead>
+                    <tr>
+                      <th>HORA</th>
+                      <th>FERRAMENTA</th>
+                      <th>AÇÃO</th>
+                      <th>OP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-recent-body">
+                    <tr><td colspan="4" class="empty-state"><span class="icon">📋</span>Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wear alerts -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚠️ FERRAMENTAS PRÓXIMAS DO LIMITE DE VIDA ÚTIL</span>
+          </div>
+          <div style="overflow:auto">
+            <table class="data-table" id="wear-table">
+              <thead>
+                <tr>
+                  <th>FERRAMENTA</th>
+                  <th>TIPO</th>
+                  <th>CICLOS ATUAIS</th>
+                  <th>CICLOS MÁXIMOS</th>
+                  <th>DESGASTE</th>
+                  <th>PREVISÃO ESGOTAMENTO</th>
+                  <th>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody id="wear-body">
+                <tr><td colspan="7" class="empty-state"><span class="icon">🔧</span>Carregando dados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ BIPAR / MOVIMENTAR ════ -->
+      <div id="page-bipar" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">BIPAR <span>FERRAMENTA</span></div>
+            <div class="page-sub text-mono">Retirada · Devolução · Movimentação</div>
+          </div>
+        </div>
+
+        <div class="flex gap-16" style="align-items:flex-start">
+          <!-- Scanner -->
+          <div style="flex:1">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📷 LEITURA QR / CÓDIGO DE BARRAS</span>
+              </div>
+              <div class="card-body">
+                <div class="tabs">
+                  <div class="tab active" onclick="setOperType('retirada',this)">RETIRADA</div>
+                  <div class="tab" onclick="setOperType('devolucao',this)">DEVOLUÇÃO</div>
+                  <div class="tab" onclick="setOperType('transferencia',this)">TRANSFERÊNCIA</div>
+                </div>
+
+                <div class="scanner-box" onclick="document.getElementById('scan-input').focus()">
+                  <span class="scan-icon">📷</span>
+                  <div class="scan-label">APONTE O SCANNER</div>
+                  <div class="scan-sub">ou clique e digite o código manualmente</div>
+                  <input type="text" id="scan-input" class="scanner-input"
+                    placeholder="QR CODE / CÓDIGO"
+                    onkeydown="if(event.key==='Enter') scanTool()"
+                    autocomplete="off">
+                </div>
+
+                <div class="tool-info-card" id="tool-info-card">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xs text-mono text-dim">FERRAMENTA IDENTIFICADA</div>
+                      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-top:4px" id="tinfo-name">—</div>
+                    </div>
+                    <div id="tinfo-badge"></div>
+                  </div>
+                  <div class="tool-info-grid">
+                    <div class="tool-info-row">
+                      <span class="tik">CÓDIGO</span>
+                      <span class="tiv mono" id="tinfo-code">—</span>
+                    </div>
+                    <div class="tool-info-row">
+                      <span class="tik">TIPO</span>
+                      <span class="tiv" id="tinfo-type">—</span>
+                    </div>
+                    <div class="tool-info-row">
+                      <span class="tik">CICLOS ATUAIS / MÁX</span>
+                      <span class="tiv" id="tinfo-cycles">—</span>
+                    </div>
+                    <div class="tool-info-row">
+                      <span class="tik">ÚLTIMA UTILIZAÇÃO</span>
+                      <span class="tiv" id="tinfo-last">—</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-grid cols-2 mt-16" id="oper-fields">
+                  <div class="form-field">
+                    <label>OPERADOR / MATRÍCULA</label>
+                    <input type="text" id="oper-user" placeholder="nome ou matrícula">
+                  </div>
+                  <div class="form-field">
+                    <label>LINHA DE PRODUÇÃO</label>
+                    <select id="oper-line">
+                      <option value="">Selecione a linha</option>
+                      <option>SMT-01</option><option>SMT-02</option><option>SMT-03</option><option>SMT-04</option>
+                      <option>PTH-01</option><option>PTH-02</option><option>PTH-03</option><option>PTH-04</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label>ORDEM DE PRODUÇÃO (OP)</label>
+                    <input type="text" id="oper-op" placeholder="OP-XXXXX">
+                  </div>
+                  <div class="form-field">
+                    <label>PRODUTO / REFERÊNCIA</label>
+                    <input type="text" id="oper-product" placeholder="ex: TV_XYZ_BOARD">
+                  </div>
+                  <div class="form-field" id="qty-field">
+                    <label>QUANTIDADE PRODUZIDA</label>
+                    <input type="number" id="oper-qty" placeholder="0" min="0">
+                  </div>
+                  <div class="form-field">
+                    <label>TURNO</label>
+                    <select id="oper-shift">
+                      <option>A - Manhã</option>
+                      <option>B - Tarde</option>
+                      <option>C - Noite</option>
+                    </select>
+                  </div>
+                  <div class="form-field" style="grid-column:1/-1">
+                    <label>OBSERVAÇÕES</label>
+                    <textarea id="oper-obs" placeholder="observações adicionais..."></textarea>
+                  </div>
+                </div>
+
+                <div class="flex gap-8 mt-16">
+                  <button class="btn-success full-width" id="btn-confirm-oper" onclick="confirmOperation()" style="padding:14px;font-size:14px">
+                    ✓ CONFIRMAR OPERAÇÃO
+                  </button>
+                  <button class="btn-secondary" onclick="clearScan()">✕ LIMPAR</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status panel -->
+          <div style="width:300px;flex-shrink:0">
+            <div class="card mb-16">
+              <div class="card-header"><span class="card-title">🟢 FERRAMENTAS DISPONÍVEIS</span></div>
+              <div style="overflow:auto;max-height:250px">
+                <table class="data-table" id="avail-table">
+                  <thead><tr><th>CÓD</th><th>NOME</th><th>STATUS</th></tr></thead>
+                  <tbody id="avail-body">
+                    <tr><td colspan="3" class="inline-loader"><span class="loading-spinner"></span> Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><span class="card-title">⚡ EM USO AGORA</span></div>
+              <div style="overflow:auto;max-height:250px">
+                <table class="data-table" id="inuse-table">
+                  <thead><tr><th>CÓD</th><th>NOME</th><th>LINHA</th></tr></thead>
+                  <tbody id="inuse-body">
+                    <tr><td colspan="3" class="inline-loader"><span class="loading-spinner"></span> Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ FERRAMENTAS ════ -->
+      <div id="page-ferramentas" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">CONTROLE DE <span>FERRAMENTAS</span></div>
+            <div class="page-sub text-mono">Inventário completo · Wave Tray · Parafusadeira · Pinboard · Gabarito</div>
+          </div>
+          <div class="flex gap-8">
+            <input type="text" id="search-tool" placeholder="🔍 Buscar ferramenta..." oninput="filterTools()"
+              style="background:var(--bg-deep);border:1px solid var(--border-glow);border-radius:2px;padding:8px 14px;color:var(--text-bright);font-family:var(--font-mono);font-size:13px;outline:none;width:200px">
+            <select id="filter-type" onchange="filterTools()"
+              style="background:var(--bg-deep);border:1px solid var(--border-glow);border-radius:2px;padding:8px 14px;color:var(--text-bright);font-family:var(--font-mono);font-size:12px;outline:none">
+              <option value="">Todos os tipos</option>
+              <option>Wave Tray</option>
+              <option>Parafusadeira</option>
+              <option>Pinboard AUTO FCT</option>
+              <option>Pinboard FCT OLD</option>
+              <option>Gabarito</option>
+            </select>
+            <select id="filter-status" onchange="filterTools()"
+              style="background:var(--bg-deep);border:1px solid var(--border-glow);border-radius:2px;padding:8px 14px;color:var(--text-bright);font-family:var(--font-mono);font-size:12px;outline:none">
+              <option value="">Todos os status</option>
+              <option>Disponível</option>
+              <option>Em Uso</option>
+              <option>Manutenção</option>
+              <option>Bloqueada</option>
+            </select>
+            <button class="btn-primary" onclick="navigate('cadastro')">+ CADASTRAR</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="overflow:auto">
+            <table class="data-table" id="tools-table">
+              <thead>
+                <tr>
+                  <th>CÓDIGO</th>
+                  <th>NOME / DESCRIÇÃO</th>
+                  <th>TIPO</th>
+                  <th>QTD LOTE</th>
+                  <th>CICLOS ATUAIS</th>
+                  <th>VIDA ÚTIL</th>
+                  <th>DESGASTE</th>
+                  <th>LOCALIZAÇÃO</th>
+                  <th>STATUS</th>
+                  <th>AÇÕES</th>
+                </tr>
+              </thead>
+              <tbody id="tools-body">
+                <tr><td colspan="10" class="inline-loader"><span class="loading-spinner"></span> Buscando ferramentas...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ CADASTRO ════ -->
+      <div id="page-cadastro" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">CADASTRO DE <span>FERRAMENTA</span></div>
+            <div class="page-sub text-mono">Registre nova ferramenta no sistema</div>
+          </div>
+          <button class="btn-secondary" onclick="navigate('ferramentas')">← VOLTAR</button>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="form-section-title">IDENTIFICAÇÃO</div>
+            <div class="form-grid cols-3 mt-12">
+              <div class="form-field">
+                <label>CÓDIGO INTERNO *</label>
+                <input type="text" id="cad-code" placeholder="ex: WT-001">
+              </div>
+              <div class="form-field">
+                <label>NOME / DESCRIÇÃO *</label>
+                <input type="text" id="cad-name" placeholder="ex: Wave Tray Linha SMT-01">
+              </div>
+              <div class="form-field">
+                <label>TIPO / CATEGORIA *</label>
+                <select id="cad-type" onchange="updateChecklistOptions()">
+                  <option value="">Selecione o tipo</option>
+                  <option>Wave Tray</option>
+                  <option>Parafusadeira</option>
+                  <option>Pinboard AUTO FCT</option>
+                  <option>Pinboard FCT OLD</option>
+                  <option>Gabarito</option>
+                  <option>Stencil</option>
+                  <option>Carrier</option>
+                  <option>Feeder Especial</option>
+                  <option>Outro</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>FABRICANTE</label>
+                <input type="text" id="cad-maker" placeholder="fabricante">
+              </div>
+              <div class="form-field">
+                <label>FORNECEDOR</label>
+                <input type="text" id="cad-supplier" placeholder="fornecedor / importador">
+              </div>
+              <div class="form-field">
+                <label>NCM</label>
+                <input type="text" id="cad-ncm" placeholder="código NCM">
+              </div>
+            </div>
+
+            <hr class="form-divider mt-16">
+            <div class="form-section-title mt-12">PROCESSO</div>
+            <div class="form-grid cols-3 mt-12">
+              <div class="form-field">
+                <label>TIPO DE CONTROLE</label>
+                <select id="cad-ctrl">
+                  <option value="lote">LOTE / KIT (com QR Master)</option>
+                  <option value="unitario">UNITÁRIO (QR individual)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>QUANTIDADE DO LOTE</label>
+                <input type="number" id="cad-qty" placeholder="ex: 60" min="1">
+              </div>
+              <div class="form-field">
+                <label>PLACAS POR CICLO / BLANK</label>
+                <input type="number" id="cad-ppc" placeholder="ex: 8" min="1">
+              </div>
+              <div class="form-field">
+                <label>CICLOS MÁXIMOS (vida útil)</label>
+                <input type="number" id="cad-maxcyc" placeholder="ex: 50000" min="1">
+              </div>
+              <div class="form-field">
+                <label>PLACAS MÁXIMAS</label>
+                <input type="number" id="cad-maxpla" placeholder="calculado automaticamente">
+              </div>
+              <div class="form-field">
+                <label>PRODUTO VINCULADO</label>
+                <input type="text" id="cad-product" placeholder="ex: TV_XYZ">
+              </div>
+            </div>
+
+            <hr class="form-divider mt-16">
+            <div class="form-section-title mt-12">LOGÍSTICA / IMPORTAÇÃO</div>
+            <div class="form-grid cols-3 mt-12">
+              <div class="form-field">
+                <label>LEAD TIME (dias)</label>
+                <input type="number" id="cad-lead" placeholder="ex: 120 (4 meses)" min="1">
+              </div>
+              <div class="form-field">
+                <label>ESTOQUE MÍNIMO</label>
+                <input type="number" id="cad-estmin" placeholder="mín para acionar compra" min="0">
+              </div>
+              <div class="form-field">
+                <label>ESTOQUE SEGURANÇA</label>
+                <input type="number" id="cad-estseg" placeholder="estoque de segurança" min="0">
+              </div>
+              <div class="form-field">
+                <label>MODAL DE IMPORTAÇÃO</label>
+                <select id="cad-modal">
+                  <option value="">Não se aplica</option>
+                  <option value="navio">🚢 Navio (lento/barato)</option>
+                  <option value="aviao">✈️ Avião (rápido/caro)</option>
+                  <option value="nacional">🏭 Nacional</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>PAÍS ORIGEM</label>
+                <input type="text" id="cad-country" placeholder="ex: China">
+              </div>
+              <div class="form-field">
+                <label>PREÇO UNITÁRIO (R$)</label>
+                <input type="number" id="cad-price" placeholder="0.00" step="0.01" min="0">
+              </div>
+            </div>
+
+            <hr class="form-divider mt-16">
+            <div class="form-section-title mt-12">CHECKLIST VINCULADO</div>
+            <div class="form-grid cols-2 mt-12">
+              <div class="form-field">
+                <label>TEMPLATE DE CHECKLIST</label>
+                <select id="cad-checklist">
+                  <option value="">Selecione o checklist</option>
+                  <option value="wave-tray">Checklist Wave Tray (Trava · Desgaste · Limpeza)</option>
+                  <option value="parafusadeira">Checklist Parafusadeira (Integridade)</option>
+                  <option value="pinboard-auto">Checklist Pinboard AUTO FCT</option>
+                  <option value="pinboard-old">Checklist Pinboard FCT OLD</option>
+                  <option value="gabarito">Checklist Gabarito (Integridade · Limpeza)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>OBSERVAÇÕES GERAIS</label>
+                <input type="text" id="cad-obs" placeholder="notas adicionais">
+              </div>
+            </div>
+
+            <div class="flex gap-8 mt-20">
+              <button class="btn-success" onclick="saveTool()" style="padding:12px 32px">💾 SALVAR FERRAMENTA</button>
+              <button class="btn-secondary" onclick="clearCadForm()">LIMPAR FORMULÁRIO</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ CHECKLIST ════ -->
+      <div id="page-checklist" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">CHECKLIST <span>INSPEÇÃO</span></div>
+            <div class="page-sub text-mono">Inspeção obrigatória na devolução</div>
+          </div>
+        </div>
+
+        <div class="flex gap-16" style="align-items:flex-start">
+          <div style="flex:1">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title" id="checklist-title">SELECIONE UMA FERRAMENTA</span>
+              </div>
+              <div class="card-body">
+                <div class="form-grid cols-3 mb-16">
+                  <div class="form-field">
+                    <label>FERRAMENTA (código QR)</label>
+                    <input type="text" id="chk-tool" placeholder="bipular ou digitar código">
+                  </div>
+                  <div class="form-field">
+                    <label>OP</label>
+                    <input type="text" id="chk-op" placeholder="OP-XXXXX">
+                  </div>
+                  <div class="form-field">
+                    <label>INSPETOR</label>
+                    <input type="text" id="chk-inspector" placeholder="nome do inspetor">
+                  </div>
+                </div>
+                <button class="btn-primary mb-16" onclick="loadChecklist()">CARREGAR CHECKLIST</button>
+
+                <div id="checklist-items"></div>
+
+                <div class="form-field mt-16">
+                  <label>OBSERVAÇÕES / AÇÃO REALIZADA</label>
+                  <textarea id="chk-obs" placeholder="descreva qualquer dano, ação realizada ou observação..."></textarea>
+                </div>
+
+                <div class="flex gap-8 mt-16">
+                  <button class="btn-success full-width" onclick="submitChecklist('ok')" style="padding:14px">✓ APROVAR — FERRAMENTA OK</button>
+                  <button class="btn-danger full-width" onclick="submitChecklist('nok')" style="padding:14px">✗ REPROVAR — BLOQUEAR</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:300px;flex-shrink:0">
+            <div class="card">
+              <div class="card-header"><span class="card-title">⏳ AGUARDANDO INSPEÇÃO</span></div>
+              <div style="overflow:auto;max-height:400px">
+                <table class="data-table" id="pending-check-table">
+                  <thead><tr><th>CÓD</th><th>FERRAMENTA</th><th>DEVOLVIDO</th></tr></thead>
+                  <tbody id="pending-check-body">
+                    <tr><td colspan="3" class="empty-state"><span class="icon">✅</span>Nenhuma pendente</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ LINHAS SMT ════ -->
+      <div id="page-smtlines" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">LINHAS <span>SMT</span></div>
+            <div class="page-sub text-mono">4 linhas de montagem superficial · status em tempo real</div>
+          </div>
+        </div>
+        <div class="line-grid" id="smt-lines-grid"></div>
+      </div>
+
+      <!-- ════ LINHAS PTH ════ -->
+      <div id="page-pthlines" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">LINHAS <span>PTH</span></div>
+            <div class="page-sub text-mono">4 linhas PTH / Wave Soldering · status em tempo real</div>
+          </div>
+        </div>
+        <div class="line-grid" id="pth-lines-grid"></div>
+      </div>
+
+      <!-- ════ IMPORTAÇÃO ════ -->
+      <div id="page-importacao" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">GESTÃO DE <span>IMPORTAÇÃO</span></div>
+            <div class="page-sub text-mono">Rastreamento China → Brasil · Lead time 4 a 5 meses</div>
+          </div>
+          <button class="btn-primary" onclick="openImportModal()">+ NOVA IMPORTAÇÃO</button>
+        </div>
+
+        <div id="imports-list"></div>
+      </div>
+
+      <!-- ════ ALERTAS ════ -->
+      <div id="page-alertas" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">CENTRAL DE <span>ALERTAS</span></div>
+            <div class="page-sub text-mono">Monitoramento contínuo · Prevenção de parada de linha</div>
+          </div>
+        </div>
+        <div id="alerts-full-list"></div>
+      </div>
+
+      <!-- ════ HISTÓRICO ════ -->
+      <div id="page-historico" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">HISTÓRICO DE <span>MOVIMENTAÇÕES</span></div>
+            <div class="page-sub text-mono">Rastreabilidade total · todos os registros</div>
+          </div>
+          <button class="btn-secondary" onclick="exportHistory()">⬇ EXPORTAR CSV</button>
+        </div>
+        <div class="card">
+          <div style="overflow:auto">
+            <table class="data-table" id="hist-table">
+              <thead>
+                <tr>
+                  <th>DATA/HORA</th>
+                  <th>FERRAMENTA</th>
+                  <th>AÇÃO</th>
+                  <th>OPERADOR</th>
+                  <th>LINHA</th>
+                  <th>OP</th>
+                  <th>QTD</th>
+                  <th>CICLOS</th>
+                  <th>OBS</th>
+                </tr>
+              </thead>
+              <tbody id="hist-body">
+                <tr><td colspan="9" class="inline-loader"><span class="loading-spinner"></span> Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ COMPRAS ════ -->
+      <div id="page-compras" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">GESTÃO DE <span>COMPRAS</span></div>
+            <div class="page-sub text-mono">Pedidos e fornecedores</div>
+          </div>
+          <button class="btn-primary" onclick="openPurchaseModal()">+ NOVO PEDIDO</button>
+        </div>
+        <div class="card">
+          <div style="overflow:auto">
+            <table class="data-table" id="purchase-table">
+              <thead>
+                <tr>
+                  <th>DATA PEDIDO</th>
+                  <th>FERRAMENTA</th>
+                  <th>FORNECEDOR</th>
+                  <th>QTD</th>
+                  <th>VALOR (R$)</th>
+                  <th>MODAL</th>
+                  <th>ETA</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="purchase-body">
+                <tr><td colspan="8" class="empty-state"><span class="icon">🛒</span>Nenhum pedido registrado</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ CHECKLISTS CAD ════ -->
+      <div id="page-checklists-cad" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">TEMPLATES DE <span>CHECKLIST</span></div>
+            <div class="page-sub text-mono">Baseado nos checklists existentes da planilha</div>
+          </div>
+        </div>
+        <div id="checklist-templates-grid" class="flex gap-16" style="flex-wrap:wrap;align-items:flex-start"></div>
+      </div>
+
+      <!-- ════ RELATÓRIOS ════ -->
+      <div id="page-relatorios" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">RELATÓRIOS <span>INDUSTRIAIS</span></div>
+            <div class="page-sub text-mono">Análise de desempenho e rastreabilidade</div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="cursor:pointer" onclick="generateReport('ciclos')">
+            <span class="k-label">CICLOS POR FERRAMENTA</span>
+            <div class="k-value" style="font-size:20px">📊</div>
+            <div class="k-sub">Desgaste por ferramenta</div>
+          </div>
+          <div class="kpi-card green" style="cursor:pointer" onclick="generateReport('disponibilidade')">
+            <span class="k-label">DISPONIBILIDADE</span>
+            <div class="k-value text-success" style="font-size:20px">📈</div>
+            <div class="k-sub">OEE das ferramentas</div>
+          </div>
+          <div class="kpi-card warn" style="cursor:pointer" onclick="generateReport('importacao')">
+            <span class="k-label">IMPORTAÇÕES</span>
+            <div class="k-value text-warn" style="font-size:20px">🚢</div>
+            <div class="k-sub">Lead time e status</div>
+          </div>
+          <div class="kpi-card danger" style="cursor:pointer" onclick="generateReport('perdas')">
+            <span class="k-label">PERDAS / DESCARTES</span>
+            <div class="k-value text-danger" style="font-size:20px">🗑️</div>
+            <div class="k-sub">Histórico de perdas</div>
+          </div>
+        </div>
+        <div class="card mt-16" id="report-result" style="display:none">
+          <div class="card-header"><span class="card-title" id="report-title">RELATÓRIO</span></div>
+          <div class="card-body" id="report-body"></div>
+        </div>
+      </div>
+
+      <!-- ════ CONFIG ════ -->
+      <div id="page-config" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">CONFIGURAÇÕES <span>DO SISTEMA</span></div>
+            <div class="page-sub text-mono">Google Sheets · Parâmetros · Integração</div>
+          </div>
+          <button class="btn-success" onclick="saveConfig()">💾 SALVAR</button>
+        </div>
+
+        <div class="card">
+  <div class="card-body">
+    <div class="form-section-title">🔗 INTEGRAÇÃO GOOGLE SHEETS</div>
+    <div class="form-grid cols-2 mt-12">
+      <div class="form-field" style="grid-column:1/-1">
+        <label>URL DO APPS SCRIPT (Web App)</label>
+        <input type="text" id="cfg-script-url"
+          placeholder="https://script.google.com/macros/s/.../exec"
+          value="https://script.google.com/macros/s/AKfycbyXYpAblApfHyP6uTP6Ei0gx_IjEdK5q99G1VfHEpP_clQ9ftxzRew0rLaGkPwo8dg/exec">
+      </div>
+      <div class="form-field">
+        <label>INTERVALO DE ATUALIZAÇÃO (segundos)</label>
+        <input type="number" id="cfg-refresh" placeholder="30" value="30" min="10">
+      </div>
+    </div>
+
+            <div class="flex gap-8 mt-12">
+              <button class="btn-primary" onclick="testConnection()">🔗 TESTAR CONEXÃO</button>
+              <div id="conn-status" class="text-mono text-sm text-dim" style="padding:10px 0"></div>
+            </div>
+
+            <hr class="form-divider mt-16">
+            <div class="form-section-title mt-12">⚙️ PARÂMETROS OPERACIONAIS</div>
+            <div class="form-grid cols-3 mt-12">
+              <div class="form-field">
+                <label>ALERTA DE DESGASTE (%)</label>
+                <input type="number" id="cfg-wear-alert" value="80" min="50" max="99">
+              </div>
+              <div class="form-field">
+                <label>ALERTA CRÍTICO (%)</label>
+                <input type="number" id="cfg-wear-crit" value="95" min="50" max="100">
+              </div>
+              <div class="form-field">
+                <label>ESTOQUE MÍNIMO PADRÃO</label>
+                <input type="number" id="cfg-min-stock" value="5" min="1">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ════ MODAL CHECKLIST DEVOLUÇÃO ════ -->
+<div class="modal-overlay hidden" id="modal-devolucao">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✅ CHECKLIST DE DEVOLUÇÃO OBRIGATÓRIO</span>
+      <button class="modal-close" onclick="closeModal('modal-devolucao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="devolucao-checklist-items"></div>
+      <div class="form-field mt-16">
+        <label>OBSERVAÇÕES / AÇÃO REALIZADA</label>
+        <textarea id="dev-obs" placeholder="descreva qualquer condição observada..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="approveDevolucao()">✓ APROVADO — FERRAMENTA OK</button>
+      <button class="btn-danger" onclick="rejectDevolucao()">✗ REPROVADO — BLOQUEAR FERRAMENTA</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL IMPORTAÇÃO ════ -->
+<div class="modal-overlay hidden" id="modal-import">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🚢 NOVA IMPORTAÇÃO</span>
+      <button class="modal-close" onclick="closeModal('modal-import')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-field">
+          <label>FERRAMENTA</label>
+          <select id="imp-tool">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>FORNECEDOR</label>
+          <input type="text" id="imp-supplier" placeholder="nome do fornecedor">
+        </div>
+        <div class="form-field">
+          <label>INVOICE / PO</label>
+          <input type="text" id="imp-invoice" placeholder="número do pedido">
+        </div>
+        <div class="form-field">
+          <label>QUANTIDADE</label>
+          <input type="number" id="imp-qty" placeholder="quantidade">
+        </div>
+        <div class="form-field">
+          <label>VALOR (USD)</label>
+          <input type="number" id="imp-value" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-field">
+          <label>MODAL</label>
+          <select id="imp-modal">
+            <option value="navio">🚢 Navio (~120 dias)</option>
+            <option value="aviao">✈️ Avião (~30 dias)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>DATA EMBARQUE</label>
+          <input type="date" id="imp-date">
+        </div>
+        <div class="form-field">
+          <label>NCM</label>
+          <input type="text" id="imp-ncm" placeholder="código NCM">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="saveImport()">💾 REGISTRAR IMPORTAÇÃO</button>
+      <button class="btn-secondary" onclick="closeModal('modal-import')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIGURATION
+// ══════════════════════════════════════════════════════════
+const CONFIG = {
+  scriptUrl: localStorage.getItem('scriptUrl') || '',
+  refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '30') * 1000,
+  wearAlert: parseInt(localStorage.getItem('wearAlert') || '80'),
+  wearCrit:  parseInt(localStorage.getItem('wearCrit')  || '95'),
+};
+
+let currentUser       = null;
+let currentPage       = 'dashboard';
+let operationType     = 'retirada';
+let toolsData         = [];
+let historyData       = [];
+let importsData       = [];
+let currentScannedTool = null;
+let refreshTimer      = null;
+
+// ══════════════════════════════════════════════════════════
+//  CHECKLIST TEMPLATES (espelho do Google Sheets)
+// ══════════════════════════════════════════════════════════
+const CHECKLIST_TEMPLATES = {
+  'Wave Tray': {
+    name: 'Wave Tray',
+    items: [
+      { id:'trava',    name:'Trava',    material:'Fenda/Philips/Allen/Alicate', required:true },
+      { id:'desgaste', name:'Desgaste', material:'N/A',                         required:true },
+      { id:'limpeza',  name:'Limpeza',  material:'Escova de aço / Álcool isopropílico / Pano', required:true },
+    ]
+  },
+  'Parafusadeira': {
+    name: 'Parafusadeira',
+    items: [
+      { id:'integridade', name:'Integridade', material:'N/A', required:true },
+    ]
+  },
+  'Pinboard AUTO FCT': {
+    name: 'Pinboard AUTO FCT',
+    items: [
+      { id:'agulha',       name:'Agulha',                    material:'Alicate',                       required:true },
+      { id:'placa_com',    name:'Placa de comunicação',       material:'N/A',                           required:true },
+      { id:'pinos_cx',     name:'Pinos de conexão',           material:'Fenda/Philips/Allen/Alicate',   required:true },
+      { id:'receptaculo',  name:'Receptáculo',                material:'Fenda/Philips/Allen/Alicate',   required:true },
+      { id:'pino_guia_cp', name:'Pino guia da contra placa',  material:'Fenda/Philips/Allen/Alicate',   required:true },
+      { id:'pino_guia_pb', name:'Pino guia da pinboard',      material:'Fenda/Philips/Allen/Alicate',   required:true },
+      { id:'amortecedor',  name:'Amortecedores',              material:'Fenda/Philips/Allen/Alicate',   required:true },
+    ]
+  },
+  'Pinboard FCT OLD': {
+    name: 'Pinboard FCT OLD',
+    items: [
+      { id:'agulha',      name:'Agulha',               material:'Fenda/Philips/Allen/Alicate', required:true },
+      { id:'placa_com',   name:'Placa de comunicação',  material:'Fenda/Philips/Allen/Alicate', required:true },
+      { id:'pinos_cx',    name:'Pinos de conexão',      material:'Fenda/Philips/Allen/Alicate', required:true },
+      { id:'receptaculo', name:'Receptáculo',           material:'Fenda/Philips/Allen/Alicate', required:true },
+      { id:'pino_guia',   name:'Pino guia',             material:'Fenda/Philips/Allen/Alicate', required:true },
+    ]
+  },
+  'Gabarito': {
+    name: 'Gabarito',
+    items: [
+      { id:'integridade', name:'Integridade', material:'N/A',                                       required:true },
+      { id:'limpeza',     name:'Limpeza',     material:'Escova de aço / Álcool isopropílico / Pano',required:true },
+    ]
+  },
+  'Stencil': {
+    name: 'Stencil',
+    items: [
+      { id:'integridade', name:'Integridade', material:'N/A',                        required:true },
+      { id:'limpeza',     name:'Limpeza',     material:'Álcool isopropílico / Pano', required:true },
+    ]
+  },
+  'Rodo': {
+    name: 'Rodo',
+    items: [
+      { id:'integridade', name:'Integridade', material:'N/A',                        required:true },
+      { id:'limpeza',     name:'Limpeza',     material:'Álcool isopropílico / Pano', required:true },
+    ]
+  },
+  'Slot': {
+    name: 'Slot',
+    items: [
+      { id:'integridade', name:'Integridade', material:'N/A',                            required:true },
+      { id:'limpeza',     name:'Limpeza',     material:'Escova de aço / Álcool isopropílico', required:true },
+    ]
+  },
+};
+
+// ── Mock data (fallback offline) ──────────────────────────
+const MOCK_TOOLS = [
+  { code:'WT-001',     name:'Wave Tray Kit A',       type:'Wave Tray',         qty:60, cycles:12400, maxCycles:50000, status:'Disponível',         location:'Almoxarifado', checklist:'Wave Tray',         product:'TV_XYZ',   ppc:8, lote:true,  checklistPendente:false },
+  { code:'WT-002',     name:'Wave Tray Kit B',       type:'Wave Tray',         qty:60, cycles:45200, maxCycles:50000, status:'Disponível',         location:'Almoxarifado', checklist:'Wave Tray',         product:'TV_ABC',   ppc:8, lote:true,  checklistPendente:false },
+  { code:'WT-003',     name:'Wave Tray Kit C',       type:'Wave Tray',         qty:45, cycles:48800, maxCycles:50000, status:'Checklist Pendente', location:'PTH-01',       checklist:'Wave Tray',         product:'BOARD_L3', ppc:8, lote:true,  checklistPendente:true  },
+  { code:'PB-001',     name:'Pinboard AUTO FCT L1',  type:'Pinboard AUTO FCT', qty:1,  cycles:3200,  maxCycles:10000, status:'Disponível',         location:'Almoxarifado', checklist:'Pinboard AUTO FCT', product:'TV_XYZ',   ppc:1, lote:false, checklistPendente:false },
+  { code:'PB-002',     name:'Pinboard AUTO FCT L2',  type:'Pinboard AUTO FCT', qty:1,  cycles:9500,  maxCycles:10000, status:'Manutenção',         location:'Manutenção',   checklist:'Pinboard AUTO FCT', product:'TV_ABC',   ppc:1, lote:false, checklistPendente:false },
+  { code:'PB-OLD-001', name:'Pinboard FCT OLD',      type:'Pinboard FCT OLD',  qty:1,  cycles:6800,  maxCycles:8000,  status:'Checklist Pendente', location:'SMT-02',       checklist:'Pinboard FCT OLD',  product:'BOARD_OLD',ppc:1, lote:false, checklistPendente:true  },
+  { code:'PAR-001',    name:'Parafusadeira Elétrica 1','type':'Parafusadeira', qty:1,  cycles:22000, maxCycles:100000,status:'Disponível',         location:'Almoxarifado', checklist:'Parafusadeira',     product:'GERAL',    ppc:1, lote:false, checklistPendente:false },
+  { code:'PAR-002',    name:'Parafusadeira Elétrica 2','type':'Parafusadeira', qty:1,  cycles:88000, maxCycles:100000,status:'Disponível',         location:'Almoxarifado', checklist:'Parafusadeira',     product:'GERAL',    ppc:1, lote:false, checklistPendente:false },
+  { code:'GAB-001',    name:'Gabarito SMT-01',        type:'Gabarito',          qty:1,  cycles:5400,  maxCycles:20000, status:'Disponível',         location:'Almoxarifado', checklist:'Gabarito',          product:'TV_XYZ',   ppc:1, lote:false, checklistPendente:false },
+  { code:'GAB-002',    name:'Gabarito SMT-03',        type:'Gabarito',          qty:1,  cycles:19200, maxCycles:20000, status:'Bloqueada',          location:'Manutenção',   checklist:'Gabarito',          product:'TV_ABC',   ppc:1, lote:false, checklistPendente:false },
+];
+
+const MOCK_HISTORY = [
+  { dt:'2025-05-25 14:32', tool:'WT-001', action:'RETIRADA',  user:'Carlos S.',  line:'PTH-01', op:'OP-88231', qty:800,  cycles:100, checklistResult:'',       obs:'' },
+  { dt:'2025-05-25 13:10', tool:'PB-001', action:'CHECKLIST', user:'Ana Lima',   line:'SMT-01', op:'OP-88220', qty:0,    cycles:0,   checklistResult:'aprovado', obs:'OK após inspeção' },
+  { dt:'2025-05-25 11:55', tool:'WT-003', action:'RETIRADA',  user:'João P.',    line:'PTH-01', op:'OP-88198', qty:1200, cycles:150, checklistResult:'',       obs:'' },
+  { dt:'2025-05-25 09:00', tool:'PAR-001',action:'RETIRADA',  user:'Maria F.',   line:'SMT-02', op:'OP-88195', qty:0,    cycles:0,   checklistResult:'',       obs:'' },
+  { dt:'2025-05-24 16:40', tool:'PB-002', action:'MANUTENÇÃO',user:'Técnico J.', line:'—',      op:'—',        qty:0,    cycles:0,   checklistResult:'',       obs:'Agulha quebrada' },
+];
+
+const MOCK_IMPORTS = [
+  { id:'IMP-001', tool:'Wave Tray Kit (60 un)',supplier:'Shenzhen Tools Co.', invoice:'INV-2025-0441',qty:120,value:8400, modal:'navio',embarque:'2025-02-10',eta:'2025-06-10',status:'alfandega',ncm:'8466.94.90'},
+  { id:'IMP-002', tool:'Pinboard AUTO FCT',    supplier:'PCB Fixtures Ltd.',  invoice:'INV-2025-0312',qty:4,  value:12000,modal:'aviao',embarque:'2025-04-20',eta:'2025-05-20',status:'entregue', ncm:'8466.94.90'},
+];
+
+const IMPORT_STEPS = ['comprado','producao','embarcado','transito','alfandega','entregue'];
+
+// ══════════════════════════════════════════════════════════
+//  API CALLS (Google Sheets via Apps Script)
+// ══════════════════════════════════════════════════════════
+async function apiCall(action, params = {}) {
+  if (!CONFIG.scriptUrl) return null;
+  try {
+    const query = new URLSearchParams({ action, ...params });
+    const res   = await fetch(`${CONFIG.scriptUrl}?${query}`);
+    return await res.json();
+  } catch(e) { console.warn('API GET offline:', e); return null; }
+}
+
+async function apiPost(action, data = {}) {
+  if (!CONFIG.scriptUrl) return null;
+  try {
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...data })
+    });
+    return await res.json();
+  } catch(e) { console.warn('API POST offline:', e); return null; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  OBTER FERRAMENTAS (online → offline fallback)
+// ══════════════════════════════════════════════════════════
+async function getTools() {
+  const api = await apiCall('getTools');
+  if (api && api.data) {
+    // Mapeia nomes do Sheets → HTML
+    toolsData = api.data.map(t => ({
+      code: t.codigo, name: t.nome, type: t.tipo,
+      qty: t.quantidade, cycles: t.ciclos, maxCycles: t.max_ciclos,
+      status: t.status, location: t.localizacao,
+      checklist: t.checklist_template, product: t.produto,
+      ppc: t.pecas_por_ciclo, lote: t.controle_lote === 'Sim',
+      checklistPendente: t.checklist_pendente === true || t.checklist_pendente === 'TRUE'
+    }));
+  } else {
+    toolsData = MOCK_TOOLS;
+  }
+  return toolsData;
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOGIN / LOGOUT / CLOCK
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim() || 'Usuário';
+  const role = document.getElementById('login-role').value;
+  const roleLabels = {
+    operador:'OPERADOR', lider:'LÍDER PROD.', manutencao:'MANUTENÇÃO',
+    almoxarifado:'ALMOXARIFADO', compras:'COMPRAS', engenharia:'ENGENHARIA', admin:'ADMINISTRADOR'
+  };
+  currentUser = { name: user, role, roleLabel: roleLabels[role] };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('user-name').textContent = user;
+  document.getElementById('user-role').textContent = roleLabels[role];
+  document.getElementById('user-avatar').textContent = user.charAt(0).toUpperCase();
+  startClock(); loadDashboard(); startAutoRefresh(); loadConfig();
+}
+
+function doLogout() {
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  currentUser = null; clearInterval(refreshTimer);
+}
+
+function startClock() {
+  function tick() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR'); }
+  tick(); setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════
+function navigate(page) {
+  document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'"))
+      n.classList.add('active');
+  });
+  currentPage = page;
+  switch(page) {
+    case 'dashboard':      loadDashboard();            break;
+    case 'ferramentas':    loadTools();                break;
+    case 'bipar':          loadBiparPage();            break;
+    case 'checklist':      loadChecklistPage();        break;
+    case 'smtlines':       loadLines('smt');           break;
+    case 'pthlines':       loadLines('pth');           break;
+    case 'importacao':     loadImports();              break;
+    case 'historico':      loadHistory();              break;
+    case 'checklists-cad': loadChecklistTemplates();   break;
+    case 'config':         loadConfigPage();           break;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const tools = await getTools();
+  const total  = tools.length;
+  const disp   = tools.filter(t => t.status === 'Disponível').length;
+  const uso    = tools.filter(t => t.status === 'Em Uso').length;
+  const man    = tools.filter(t => t.status === 'Manutenção').length;
+  const chkPnd = tools.filter(t => t.status === 'Checklist Pendente').length;
+  const bloc   = tools.filter(t => t.status === 'Bloqueada').length;
+  const critical = tools.filter(t => t.maxCycles > 0 && (t.cycles / t.maxCycles) >= CONFIG.wearAlert / 100).length;
+
+  setText('kpi-total',    total);
+  setText('kpi-disp',     disp);
+  setText('kpi-uso',      uso);
+  setText('kpi-manut',    man);
+  setText('kpi-critico',  critical);
+  setText('kpi-pendente', chkPnd);
+  setText('kpi-bloc',     bloc);
+
+  // Alertas de checklist pendente
+  const alertsEl = document.getElementById('alert-list');
+  if (alertsEl) {
+    const pendentes = tools.filter(t => t.status === 'Checklist Pendente');
+    const criticos  = tools.filter(t => t.maxCycles > 0 && (t.cycles / t.maxCycles) >= CONFIG.wearCrit / 100);
+    let html = '';
+    pendentes.forEach(t => {
+      html += `<div class="alert-strip warn">
+        <span class="icon">⚠️</span>
+        <span class="msg"><strong>CHECKLIST PENDENTE</strong> — ${t.name} (${t.code}) está aguardando inspeção antes de ser liberada</span>
+        <button class="btn-primary" style="padding:4px 12px;font-size:11px;margin-left:auto" onclick="navigate('checklist')">INSPECIONAR</button>
+      </div>`;
+    });
+    criticos.forEach(t => {
+      const pct = Math.round(t.cycles / t.maxCycles * 100);
+      html += `<div class="alert-strip">
+        <span class="icon">🔴</span>
+        <span class="msg"><strong>DESGASTE CRÍTICO ${pct}%</strong> — ${t.name} (${t.code})</span>
+        <span class="time">${t.cycles.toLocaleString()} / ${t.maxCycles.toLocaleString()} ciclos</span>
+      </div>`;
+    });
+    alertsEl.innerHTML = html || '<div class="empty-state" style="padding:16px"><span class="icon">✅</span>Sem alertas ativos</div>';
+  }
+
+  renderRecentHistory();
+}
+
+function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+
+function renderRecentHistory() {
+  const body = document.getElementById('dash-hist-body');
+  if (!body) return;
+  const recent = MOCK_HISTORY.slice(0,5);
+  body.innerHTML = recent.map(h => `<tr>
+    <td class="mono text-xs">${h.dt}</td>
+    <td class="highlight">${h.tool}</td>
+    <td>${actionBadge(h.action)}</td>
+    <td>${h.user}</td>
+    <td class="mono text-xs">${h.line || '—'}</td>
+  </tr>`).join('');
+}
+
+function actionBadge(action) {
+  const map = {
+    'RETIRADA':   '<span class="badge em-uso">RETIRADA</span>',
+    'DEVOLUÇÃO':  '<span class="badge disponivel">DEVOLUÇÃO</span>',
+    'MANUTENÇÃO': '<span class="badge manutencao">MANUTENÇÃO</span>',
+    'BLOQUEIO':   '<span class="badge bloqueado">BLOQUEIO</span>',
+    'CHECKLIST':  '<span class="badge inspecao">CHECKLIST</span>',
+    'DESCARTE':   '<span class="badge descartado">DESCARTE</span>',
+    'CADASTRO':   '<span class="badge em-uso">CADASTRO</span>',
+  };
+  return map[action] || `<span class="badge">${action}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  FERRAMENTAS
+// ══════════════════════════════════════════════════════════
+async function loadTools() {
+  const tools = await getTools();
+  renderToolsTable(tools);
+}
+
+function renderToolsTable(tools) {
+  const body = document.getElementById('tools-body');
+  if (!tools.length) {
+    body.innerHTML = '<tr><td colspan="10" class="empty-state"><span class="icon">🔧</span>Nenhuma ferramenta cadastrada</td></tr>';
+    return;
+  }
+  body.innerHTML = tools.map(t => {
+    const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
+    const wearCls = pct >= CONFIG.wearCrit ? 'danger' : pct >= CONFIG.wearAlert ? 'warn' : '';
+    const statusMap = {
+      'Disponível':'disponivel','Em Uso':'em-uso','Manutenção':'manutencao',
+      'Bloqueada':'bloqueado','Descartada':'descartado','Checklist Pendente':'inspecao'
+    };
+    const chkIcon = t.checklistPendente
+      ? '<span style="color:var(--accent-warn);font-size:11px">⏳ PENDENTE</span>'
+      : '<span style="color:var(--accent-secondary);font-size:11px">✓</span>';
+    return `<tr>
+      <td class="mono highlight">${t.code}</td>
+      <td>${t.name}</td>
+      <td><span class="badge inspecao">${t.type}</span></td>
+      <td class="mono">${t.qty}</td>
+      <td class="mono">${(t.cycles||0).toLocaleString()}</td>
+      <td class="mono">${(t.maxCycles||0).toLocaleString()}</td>
+      <td>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill ${wearCls}" style="width:${pct}%"></div></div>
+          <span class="progress-pct">${pct}%</span>
+        </div>
+      </td>
+      <td class="mono text-xs">${t.location}</td>
+      <td><span class="badge ${statusMap[t.status] || ''}">${t.status}</span></td>
+      <td>
+        <div class="flex gap-8">
+          ${chkIcon}
+          <button class="btn-secondary" style="padding:4px 8px;font-size:11px" onclick="quickScan('${t.code}')">📷</button>
+          <button class="btn-secondary" style="padding:4px 8px;font-size:11px" onclick="viewHistory('${t.code}')">📋</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTools() {
+  const search  = document.getElementById('search-tool').value.toLowerCase();
+  const typeF   = document.getElementById('filter-type').value;
+  const statusF = document.getElementById('filter-status').value;
+  const filtered = toolsData.filter(t => {
+    const matchSearch = !search || t.name.toLowerCase().includes(search) || t.code.toLowerCase().includes(search);
+    const matchType   = !typeF   || t.type === typeF;
+    const matchStatus = !statusF || t.status === statusF;
+    return matchSearch && matchType && matchStatus;
+  });
+  renderToolsTable(filtered);
+}
+
+// ══════════════════════════════════════════════════════════
+//  BIPAR — lógica com bloqueio por checklist pendente
+// ══════════════════════════════════════════════════════════
+function setOperType(type, el) {
+  operationType = type;
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('qty-field').style.display = type === 'devolucao' ? 'none' : '';
+  document.getElementById('btn-confirm-oper').textContent =
+    type === 'retirada'     ? '✓ CONFIRMAR RETIRADA' :
+    type === 'devolucao'    ? '✓ CONFIRMAR DEVOLUÇÃO' : '✓ CONFIRMAR TRANSFERÊNCIA';
+}
+
+async function loadBiparPage() {
+  const tools = await getTools();
+  const avail = tools.filter(t => t.status === 'Disponível');
+  const inuse = tools.filter(t => t.status === 'Em Uso');
+  const pend  = tools.filter(t => t.status === 'Checklist Pendente');
+
+  document.getElementById('avail-body').innerHTML = avail.length ?
+    avail.map(t => `<tr>
+      <td class="mono text-xs">${t.code}</td>
+      <td class="highlight">${t.name}</td>
+      <td><span class="badge disponivel">OK</span></td>
+    </tr>`).join('') :
+    '<tr><td colspan="3" class="empty-state">Nenhuma disponível</td></tr>';
+
+  document.getElementById('inuse-body').innerHTML = inuse.length ?
+    inuse.map(t => `<tr>
+      <td class="mono text-xs">${t.code}</td>
+      <td class="highlight">${t.name}</td>
+      <td class="mono text-xs">${t.location}</td>
+    </tr>`).join('') :
+    '<tr><td colspan="3" class="empty-state">Nenhuma em uso</td></tr>';
+
+  // Badge de pendentes na nav
+  const badge = document.querySelector('.nav-badge.warn');
+  if (badge) badge.textContent = pend.length || '';
+}
+
+function scanTool() {
+  const code = document.getElementById('scan-input').value.trim().toUpperCase();
+  if (!code) return;
+  const tool = toolsData.find(t => t.code.toUpperCase() === code || t.code.toUpperCase().includes(code));
+  if (!tool) { toast('Ferramenta não encontrada: ' + code, 'error'); return; }
+
+  currentScannedTool = tool;
+  const card = document.getElementById('tool-info-card');
+  card.classList.add('visible');
+  document.getElementById('tinfo-name').textContent  = tool.name;
+  document.getElementById('tinfo-code').textContent  = tool.code;
+  document.getElementById('tinfo-type').textContent  = tool.type + (tool.lote ? ` (Lote: ${tool.qty} un)` : ' (Unitária)');
+  document.getElementById('tinfo-cycles').textContent = `${(tool.cycles||0).toLocaleString()} / ${(tool.maxCycles||0).toLocaleString()}`;
+  document.getElementById('tinfo-last').textContent  = new Date().toLocaleString('pt-BR');
+
+  const statusMap = {'Disponível':'disponivel','Em Uso':'em-uso','Manutenção':'manutencao','Bloqueada':'bloqueado','Checklist Pendente':'inspecao'};
+  document.getElementById('tinfo-badge').innerHTML = `<span class="badge ${statusMap[tool.status] || ''}">${tool.status}</span>`;
+
+  // ── VALIDAÇÕES ────────────────────────────────────────────
+  if (operationType === 'retirada') {
+    if (tool.status === 'Checklist Pendente') {
+      toast(`🔒 BLOQUEADA — ${tool.code} aguarda CHECKLIST antes de ser retirada!`, 'error');
+    } else if (tool.status === 'Em Uso') {
+      toast(`⚠️ ERRO: ${tool.code} já está em uso na linha ${tool.location}!`, 'error');
+    } else if (tool.status === 'Bloqueada') {
+      toast(`🔴 ERRO: ${tool.code} está BLOQUEADA. Consultar manutenção.`, 'error');
+    } else if (tool.status === 'Manutenção') {
+      toast(`🔧 ${tool.code} está em MANUTENÇÃO.`, 'warn');
+    } else {
+      toast(`✓ Ferramenta identificada: ${tool.name}`, 'success');
+    }
+  } else if (operationType === 'devolucao') {
+    if (tool.status !== 'Em Uso') {
+      toast(`⚠️ ${tool.code} não está em uso. Verifique o código.`, 'warn');
+    } else {
+      toast(`✓ ${tool.name} — confirme a devolução e preencha o checklist`, 'success');
+    }
+  } else {
+    toast(`✓ Ferramenta identificada: ${tool.name}`, 'success');
+  }
+}
+
+function quickScan(code) {
+  navigate('bipar');
+  setTimeout(() => { document.getElementById('scan-input').value = code; scanTool(); }, 300);
+}
+
+async function confirmOperation() {
+  if (!currentScannedTool) { toast('Bipar uma ferramenta primeiro!', 'warn'); return; }
+
+  // BLOQUEIO: não permite retirar se checklist pendente
+  if (operationType === 'retirada' && currentScannedTool.status === 'Checklist Pendente') {
+    toast(`🔒 Impossível retirar — ${currentScannedTool.code} tem CHECKLIST PENDENTE!`, 'error');
+    return;
+  }
+  if (operationType === 'retirada' && currentScannedTool.status !== 'Disponível') {
+    toast(`⚠️ Ferramenta não está Disponível (${currentScannedTool.status})`, 'error');
+    return;
+  }
+
+  const line  = document.getElementById('oper-line').value;
+  const op    = document.getElementById('oper-op').value;
+  const qty   = parseInt(document.getElementById('oper-qty').value) || 0;
+  const user  = document.getElementById('oper-user').value || currentUser.name;
+  const shift = document.getElementById('oper-shift').value;
+  const obs   = document.getElementById('oper-obs').value;
+
+  if (!line && operationType !== 'manutencao') { toast('Selecione a linha de produção!', 'warn'); return; }
+
+  // DEVOLUÇÃO → abre checklist obrigatório
+  if (operationType === 'devolucao') {
+    openDevolucaoChecklist(currentScannedTool);
+    return;
+  }
+
+  // Calcula ciclos para retirada
+  let newCycles = currentScannedTool.cycles || 0;
+  if (operationType === 'retirada' && qty > 0 && currentScannedTool.ppc > 0) {
+    const cyclesFromOp = Math.round(qty / currentScannedTool.ppc);
+    const lotQty = currentScannedTool.qty || 1;
+    newCycles = currentScannedTool.cycles + Math.round(cyclesFromOp / lotQty);
+  }
+
+  const record = {
+    action: operationType.toUpperCase(), toolCode: currentScannedTool.code,
+    line, op, qty, newCycles, user, shift, obs, timestamp: new Date().toISOString()
+  };
+
+  const result = await apiPost('logMovement', record);
+
+  // Atualiza local
+  const idx = toolsData.findIndex(t => t.code === currentScannedTool.code);
+  if (idx >= 0) {
+    toolsData[idx].status   = operationType === 'retirada' ? 'Em Uso' : 'Disponível';
+    toolsData[idx].location = operationType === 'retirada' ? line : 'Almoxarifado';
+    toolsData[idx].cycles   = newCycles;
+    toolsData[idx].checklistPendente = false;
+  }
+
+  MOCK_HISTORY.unshift({
+    dt: new Date().toLocaleString('pt-BR').replace(',',''),
+    tool: currentScannedTool.code, action: operationType.toUpperCase(),
+    user, line, op, qty, cycles: newCycles - currentScannedTool.cycles, obs,
+    checklistResult: ''
+  });
+
+  toast(`✓ ${operationType.toUpperCase()} registrada com sucesso!`, 'success');
+  clearScan(); loadBiparPage();
+}
+
+function clearScan() {
+  document.getElementById('scan-input').value = '';
+  document.getElementById('tool-info-card').classList.remove('visible');
+  currentScannedTool = null;
+  ['oper-op','oper-qty','oper-obs','oper-user','oper-product'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHECKLIST / DEVOLUÇÃO
+//  Regra: devolução SÓ conclui após checklist preenchido
+//  Item com NOK → ferramenta vai para Bloqueada
+//  Todos OK → Disponível no almoxarifado
+// ══════════════════════════════════════════════════════════
+function openDevolucaoChecklist(tool) {
+  const key = tool.checklist || tool.type;
+  const tpl = CHECKLIST_TEMPLATES[key];
+  if (!tpl) { toast('Checklist não encontrado para: ' + key, 'warn'); return; }
+
+  const container = document.getElementById('devolucao-checklist-items');
+  container.innerHTML = `
+    <div class="text-xs text-mono text-dim mb-16">
+      Ferramenta: <strong class="text-bright">${tool.name} (${tool.code})</strong>
+      <span class="badge bloqueado" style="margin-left:8px">OBRIGATÓRIO PARA LIBERAR</span>
+    </div>
+    ${tpl.items.map(item => `
+    <div class="checklist-item" data-item-id="${item.id}">
+      <div>
+        <div class="item-name">${item.name} ${item.required ? '<span class="text-danger text-xs">*</span>':''}</div>
+        ${item.material ? `<div class="item-mat">${item.material}</div>` : ''}
+      </div>
+      <div class="radio-group" style="margin-left:auto">
+        <button class="radio-btn ok"  onclick="selectCheck(this,'${item.id}','ok')">OK</button>
+        <button class="radio-btn nok" onclick="selectCheck(this,'${item.id}','nok')">NOK</button>
+        <button class="radio-btn na"  onclick="selectCheck(this,'${item.id}','na')">N/A</button>
+      </div>
+    </div>`).join('')}
+  `;
+  document.getElementById('modal-devolucao').classList.remove('hidden');
+}
+
+function selectCheck(btn, itemId, val) {
+  const row = btn.closest('.checklist-item');
+  row.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.itemId = itemId;
+  btn.dataset.val    = val;
+}
+
+function _getChecklistState() {
+  const rows = document.querySelectorAll('.checklist-item[data-item-id]');
+  const items = [];
+  let allFilled = true;
+  let hasNok    = false;
+  rows.forEach(row => {
+    const selected = row.querySelector('.radio-btn.selected');
+    const itemId   = row.getAttribute('data-item-id');
+    const itemName = row.querySelector('.item-name').textContent.trim().replace(' *','');
+    if (!selected) { allFilled = false; }
+    else {
+      if (selected.dataset.val === 'nok') hasNok = true;
+      items.push({ id: itemId, name: itemName, value: selected.dataset.val });
+    }
+  });
+  return { allFilled, hasNok, items };
+}
+
+async function approveDevolucao() {
+  const obs = document.getElementById('dev-obs').value;
+  const { allFilled, hasNok, items } = _getChecklistState();
+
+  if (!allFilled) {
+    toast('⚠️ Preencha todos os itens do checklist antes de confirmar!', 'warn');
+    return;
+  }
+
+  const checklistResult = hasNok ? 'reprovado' : 'aprovado';
+
+  closeModal('modal-devolucao');
+
+  const line  = document.getElementById('oper-line').value;
+  const op    = document.getElementById('oper-op').value;
+  const user  = document.getElementById('oper-user').value || currentUser.name;
+  const shift = document.getElementById('oper-shift').value;
+
+  // Envia para o Sheets com checklist
+  await apiPost('logMovement', {
+    action: 'DEVOLUÇÃO',
+    toolCode: currentScannedTool.code,
+    line, op, user, shift, obs,
+    checklistResult,
+    checklistItems: items,
+    timestamp: new Date().toISOString()
+  });
+
+  // Atualiza local
+  const idx = toolsData.findIndex(t => t.code === currentScannedTool.code);
+  if (idx >= 0) {
+    if (hasNok) {
+      toolsData[idx].status   = 'Bloqueada';
+      toolsData[idx].location = 'Manutenção';
+    } else {
+      toolsData[idx].status   = 'Disponível';
+      toolsData[idx].location = 'Almoxarifado';
+    }
+    toolsData[idx].checklistPendente = false;
+  }
+
+  MOCK_HISTORY.unshift({
+    dt: new Date().toLocaleString('pt-BR').replace(',',''),
+    tool: currentScannedTool.code, action: 'DEVOLUÇÃO',
+    user, line, op, qty:0, cycles:0,
+    checklistResult, obs
+  });
+
+  if (hasNok) {
+    toast('⚠️ Item REPROVADO no checklist — Ferramenta BLOQUEADA e enviada para manutenção!', 'error');
+  } else {
+    toast('✓ Checklist aprovado — Ferramenta liberada ao almoxarifado!', 'success');
+  }
+
+  clearScan(); loadBiparPage();
+}
+
+function rejectDevolucao() {
+  // Cancelar sem registrar → ferramenta fica como "Checklist Pendente"
+  const obs = document.getElementById('dev-obs').value || 'Checklist não realizado';
+  closeModal('modal-devolucao');
+
+  if (currentScannedTool) {
+    const idx = toolsData.findIndex(t => t.code === currentScannedTool.code);
+    if (idx >= 0) {
+      toolsData[idx].status           = 'Checklist Pendente';
+      toolsData[idx].checklistPendente = true;
+    }
+
+    apiPost('logMovement', {
+      action: 'DEVOLUÇÃO',
+      toolCode: currentScannedTool.code,
+      user: currentUser.name, obs,
+      checklistResult: null,  // sem checklist → pendente
+      timestamp: new Date().toISOString()
+    });
+
+    MOCK_HISTORY.unshift({
+      dt: new Date().toLocaleString('pt-BR').replace(',',''),
+      tool: currentScannedTool.code, action:'DEVOLUÇÃO',
+      user: currentUser.name, line:'—', op:'—', qty:0, cycles:0,
+      checklistResult:'pendente', obs
+    });
+  }
+
+  toast('⏳ Checklist não realizado — Ferramenta marcada como PENDENTE', 'warn');
+  clearScan(); loadBiparPage();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PÁGINA DE CHECKLIST (inspeção de ferramentas pendentes)
+// ══════════════════════════════════════════════════════════
+async function loadChecklistPage() {
+  const tools   = await getTools();
+  const pending = tools.filter(t => t.status === 'Checklist Pendente');
+  const body    = document.getElementById('pending-check-body');
+  body.innerHTML = pending.length ?
+    pending.map(t => `<tr>
+      <td class="mono text-xs">${t.code}</td>
+      <td class="highlight">${t.name}</td>
+      <td><span class="badge inspecao">PENDENTE</span></td>
+      <td>
+        <button class="btn-primary" style="padding:4px 12px;font-size:11px"
+          onclick="iniciarChecklistPendente('${t.code}')">✓ INSPECIONAR</button>
+      </td>
+    </tr>`).join('') :
+    '<tr><td colspan="4" class="empty-state"><span class="icon">✅</span>Nenhuma pendente</td></tr>';
+}
+
+function iniciarChecklistPendente(code) {
+  const tool = toolsData.find(t => t.code === code);
+  if (!tool) { toast('Ferramenta não encontrada', 'error'); return; }
+  currentScannedTool = tool;
+
+  // Usa o modal de devolução para executar o checklist pendente
+  openDevolucaoChecklist(tool);
+
+  // Atualiza o título do modal
+  const title = document.querySelector('#modal-devolucao .modal-title');
+  if (title) title.textContent = `INSPEÇÃO / CHECKLIST — ${tool.code}`;
+
+  // Botão de "Salvar sem checklist" deve ser "Adiar"
+  const btnReject = document.querySelector('#modal-devolucao .btn-danger');
+  if (btnReject) btnReject.textContent = '⏸ ADIAR';
+}
+
+function loadChecklist() {
+  const code = document.getElementById('chk-tool').value.trim().toUpperCase();
+  const tool = toolsData.find(t => t.code.toUpperCase() === code);
+  if (!tool) { toast('Ferramenta não encontrada', 'error'); return; }
+
+  const key = tool.checklist || tool.type;
+  const tpl = CHECKLIST_TEMPLATES[key];
+  if (!tpl) { toast('Checklist não definido para este tipo', 'warn'); return; }
+
+  document.getElementById('checklist-title').textContent = `CHECKLIST: ${tpl.name.toUpperCase()} — ${tool.code}`;
+  const container = document.getElementById('checklist-items');
+  container.innerHTML = tpl.items.map(item => `
+    <div class="checklist-item" data-item-id="${item.id}">
+      <div>
+        <div class="item-name">${item.name}</div>
+        ${item.material ? `<div class="item-mat">${item.material}</div>` : ''}
+      </div>
+      <div class="radio-group" style="margin-left:auto">
+        <button class="radio-btn ok"  onclick="selectCheck(this,'${item.id}','ok')">OK</button>
+        <button class="radio-btn nok" onclick="selectCheck(this,'${item.id}','nok')">NOK</button>
+        <button class="radio-btn na"  onclick="selectCheck(this,'${item.id}','na')">N/A</button>
+      </div>
+    </div>`).join('');
+  currentScannedTool = tool;
+}
+
+async function submitChecklist(result) {
+  if (!currentScannedTool) { toast('Selecione uma ferramenta primeiro', 'warn'); return; }
+  const obs = document.getElementById('chk-obs').value;
+  const { allFilled, hasNok, items } = _getChecklistState();
+
+  if (!allFilled && result === 'ok') { toast('Preencha todos os itens antes de aprovar', 'warn'); return; }
+
+  const finalResult = (result === 'ok' && !hasNok) ? 'aprovado' : 'reprovado';
+
+  await apiPost('logChecklist', {
+    toolCode: currentScannedTool.code,
+    user: currentUser.name,
+    result: finalResult, items, obs,
+    timestamp: new Date().toISOString()
+  });
+
+  const idx = toolsData.findIndex(t => t.code === currentScannedTool.code);
+  if (idx >= 0) {
+    toolsData[idx].status           = finalResult === 'aprovado' ? 'Disponível' : 'Bloqueada';
+    toolsData[idx].location         = finalResult === 'aprovado' ? 'Almoxarifado' : 'Manutenção';
+    toolsData[idx].checklistPendente = false;
+  }
+
+  MOCK_HISTORY.unshift({
+    dt: new Date().toLocaleString('pt-BR').replace(',',''),
+    tool: currentScannedTool.code, action:'CHECKLIST',
+    user: currentUser.name, line:'—', op:'—', qty:0, cycles:0,
+    checklistResult: finalResult, obs
+  });
+
+  if (finalResult === 'aprovado') {
+    toast('✓ Checklist aprovado — Ferramenta liberada!', 'success');
+  } else {
+    toast('🔴 Ferramenta REPROVADA e BLOQUEADA — Manutenção acionada.', 'error');
+  }
+
+  loadChecklistPage();
+  currentScannedTool = null;
+}
+
+// ══════════════════════════════════════════════════════════
+//  HISTÓRICO
+// ══════════════════════════════════════════════════════════
+async function loadHistory() {
+  const api = await apiCall('getHistory', { limit: 200 });
+  const rows = (api && api.data) ? api.data.map(r => ({
+    dt: r.data_hora, tool: r.codigo_ferramenta, action: r.acao,
+    user: r.operador, line: r.linha, op: r.op, qty: r.quantidade,
+    cycles: r.ciclos_acumulados, checklistResult: r.resultado_checklist, obs: r.observacoes
+  })) : MOCK_HISTORY;
+
+  const body = document.getElementById('hist-body');
+  body.innerHTML = rows.map(h => `<tr>
+    <td class="mono text-xs">${h.dt}</td>
+    <td class="highlight">${h.tool}</td>
+    <td>${actionBadge(h.action)}</td>
+    <td>${h.user}</td>
+    <td class="mono text-xs">${h.line || '—'}</td>
+    <td class="mono text-xs">${h.op || '—'}</td>
+    <td class="mono">${h.qty || '—'}</td>
+    <td class="mono">${h.cycles || '—'}</td>
+    <td>
+      ${h.checklistResult
+        ? `<span class="badge ${h.checklistResult === 'aprovado' ? 'disponivel' : h.checklistResult === 'reprovado' ? 'bloqueado' : 'inspecao'}">${h.checklistResult.toUpperCase()}</span>`
+        : ''}
+    </td>
+    <td class="text-dim text-xs">${h.obs || ''}</td>
+  </tr>`).join('');
+}
+
+function viewHistory(code) {
+  navigate('historico');
+  setTimeout(async () => {
+    const api = await apiCall('getHistory', { codigo: code });
+    const rows = (api && api.data) ? api.data.map(r => ({
+      dt: r.data_hora, tool: r.codigo_ferramenta, action: r.acao,
+      user: r.operador, line: r.linha, op: r.op, qty: r.quantidade,
+      cycles: r.ciclos_acumulados, checklistResult: r.resultado_checklist, obs: r.observacoes
+    })) : MOCK_HISTORY.filter(h => h.tool === code);
+
+    const body = document.getElementById('hist-body');
+    body.innerHTML = rows.map(h => `<tr>
+      <td class="mono text-xs">${h.dt}</td>
+      <td class="highlight">${h.tool}</td>
+      <td>${actionBadge(h.action)}</td>
+      <td>${h.user}</td>
+      <td class="mono text-xs">${h.line || '—'}</td>
+      <td class="mono text-xs">${h.op || '—'}</td>
+      <td class="mono">${h.qty || '—'}</td>
+      <td class="mono">${h.cycles || '—'}</td>
+      <td>
+        ${h.checklistResult
+          ? `<span class="badge ${h.checklistResult === 'aprovado' ? 'disponivel' : h.checklistResult === 'reprovado' ? 'bloqueado' : 'inspecao'}">${h.checklistResult.toUpperCase()}</span>`
+          : ''}
+      </td>
+      <td class="text-dim text-xs">${h.obs || ''}</td>
+    </tr>`).join('');
+  }, 200);
+}
+
+function exportHistory() {
+  const rows = [['Data/Hora','Ferramenta','Ação','Operador','Linha','OP','Quantidade','Ciclos','Checklist','Observações']];
+  MOCK_HISTORY.forEach(h => rows.push([h.dt,h.tool,h.action,h.user,h.line,h.op,h.qty,h.cycles,h.checklistResult||'',h.obs]));
+  const csv  = rows.map(r => r.join(';')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href=url; a.download='historico_ferramentas.csv'; a.click();
+  toast('📥 Exportado com sucesso!', 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+//  LINHAS
+// ══════════════════════════════════════════════════════════
+function loadLines(type) {
+  const lines = type === 'smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : ['PTH-01','PTH-02','PTH-03','PTH-04'];
+  const grid  = document.getElementById(`${type}-lines-grid`);
+  grid.innerHTML = lines.map(l => {
+    const tools = toolsData.filter(t => t.location === l);
+    return renderLineCard(l, tools, type.toUpperCase());
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  IMPORTAÇÕES
+// ══════════════════════════════════════════════════════════
+function loadImports() {
+  const list = document.getElementById('imports-list');
+  if (!MOCK_IMPORTS.length) {
+    list.innerHTML = '<div class="empty-state"><span class="icon">🚢</span>Nenhuma importação registrada</div>';
+    return;
+  }
+  list.innerHTML = MOCK_IMPORTS.map(imp => {
+    const stepIdx = IMPORT_STEPS.indexOf(imp.status);
+    return `<div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">${imp.id} — ${imp.tool}</span>
+        <span class="badge ${imp.status==='entregue'?'disponivel':'em-uso'}">${imp.status.toUpperCase()}</span>
+      </div>
+      <div class="card-body">
+        <div class="flex gap-20 mb-16 flex-wrap">
+          <div class="tool-info-row"><span class="tik">FORNECEDOR</span><span class="tiv">${imp.supplier}</span></div>
+          <div class="tool-info-row"><span class="tik">INVOICE</span><span class="tiv mono">${imp.invoice}</span></div>
+          <div class="tool-info-row"><span class="tik">QTD</span><span class="tiv">${imp.qty} un</span></div>
+          <div class="tool-info-row"><span class="tik">VALOR</span><span class="tiv">USD ${(imp.value||0).toLocaleString()}</span></div>
+          <div class="tool-info-row"><span class="tik">MODAL</span><span class="tiv">${imp.modal==='navio'?'🚢 Navio':'✈️ Avião'}</span></div>
+          <div class="tool-info-row"><span class="tik">NCM</span><span class="tiv mono">${imp.ncm}</span></div>
+          <div class="tool-info-row"><span class="tik">ETA</span><span class="tiv">${imp.eta}</span></div>
+        </div>
+        <div class="import-track">
+          ${IMPORT_STEPS.map((s,i) => `
+          <div class="import-step ${i<stepIdx?'done':i===stepIdx?'active':''}">
+            <div class="import-dot">${i<stepIdx?'✓':i+1}</div>
+            <div class="import-label">${s.toUpperCase()}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openImportModal() {
+  const sel = document.getElementById('imp-tool');
+  sel.innerHTML = toolsData.map(t => `<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
+  document.getElementById('modal-import').classList.remove('hidden');
+}
+
+async function saveImport() {
+  const data = {
+    tool:     document.getElementById('imp-tool').value,
+    supplier: document.getElementById('imp-supplier').value,
+    invoice:  document.getElementById('imp-invoice').value,
+    qty:      document.getElementById('imp-qty').value,
+    value:    document.getElementById('imp-value').value,
+    modal:    document.getElementById('imp-modal').value,
+    date:     document.getElementById('imp-date').value,
+    ncm:      document.getElementById('imp-ncm').value,
+  };
+  await apiPost('saveImport', data);
+  MOCK_IMPORTS.unshift({ id:`IMP-${String(MOCK_IMPORTS.length+1).padStart(3,'0')}`, ...data, status:'comprado', eta:'—' });
+  closeModal('modal-import');
+  toast('✓ Importação registrada!', 'success');
+  loadImports();
+}
+
+// ══════════════════════════════════════════════════════════
+//  CADASTRO DE FERRAMENTA
+// ══════════════════════════════════════════════════════════
+async function saveTool() {
+  const code = document.getElementById('cad-code').value.trim();
+  const name = document.getElementById('cad-name').value.trim();
+  const type = document.getElementById('cad-type').value;
+  if (!code || !name || !type) { toast('Preencha os campos obrigatórios (*)', 'warn'); return; }
+
+  const newTool = {
+    code, name, type,
+    qty:      parseInt(document.getElementById('cad-qty').value) || 1,
+    cycles:   0,
+    maxCycles: parseInt(document.getElementById('cad-maxcyc').value) || 0,
+    status:   'Disponível', location: 'Almoxarifado',
+    checklist: type,
+    product:  document.getElementById('cad-product').value,
+    ppc:      parseInt(document.getElementById('cad-ppc').value) || 1,
+    lote:     document.getElementById('cad-ctrl').value === 'lote',
+    leadTime: document.getElementById('cad-lead').value,
+    minStock: document.getElementById('cad-estmin').value,
+    modal:    document.getElementById('cad-modal').value,
+    checklistPendente: false
+  };
+
+  await apiPost('saveTool', newTool);
+  toolsData.push(newTool);
+  toast(`✓ Ferramenta ${code} cadastrada com sucesso!`, 'success');
+  clearCadForm();
+  navigate('ferramentas');
+}
+
+function clearCadForm() {
+  ['cad-code','cad-name','cad-maker','cad-supplier','cad-ncm','cad-qty','cad-ppc','cad-maxcyc','cad-maxpla','cad-product','cad-lead','cad-estmin','cad-estseg','cad-country','cad-price','cad-obs'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+
+function updateChecklistOptions() {
+  const type = document.getElementById('cad-type').value;
+  const sel  = document.getElementById('cad-checklist');
+  if (sel && CHECKLIST_TEMPLATES[type]) sel.value = type;
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHECKLIST TEMPLATES PAGE
+// ══════════════════════════════════════════════════════════
+function loadChecklistTemplates() {
+  const grid = document.getElementById('checklist-templates-grid');
+  grid.innerHTML = Object.entries(CHECKLIST_TEMPLATES).map(([key, tpl]) => `
+    <div class="card" style="width:300px">
+      <div class="card-header">
+        <span class="card-title">${tpl.name.toUpperCase()}</span>
+        <span class="badge em-uso">${tpl.items.length} ITENS</span>
+      </div>
+      <div class="card-body">
+        ${tpl.items.map(item => `
+        <div class="checklist-item" style="padding:8px 0">
+          <div>
+            <div style="font-size:13px;color:var(--text-bright)">${item.name}</div>
+            ${item.material ? `<div class="text-xs text-mono text-dim">${item.material}</div>` : ''}
+          </div>
+          ${item.required ? '<span class="badge bloqueado" style="margin-left:auto">OBRIG.</span>' : ''}
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  RELATÓRIOS
+// ══════════════════════════════════════════════════════════
+function generateReport(type) {
+  const card  = document.getElementById('report-result');
+  const title = document.getElementById('report-title');
+  const body  = document.getElementById('report-body');
+  card.style.display = 'block';
+
+  const reports = {
+    ciclos: { title:'CICLOS POR FERRAMENTA', content:() => `<table class="data-table">
+      <thead><tr><th>FERRAMENTA</th><th>TIPO</th><th>CICLOS</th><th>MÁX</th><th>DESGASTE</th></tr></thead>
+      <tbody>${[...toolsData].sort((a,b)=>b.cycles-a.cycles).map(t => {
+        const pct = t.maxCycles>0?Math.round(t.cycles/t.maxCycles*100):0;
+        return `<tr><td class="highlight">${t.name}</td><td>${t.type}</td>
+          <td class="mono">${(t.cycles||0).toLocaleString()}</td>
+          <td class="mono">${(t.maxCycles||0).toLocaleString()}</td>
+          <td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${pct>90?'danger':pct>75?'warn':''}" style="width:${pct}%"></div></div><span class="progress-pct">${pct}%</span></div></td>
+        </tr>`;}).join('')}</tbody></table>`},
+    disponibilidade: { title:'DISPONIBILIDADE', content:() => {
+      const disp=toolsData.filter(t=>t.status==='Disponível').length;
+      const pend=toolsData.filter(t=>t.status==='Checklist Pendente').length;
+      const total=toolsData.length;
+      const pct=total>0?Math.round(disp/total*100):0;
+      return `<div class="kpi-grid">
+        <div class="kpi-card green"><span class="k-label">DISPONÍVEIS</span><div class="k-value">${pct}%</div><div class="k-sub">${disp} de ${total}</div></div>
+        <div class="kpi-card warn"><span class="k-label">CHECKLIST PENDENTE</span><div class="k-value">${pend}</div><div class="k-sub">Aguardando inspeção</div></div>
+      </div>`;}},
+    importacao: { title:'IMPORTAÇÕES', content:() => MOCK_IMPORTS.map(i => `<div style="padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+      <div class="flex justify-between items-center">
+        <span class="text-bright">${i.tool}</span>
+        <span class="badge ${i.status==='entregue'?'disponivel':'em-uso'}">${i.status}</span>
+      </div>
+      <div class="text-xs text-mono text-dim">${i.invoice} · ${i.modal==='navio'?'🚢':'✈️'} · ETA: ${i.eta}</div>
+    </div>`).join('') },
+    perdas: { title:'PERDAS E DESCARTES', content:() => {
+      const perdas = MOCK_HISTORY.filter(h=>h.action==='DESCARTE'||h.action==='BLOQUEIO'||h.checklistResult==='reprovado');
+      return perdas.length ? perdas.map(h => `<div style="padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+        <span class="text-bright">${h.tool}</span> · <span class="text-danger">${h.action}</span> · ${h.dt} · ${h.obs}
+      </div>`).join('') : '<div class="empty-state"><span class="icon">✅</span>Sem registros de perda</div>';
+    }},
+  };
+
+  const r = reports[type];
+  if (r) { title.textContent = r.title; body.innerHTML = r.content(); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════
+function loadConfigPage() {
+  document.getElementById('cfg-script-url').value  = CONFIG.scriptUrl || '';
+  document.getElementById('cfg-refresh').value     = CONFIG.refreshInterval / 1000;
+  document.getElementById('cfg-wear-alert').value  = CONFIG.wearAlert;
+  document.getElementById('cfg-wear-crit').value   = CONFIG.wearCrit;
+}
+
+function saveConfig() {
+  CONFIG.scriptUrl        = document.getElementById('cfg-script-url').value.trim();
+  CONFIG.refreshInterval  = parseInt(document.getElementById('cfg-refresh').value) * 1000;
+  CONFIG.wearAlert        = parseInt(document.getElementById('cfg-wear-alert').value);
+  CONFIG.wearCrit         = parseInt(document.getElementById('cfg-wear-crit').value);
+  localStorage.setItem('scriptUrl',        CONFIG.scriptUrl);
+  localStorage.setItem('refreshInterval',  CONFIG.refreshInterval / 1000);
+  localStorage.setItem('wearAlert',        CONFIG.wearAlert);
+  localStorage.setItem('wearCrit',         CONFIG.wearCrit);
+  toast('✓ Configurações salvas!', 'success');
+}
+
+async function testConnection() {
+  const status = document.getElementById('conn-status');
+  status.textContent = '⟳ Testando conexão...';
+  const result = await apiCall('ping');
+  if (result && result.status === 'ok') {
+    status.textContent  = '✓ Conectado ao Google Sheets!';
+    status.className    = 'text-mono text-sm text-success';
+    toast('✓ Conexão estabelecida!', 'success');
+  } else {
+    status.textContent  = CONFIG.scriptUrl ? '✗ Erro de conexão. Verifique a URL.' : '⚠️ URL não configurada. Modo offline (dados demo).';
+    status.className    = 'text-mono text-sm ' + (CONFIG.scriptUrl ? 'text-danger' : 'text-warn');
+  }
+}
+
+function loadConfig() {
+  const url = document.getElementById('cfg-script-url');
+  if (url) url.value = CONFIG.scriptUrl || '';
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAIS / TOAST / AUTO-REFRESH
+// ══════════════════════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function openPurchaseModal() {
+  toast('Módulo de compras em desenvolvimento.', 'info');
+}
+
+function toast(msg, type='info') {
+  const icons = { success:'✓', error:'✗', warn:'⚠️', info:'ℹ' };
+  const el    = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+function startAutoRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    if (currentPage === 'dashboard') loadDashboard();
+    if (currentPage === 'bipar')     loadBiparPage();
+    if (currentPage === 'checklist') loadChecklistPage();
+  }, CONFIG.refreshInterval);
+}
+</script>
+</body>
+</html>
