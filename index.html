@@ -2023,20 +2023,23 @@
         </div>
 
         <div class="card">
-  <div class="card-body">
-    <div class="form-section-title">🔗 INTEGRAÇÃO GOOGLE SHEETS</div>
-    <div class="form-grid cols-2 mt-12">
-      <div class="form-field" style="grid-column:1/-1">
-        <label>URL DO APPS SCRIPT (Web App)</label>
-        <input type="text" id="cfg-script-url"
-          placeholder="https://script.google.com/macros/s/.../exec"
-          value="https://script.google.com/macros/s/AKfycbyXYpAblApfHyP6uTP6Ei0gx_IjEdK5q99G1VfHEpP_clQ9ftxzRew0rLaGkPwo8dg/exec">
-      </div>
-      <div class="form-field">
-        <label>INTERVALO DE ATUALIZAÇÃO (segundos)</label>
-        <input type="number" id="cfg-refresh" placeholder="30" value="30" min="10">
-      </div>
-    </div>
+          <div class="card-body">
+            <div class="form-section-title">🔗 INTEGRAÇÃO GOOGLE SHEETS</div>
+            <div class="form-grid cols-2 mt-12">
+              <div class="form-field" style="grid-column:1/-1">
+                <label>URL DO APPS SCRIPT (Web App)</label>
+                <input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/XXXX/exec"
+                  value="">
+              </div>
+              <div class="form-field">
+                <label>PLANILHA ID</label>
+                <input type="text" id="cfg-sheet-id" placeholder="ID da planilha Google Sheets">
+              </div>
+              <div class="form-field">
+                <label>INTERVALO DE ATUALIZAÇÃO (segundos)</label>
+                <input type="number" id="cfg-refresh" placeholder="30" value="30" min="10">
+              </div>
+            </div>
 
             <div class="flex gap-8 mt-12">
               <button class="btn-primary" onclick="testConnection()">🔗 TESTAR CONEXÃO</button>
@@ -2155,7 +2158,7 @@
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const CONFIG = {
-  scriptUrl: localStorage.getItem('scriptUrl') || '',
+  scriptUrl: localStorage.getItem('scriptUrl') || document.getElementById('cfg-script-url')?.value || '',
   refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '30') * 1000,
   wearAlert: parseInt(localStorage.getItem('wearAlert') || '80'),
   wearCrit:  parseInt(localStorage.getItem('wearCrit')  || '95'),
@@ -2276,21 +2279,22 @@ async function apiCall(action, params = {}) {
   if (!CONFIG.scriptUrl) return null;
   try {
     const query = new URLSearchParams({ action, ...params });
-    const res   = await fetch(`${CONFIG.scriptUrl}?${query}`);
+    const res   = await fetch(`${CONFIG.scriptUrl}?${query}`, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
   } catch(e) { console.warn('API GET offline:', e); return null; }
 }
 
+// Tudo via GET para evitar CORS — dados enviados como JSON no parâmetro "data"
 async function apiPost(action, data = {}) {
   if (!CONFIG.scriptUrl) return null;
   try {
-    const res = await fetch(CONFIG.scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...data })
-    });
+    const payload = JSON.stringify({ action, ...data });
+    const query   = new URLSearchParams({ action, data: payload });
+    const res     = await fetch(`${CONFIG.scriptUrl}?${query}`, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
-  } catch(e) { console.warn('API POST offline:', e); return null; }
+  } catch(e) { console.warn('API POST→GET offline:', e); return null; }
 }
 
 // ══════════════════════════════════════════════════════════
