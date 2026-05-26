@@ -1177,6 +1177,49 @@
     color: var(--text-dim); font-family: var(--font-mono); font-size: 12px;
     padding: 20px;
   }
+
+  /* ═══════════════════════════ ACCESS CONTROL ════════════════════════ */
+  /* Padrão: esconde itens por perfil (JS ativa conforme role) */
+  .nav-role-not-operador  { display: none; }
+  .nav-role-cadastro      { display: none; }
+  .nav-role-suprimentos   { display: none; }
+  .nav-role-admin-eng     { display: none; }
+  .nav-role-admin         { display: none; }
+
+  /* Tela de acesso negado */
+  .access-denied {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 300px; gap: 16px;
+    color: var(--accent-danger);
+    font-family: var(--font-mono); font-size: 13px;
+    text-align: center;
+  }
+  .access-denied .icon { font-size: 48px; opacity: 0.5; }
+
+  /* Indicador de login loading */
+  .btn-login.loading {
+    opacity: 0.6; pointer-events: none;
+  }
+  .btn-login.loading::after {
+    content: ' ⟳';
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  /* Badge de perfil na sidebar */
+  .sidebar-role-badge {
+    margin: 12px 16px 4px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 2px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .sidebar-role-badge .sb-name { color: var(--text-bright); font-weight: 600; font-size: 13px; display:block; }
+  .sidebar-role-badge .sb-role { color: var(--accent-primary); letter-spacing: 1px; }
+
 </style>
 </head>
 <body>
@@ -1191,33 +1234,35 @@
     </div>
 
     <div class="field-group">
-      <label>IDENTIFICAÇÃO</label>
-      <input type="text" id="login-user" placeholder="matricula ou nome" autocomplete="off">
+      <label>USUÁRIO</label>
+      <input type="text" id="login-user" placeholder="digite seu usuário"
+        autocomplete="off" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
     </div>
 
     <div class="field-group">
       <label>SENHA</label>
-      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="off">
+      <input type="password" id="login-pass" placeholder="••••••••"
+        autocomplete="off" onkeydown="if(event.key==='Enter') doLogin()">
     </div>
 
-    <div class="field-group">
-      <label>PERFIL DE ACESSO</label>
-      <select id="login-role">
-        <option value="operador">OPERADOR DE LINHA</option>
-        <option value="lider">LÍDER DE PRODUÇÃO</option>
-        <option value="manutencao">MANUTENÇÃO</option>
-        <option value="almoxarifado">ALMOXARIFADO</option>
-        <option value="compras">COMPRAS</option>
-        <option value="engenharia">ENGENHARIA</option>
-        <option value="admin" selected>ADMINISTRADOR</option>
-      </select>
-    </div>
+    <div id="login-error" style="
+      display:none;
+      background:rgba(255,51,85,0.1);
+      border:1px solid rgba(255,51,85,0.4);
+      border-radius:2px;
+      padding:10px 14px;
+      color:var(--accent-danger);
+      font-family:var(--font-mono);
+      font-size:12px;
+      margin-bottom:12px;
+      text-align:center;
+    ">✗ USUÁRIO OU SENHA INCORRETOS</div>
 
-    <button class="btn-login" onclick="doLogin()">ACESSAR SISTEMA</button>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">ACESSAR SISTEMA</button>
 
     <div class="login-status">
       <span class="status-dot"></span>
-      SISTEMA ONLINE · CONECTADO AO GOOGLE SHEETS
+      <span id="login-status-txt">VERIFICANDO CONEXÃO...</span>
     </div>
   </div>
 </div>
@@ -1263,26 +1308,28 @@
   <div class="layout">
     <!-- SIDEBAR -->
     <nav class="sidebar">
-      <div class="nav-section">
+      <!-- VISÃO GERAL — todos os perfis -->
+      <div class="nav-section nav-role-all">
         <div class="nav-section-label">VISÃO GERAL</div>
         <div class="nav-item active" onclick="navigate('dashboard')">
           <span class="icon">⬛</span> Dashboard
         </div>
-        <div class="nav-item" onclick="navigate('alertas')">
+        <div class="nav-item nav-role-not-operador" onclick="navigate('alertas')">
           <span class="icon">🔴</span> Alertas
           <span class="nav-badge" id="nav-badge-alertas">0</span>
         </div>
       </div>
 
-      <div class="nav-section">
+      <!-- OPERAÇÃO — todos os perfis -->
+      <div class="nav-section nav-role-all">
         <div class="nav-section-label">OPERAÇÃO</div>
         <div class="nav-item" onclick="navigate('bipar')">
           <span class="icon">📷</span> Bipar / Movimentar
         </div>
-        <div class="nav-item" onclick="navigate('smtlines')">
+        <div class="nav-item nav-role-not-operador" onclick="navigate('smtlines')">
           <span class="icon">🟦</span> Linhas SMT
         </div>
-        <div class="nav-item" onclick="navigate('pthlines')">
+        <div class="nav-item nav-role-not-operador" onclick="navigate('pthlines')">
           <span class="icon">🟩</span> Linhas PTH
         </div>
         <div class="nav-item" onclick="navigate('checklist')">
@@ -1291,12 +1338,14 @@
         </div>
       </div>
 
-      <div class="nav-section">
+      <!-- FERRAMENTAS — lider, almox, manut, engenharia, admin -->
+      <div class="nav-section nav-role-not-operador">
         <div class="nav-section-label">FERRAMENTAS</div>
         <div class="nav-item" onclick="navigate('ferramentas')">
           <span class="icon">🔧</span> Controle
         </div>
-        <div class="nav-item" onclick="navigate('cadastro')">
+        <!-- Cadastro: admin, lider, engenharia -->
+        <div class="nav-item nav-role-cadastro" onclick="navigate('cadastro')">
           <span class="icon">➕</span> Cadastro
         </div>
         <div class="nav-item" onclick="navigate('historico')">
@@ -1304,7 +1353,8 @@
         </div>
       </div>
 
-      <div class="nav-section">
+      <!-- SUPRIMENTOS — almox, compras, engenharia, admin -->
+      <div class="nav-section nav-role-suprimentos">
         <div class="nav-section-label">SUPRIMENTOS</div>
         <div class="nav-item" onclick="navigate('importacao')">
           <span class="icon">🚢</span> Importação
@@ -1314,7 +1364,8 @@
         </div>
       </div>
 
-      <div class="nav-section">
+      <!-- CONFIGURAÇÃO — admin, engenharia -->
+      <div class="nav-section nav-role-admin-eng">
         <div class="nav-section-label">CONFIGURAÇÃO</div>
         <div class="nav-item" onclick="navigate('checklists-cad')">
           <span class="icon">📝</span> Checklists
@@ -1322,7 +1373,10 @@
         <div class="nav-item" onclick="navigate('relatorios')">
           <span class="icon">📊</span> Relatórios
         </div>
-        <div class="nav-item" onclick="navigate('config')">
+        <div class="nav-item nav-role-admin" onclick="navigate('usuarios')">
+          <span class="icon">👥</span> Usuários
+        </div>
+        <div class="nav-item nav-role-admin" onclick="navigate('config')">
           <span class="icon">⚙️</span> Configurações
         </div>
       </div>
@@ -2066,6 +2120,37 @@
         </div>
       </div>
 
+
+      <!-- ════ USUÁRIOS ════ -->
+      <div id="page-usuarios" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">GESTÃO DE <span>USUÁRIOS</span></div>
+            <div class="page-sub text-mono">Cadastro · Senhas · Perfis de acesso</div>
+          </div>
+          <button class="btn-primary" onclick="openUserModal()">+ NOVO USUÁRIO</button>
+        </div>
+        <div class="card">
+          <div style="overflow:auto">
+            <table class="data-table" id="users-table">
+              <thead>
+                <tr>
+                  <th>NOME</th>
+                  <th>USUÁRIO</th>
+                  <th>FUNÇÃO</th>
+                  <th>PERFIL</th>
+                  <th>ATIVO</th>
+                  <th>AÇÕES</th>
+                </tr>
+              </thead>
+              <tbody id="users-body">
+                <tr><td colspan="6" class="inline-loader"><span class="loading-spinner"></span> Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -2142,6 +2227,61 @@
     <div class="modal-footer">
       <button class="btn-success" onclick="saveImport()">💾 REGISTRAR IMPORTAÇÃO</button>
       <button class="btn-secondary" onclick="closeModal('modal-import')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ MODAL USUÁRIO ════ -->
+<div class="modal-overlay hidden" id="modal-usuario">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-usuario-title">👤 NOVO USUÁRIO</span>
+      <button class="modal-close" onclick="closeModal('modal-usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-field" style="grid-column:1/-1">
+          <label>NOME COMPLETO *</label>
+          <input type="text" id="usr-nome" placeholder="ex: Carlos Silva">
+        </div>
+        <div class="form-field">
+          <label>USUÁRIO (login) *</label>
+          <input type="text" id="usr-login" placeholder="ex: carlos.silva" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label>SENHA *</label>
+          <input type="password" id="usr-senha" placeholder="mínimo 4 caracteres" autocomplete="new-password">
+        </div>
+        <div class="form-field">
+          <label>FUNÇÃO / CARGO</label>
+          <input type="text" id="usr-funcao" placeholder="ex: Operador PTH">
+        </div>
+        <div class="form-field">
+          <label>PERFIL DE ACESSO *</label>
+          <select id="usr-role">
+            <option value="operador">OPERADOR — Só bipar e checklist</option>
+            <option value="lider">LÍDER DE PRODUÇÃO — Operação + ferramentas + cadastro</option>
+            <option value="manutencao">MANUTENÇÃO — Operação + ferramentas + histórico</option>
+            <option value="almoxarifado">ALMOXARIFADO — Operação + ferramentas + suprimentos</option>
+            <option value="compras">COMPRAS — Suprimentos + importação</option>
+            <option value="engenharia">ENGENHARIA — Quase tudo exceto config de sistema</option>
+            <option value="admin">ADMINISTRADOR — Acesso total</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>ATIVO</label>
+          <select id="usr-ativo">
+            <option value="SIM">SIM — Pode fazer login</option>
+            <option value="NAO">NÃO — Bloqueado</option>
+          </select>
+        </div>
+      </div>
+      <div id="modal-usuario-error" style="display:none;margin-top:12px;padding:10px;background:rgba(255,51,85,0.1);border:1px solid rgba(255,51,85,0.3);border-radius:2px;color:var(--accent-danger);font-family:var(--font-mono);font-size:12px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="saveUser()">💾 SALVAR USUÁRIO</button>
+      <button class="btn-secondary" onclick="closeModal('modal-usuario')">CANCELAR</button>
     </div>
   </div>
 </div>
@@ -2321,20 +2461,176 @@ async function getTools() {
 // ══════════════════════════════════════════════════════════
 //  LOGIN / LOGOUT / CLOCK
 // ══════════════════════════════════════════════════════════
-function doLogin() {
-  const user = document.getElementById('login-user').value.trim() || 'Usuário';
-  const role = document.getElementById('login-role').value;
-  const roleLabels = {
-    operador:'OPERADOR', lider:'LÍDER PROD.', manutencao:'MANUTENÇÃO',
-    almoxarifado:'ALMOXARIFADO', compras:'COMPRAS', engenharia:'ENGENHARIA', admin:'ADMINISTRADOR'
-  };
-  currentUser = { name: user, role, roleLabel: roleLabels[role] };
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').classList.add('active');
-  document.getElementById('user-name').textContent = user;
-  document.getElementById('user-role').textContent = roleLabels[role];
-  document.getElementById('user-avatar').textContent = user.charAt(0).toUpperCase();
-  startClock(); loadDashboard(); startAutoRefresh(); loadConfig();
+// ══════════════════════════════════════════════════════════
+//  SISTEMA DE AUTENTICAÇÃO
+// ══════════════════════════════════════════════════════════
+
+// Mapa de permissões por perfil
+const ROLE_PERMISSIONS = {
+  operador: {
+    label: 'OPERADOR',
+    pages: ['dashboard','bipar','checklist'],
+    canCadastrar: false,
+    navClasses: []   // não ativa nenhuma classe extra
+  },
+  lider: {
+    label: 'LÍDER PROD.',
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','relatorios'],
+    canCadastrar: true,
+    navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']
+  },
+  manutencao: {
+    label: 'MANUTENÇÃO',
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','historico','relatorios'],
+    canCadastrar: false,
+    navClasses: ['nav-role-not-operador','nav-role-admin-eng']
+  },
+  almoxarifado: {
+    label: 'ALMOXARIFADO',
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','historico','importacao','compras','relatorios'],
+    canCadastrar: false,
+    navClasses: ['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']
+  },
+  compras: {
+    label: 'COMPRAS',
+    pages: ['dashboard','bipar','checklist','importacao','compras','relatorios'],
+    canCadastrar: false,
+    navClasses: ['nav-role-suprimentos','nav-role-admin-eng']
+  },
+  engenharia: {
+    label: 'ENGENHARIA',
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','relatorios'],
+    canCadastrar: true,
+    navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']
+  },
+  admin: {
+    label: 'ADMINISTRADOR',
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','relatorios','usuarios','config'],
+    canCadastrar: true,
+    navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']
+  }
+};
+
+async function doLogin() {
+  const loginInput = document.getElementById('login-user').value.trim();
+  const passInput  = document.getElementById('login-pass').value;
+  const errorEl    = document.getElementById('login-error');
+  const btnEl      = document.getElementById('btn-login');
+  const statusEl   = document.getElementById('login-status-txt');
+
+  errorEl.style.display = 'none';
+
+  if (!loginInput || !passInput) {
+    errorEl.textContent = '✗ PREENCHA USUÁRIO E SENHA';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btnEl.classList.add('loading');
+  statusEl.textContent = 'AUTENTICANDO...';
+
+  try {
+    // Busca usuários da planilha
+    let userData = null;
+
+    if (CONFIG.scriptUrl) {
+      const api = await apiCall('getUsuarios');
+      if (api && api.data) {
+        // Procura usuário + senha na planilha
+        // Colunas: nome | usuario | senha | funcao | role | ativo
+        const found = api.data.find(u => {
+          const uLogin = String(u.usuario || u.USER || '').toLowerCase().trim();
+          const uSenha = String(u.senha   || '').trim();
+          const uAtivo = String(u.ativo   || 'SIM').toUpperCase();
+          return uLogin === loginInput.toLowerCase() && uSenha === passInput && uAtivo !== 'NAO';
+        });
+        if (found) userData = found;
+      }
+    }
+
+    // Fallback offline: admin padrão
+    if (!userData && loginInput.toLowerCase() === 'admin' && passInput === 'ahffkdy2') {
+      userData = { nome: 'Administrador', usuario: 'admin', senha: 'ahffkdy2', funcao: 'Administrador', role: 'admin', ativo: 'SIM' };
+    }
+
+    if (!userData) {
+      errorEl.textContent = '✗ USUÁRIO OU SENHA INCORRETOS';
+      errorEl.style.display = 'block';
+      btnEl.classList.remove('loading');
+      statusEl.textContent = 'SISTEMA ONLINE · SMT/PTH TOOL CONTROL';
+      document.getElementById('login-pass').value = '';
+      return;
+    }
+
+    // Login bem-sucedido
+    const role      = String(userData.role || 'operador').toLowerCase();
+    const perms     = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['operador'];
+
+    currentUser = {
+      name:     String(userData.nome || userData.USER || loginInput),
+      login:    loginInput,
+      role:     role,
+      roleLabel: perms.label,
+      funcao:   String(userData.funcao || ''),
+      perms:    perms
+    };
+
+    // Aplica interface
+    _applyRoleUI(currentUser);
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('active');
+    startClock();
+    loadDashboard();
+    startAutoRefresh();
+    loadConfig();
+
+    // Navega para primeira página permitida
+    navigate(perms.pages[0] || 'dashboard');
+
+  } catch(err) {
+    errorEl.textContent = '✗ ERRO DE CONEXÃO — TENTE NOVAMENTE';
+    errorEl.style.display = 'block';
+    console.error(err);
+  }
+
+  btnEl.classList.remove('loading');
+  statusEl.textContent = 'SISTEMA ONLINE · SMT/PTH TOOL CONTROL';
+}
+
+function _applyRoleUI(user) {
+  const perms = user.perms;
+
+  // Topbar
+  document.getElementById('user-name').textContent   = user.name;
+  document.getElementById('user-role').textContent   = user.roleLabel;
+  document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
+
+  // Ativa classes de navegação conforme o perfil
+  // Primeiro remove tudo
+  document.querySelectorAll('.nav-role-not-operador,.nav-role-cadastro,.nav-role-suprimentos,.nav-role-admin-eng,.nav-role-admin')
+    .forEach(el => el.style.display = 'none');
+
+  // Ativa as permitidas
+  perms.navClasses.forEach(cls => {
+    document.querySelectorAll('.' + cls).forEach(el => el.style.display = '');
+  });
+
+  // Badge de perfil na sidebar (insert)
+  const sidebar = document.querySelector('.sidebar');
+  let badge = document.getElementById('sidebar-role-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'sidebar-role-badge';
+    badge.className = 'sidebar-role-badge';
+    sidebar.insertBefore(badge, sidebar.firstChild);
+  }
+  badge.innerHTML = `<span class="sb-name">${user.name}</span><span class="sb-role">${user.roleLabel}</span>`;
+}
+
+function _canAccess(page) {
+  if (!currentUser) return false;
+  return currentUser.perms.pages.includes(page);
 }
 
 function doLogout() {
@@ -2352,6 +2648,11 @@ function startClock() {
 //  NAVEGAÇÃO
 // ══════════════════════════════════════════════════════════
 function navigate(page) {
+  // Verifica permissão
+  if (currentUser && !_canAccess(page)) {
+    toast('⛔ Acesso não autorizado para o seu perfil.', 'error');
+    return;
+  }
   document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-' + page);
@@ -2372,6 +2673,7 @@ function navigate(page) {
     case 'historico':      loadHistory();              break;
     case 'checklists-cad': loadChecklistTemplates();   break;
     case 'config':         loadConfigPage();           break;
+    case 'usuarios':       loadUsersPage();            break;
   }
 }
 
@@ -3250,6 +3552,121 @@ function startAutoRefresh() {
     if (currentPage === 'checklist') loadChecklistPage();
   }, CONFIG.refreshInterval);
 }
+
+// ══════════════════════════════════════════════════════════
+//  GESTÃO DE USUÁRIOS
+// ══════════════════════════════════════════════════════════
+const ROLE_LABELS = {
+  operador:'OPERADOR', lider:'LÍDER PROD.', manutencao:'MANUTENÇÃO',
+  almoxarifado:'ALMOXARIFADO', compras:'COMPRAS', engenharia:'ENGENHARIA', admin:'ADMINISTRADOR'
+};
+
+let editingUser = null;
+
+async function loadUsersPage() {
+  const api = await apiCall('getUsuarios');
+  const body = document.getElementById('users-body');
+  if (!api || !api.data || !api.data.length) {
+    body.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="icon">👥</span>Nenhum usuário cadastrado</td></tr>';
+    return;
+  }
+  body.innerHTML = api.data.map(u => {
+    const role  = String(u.role || 'operador').toLowerCase();
+    const ativo = String(u.ativo || 'SIM').toUpperCase();
+    return `<tr>
+      <td class="highlight">${u.nome || u.USER || ''}</td>
+      <td class="mono">${u.usuario || u.USER || ''}</td>
+      <td>${u.funcao || ''}</td>
+      <td><span class="badge ${role === 'admin' ? 'bloqueado' : role === 'lider' ? 'em-uso' : 'disponivel'}">${ROLE_LABELS[role] || role.toUpperCase()}</span></td>
+      <td><span class="badge ${ativo === 'SIM' ? 'disponivel' : 'bloqueado'}">${ativo}</span></td>
+      <td>
+        <div class="flex gap-8">
+          <button class="btn-secondary" style="padding:4px 10px;font-size:11px"
+            onclick="editUser(${JSON.stringify(u).replace(/"/g,'&quot;')})">✏️ EDITAR</button>
+          ${currentUser.role === 'admin' ? `<button class="btn-secondary" style="padding:4px 10px;font-size:11px;color:var(--accent-danger)"
+            onclick="toggleUser('${u.usuario || u.USER}','${ativo}')">
+            ${ativo === 'SIM' ? '🔒 BLOQUEAR' : '🔓 ATIVAR'}</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openUserModal() {
+  editingUser = null;
+  document.getElementById('modal-usuario-title').textContent = '👤 NOVO USUÁRIO';
+  ['usr-nome','usr-login','usr-senha','usr-funcao'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('usr-role').value  = 'operador';
+  document.getElementById('usr-ativo').value = 'SIM';
+  document.getElementById('modal-usuario-error').style.display = 'none';
+  document.getElementById('modal-usuario').classList.remove('hidden');
+}
+
+function editUser(u) {
+  editingUser = u;
+  document.getElementById('modal-usuario-title').textContent = '✏️ EDITAR USUÁRIO';
+  document.getElementById('usr-nome').value   = u.nome   || u.USER || '';
+  document.getElementById('usr-login').value  = u.usuario || u.USER || '';
+  document.getElementById('usr-senha').value  = '';  // não exibe senha atual
+  document.getElementById('usr-funcao').value = u.funcao || '';
+  document.getElementById('usr-role').value   = String(u.role || 'operador').toLowerCase();
+  document.getElementById('usr-ativo').value  = String(u.ativo || 'SIM').toUpperCase();
+  document.getElementById('modal-usuario-error').style.display = 'none';
+  document.getElementById('modal-usuario').classList.remove('hidden');
+}
+
+async function saveUser() {
+  const nome   = document.getElementById('usr-nome').value.trim();
+  const login  = document.getElementById('usr-login').value.trim().toLowerCase();
+  const senha  = document.getElementById('usr-senha').value.trim();
+  const funcao = document.getElementById('usr-funcao').value.trim();
+  const role   = document.getElementById('usr-role').value;
+  const ativo  = document.getElementById('usr-ativo').value;
+  const errEl  = document.getElementById('modal-usuario-error');
+
+  if (!nome || !login || (!editingUser && !senha) || !role) {
+    errEl.textContent = '✗ Preencha todos os campos obrigatórios';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (senha && senha.length < 4) {
+    errEl.textContent = '✗ Senha deve ter pelo menos 4 caracteres';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const data = {
+    nome, usuario: login,
+    senha: senha || (editingUser ? '__KEEP__' : ''),
+    funcao, role, ativo,
+    isEdit: !!editingUser,
+    editLogin: editingUser ? (editingUser.usuario || editingUser.USER) : ''
+  };
+
+  const result = await apiPost('saveUsuario', data);
+  if (result && result.status === 'ok') {
+    closeModal('modal-usuario');
+    toast('✓ Usuário salvo com sucesso!', 'success');
+    loadUsersPage();
+  } else {
+    errEl.textContent = '✗ ' + (result?.error || 'Erro ao salvar');
+    errEl.style.display = 'block';
+  }
+}
+
+async function toggleUser(login, currentStatus) {
+  const novoAtivo = currentStatus === 'SIM' ? 'NAO' : 'SIM';
+  const result = await apiPost('saveUsuario', {
+    usuario: login, ativo: novoAtivo, isEdit: true, editLogin: login, __toggleOnly: true
+  });
+  if (result && result.status === 'ok') {
+    toast(novoAtivo === 'SIM' ? '✓ Usuário ativado' : '🔒 Usuário bloqueado', 'success');
+    loadUsersPage();
+  }
+}
+
 </script>
 </body>
 </html>
