@@ -1373,6 +1373,10 @@
         <div class="nav-item" onclick="navigate('relatorios')">
           <span class="icon">📊</span> Relatórios
         </div>
+        <div class="nav-item nav-role-cadastro" onclick="navigate('aprovacoes')">
+          <span class="icon">📬</span> Aprovações
+          <span class="nav-badge warn" id="nav-badge-aprov"></span>
+        </div>
         <div class="nav-item nav-role-admin" onclick="navigate('usuarios')">
           <span class="icon">👥</span> Usuários
         </div>
@@ -2173,6 +2177,75 @@
         </div>
       </div>
 
+
+      <!-- ════ APROVAÇÕES DE DESCARTE ════ -->
+      <div id="page-aprovacoes" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">APROVAÇÕES DE <span>DESCARTE</span></div>
+            <div class="page-sub text-mono">Solicitações aguardando autorização · Líder · Engenharia · Admin</div>
+          </div>
+          <button class="btn-secondary" onclick="loadAprovacoes()">⟳ ATUALIZAR</button>
+        </div>
+
+        <!-- Pendentes -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⏳ AGUARDANDO APROVAÇÃO</span>
+            <span class="badge inspecao" id="badge-pend-count">0 pendentes</span>
+          </div>
+          <div style="overflow:auto">
+            <table class="data-table" id="aprov-pend-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>DATA/HORA</th>
+                  <th>FERRAMENTA</th>
+                  <th>TIPO</th>
+                  <th>QTD ATUAL</th>
+                  <th>QTD DESCARTE</th>
+                  <th>MOTIVO</th>
+                  <th>SOLICITANTE</th>
+                  <th>TURNO</th>
+                  <th>OBSERVAÇÕES</th>
+                  <th>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody id="aprov-pend-body">
+                <tr><td colspan="11" class="inline-loader"><span class="loading-spinner"></span> Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Histórico de aprovações -->
+        <div class="card mt-16">
+          <div class="card-header">
+            <span class="card-title">📋 HISTÓRICO DE APROVAÇÕES</span>
+          </div>
+          <div style="overflow:auto;max-height:300px">
+            <table class="data-table" id="aprov-hist-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>DATA SOLICIT.</th>
+                  <th>DATA DECISÃO</th>
+                  <th>FERRAMENTA</th>
+                  <th>QTD</th>
+                  <th>MOTIVO</th>
+                  <th>SOLICITANTE</th>
+                  <th>APROVADOR</th>
+                  <th>RESULTADO</th>
+                </tr>
+              </thead>
+              <tbody id="aprov-hist-body">
+                <tr><td colspan="9" class="empty-state"><span class="icon">📋</span>Nenhum histórico</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -2308,6 +2381,39 @@
   </div>
 </div>
 
+
+<!-- ════ MODAL APROVAÇÃO / REJEIÇÃO ════ -->
+<div class="modal-overlay hidden" id="modal-aprovacao">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-aprov-title">📬 APROVAR DESCARTE</span>
+      <button class="modal-close" onclick="closeModal('modal-aprovacao')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Detalhes da solicitação -->
+      <div style="background:var(--bg-deep);border:1px solid var(--border-glow);border-radius:4px;padding:16px;margin-bottom:16px" id="modal-aprov-detalhe">
+      </div>
+
+      <!-- Decisão -->
+      <div class="form-section-title">DECISÃO</div>
+      <div class="form-grid cols-2 mt-12">
+        <div class="form-field" style="grid-column:1/-1">
+          <label>JUSTIFICATIVA / OBSERVAÇÃO DO APROVADOR</label>
+          <textarea id="aprov-justificativa" placeholder="Descreva o motivo da aprovação ou rejeição..."></textarea>
+        </div>
+      </div>
+
+      <div id="modal-aprov-erro" style="display:none;margin-top:8px;padding:10px;background:rgba(255,51,85,0.1);border:1px solid rgba(255,51,85,0.3);border-radius:2px;color:var(--accent-danger);font-family:var(--font-mono);font-size:12px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="decidirDescarte('aprovado')">✓ APROVAR — EXECUTAR DESCARTE</button>
+      <button class="btn-danger"  onclick="decidirDescarte('rejeitado')">✗ REJEITAR SOLICITAÇÃO</button>
+      <button class="btn-secondary" onclick="closeModal('modal-aprovacao')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
@@ -2320,7 +2426,7 @@
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const CONFIG = {
-  scriptUrl: localStorage.getItem('scriptUrl') || '',
+  scriptUrl: localStorage.getItem('scriptUrl') || document.getElementById('cfg-script-url')?.value || '',
   refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '30') * 1000,
   wearAlert: parseInt(localStorage.getItem('wearAlert') || '80'),
   wearCrit:  parseInt(localStorage.getItem('wearCrit')  || '95'),
@@ -2714,6 +2820,7 @@ function navigate(page) {
     case 'checklists-cad': loadChecklistTemplates();   break;
     case 'config':         loadConfigPage();           break;
     case 'usuarios':       loadUsersPage();            break;
+    case 'aprovacoes':     loadAprovacoes();           break;
   }
 }
 
@@ -2776,6 +2883,7 @@ async function loadDashboard() {
 
   renderRecentHistory();
   renderWearTable(tools);
+  atualizarBadgeAprovacoes();
 
   // Lines grid no dashboard
   const dashGrid = document.getElementById('dash-lines-grid');
@@ -2792,6 +2900,7 @@ async function loadDashboard() {
 
 function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
 
+async 
 function renderWearTable(tools) {
   const body = document.getElementById('wear-body');
   if (!body) return;
@@ -2820,7 +2929,7 @@ function renderWearTable(tools) {
   }).join('');
 }
 
-async function renderRecentHistory() {
+function renderRecentHistory() {
   const body = document.getElementById('dash-recent-body');
   if (!body) return;
   // Tenta buscar do Sheets, fallback para MOCK
@@ -3115,51 +3224,40 @@ function clearScan() {
 //  DESCARTE — baixa quantidade + atualiza inventário
 // ══════════════════════════════════════════════════════════
 async function _registrarDescarte(tool, qty, motivo, user, obs) {
-  const novaQty = Math.max(0, (parseInt(tool.qty) || 0) - qty);
-  const estoqueMin = parseInt(tool.minStock) || 0;
-  const alertaEstoque = estoqueMin > 0 && novaQty <= estoqueMin;
-
-  // Envia para o Sheets: action DESCARTE com baixa de quantidade
-  const result = await apiPost('logDescarte', {
-    toolCode:  tool.code,
+  // Envia SOLICITAÇÃO DE DESCARTE (pendente de aprovação)
+  const result = await apiPost('solicitarDescarte', {
+    toolCode:    tool.code,
+    toolName:    tool.name,
+    toolType:    tool.type,
     qtyDescarte: qty,
-    novaQty,
+    qtyAtual:    tool.qty || 0,
     motivo,
-    user,
+    solicitante: user,
+    turno:       document.getElementById('oper-shift') ? document.getElementById('oper-shift').value : '',
+    linha:       tool.location || '',
     obs,
-    timestamp: new Date().toISOString()
+    timestamp:   new Date().toISOString()
   });
 
-  // Atualiza local
-  const idx = toolsData.findIndex(t => t.code === tool.code);
-  if (idx >= 0) {
-    toolsData[idx].qty = novaQty;
-    if (novaQty === 0) toolsData[idx].status = 'Descartada';
-  }
-
-  MOCK_HISTORY.unshift({
-    dt: new Date().toLocaleString('pt-BR').replace(',',''),
-    tool: tool.code, action: 'DESCARTE',
-    user, line: '—', op: '—', qty, cycles: 0,
-    checklistResult: '', obs: `${motivo} | ${obs}`
-  });
-
-  if (novaQty === 0) {
-    toast(`🗑️ Ferramenta ${tool.code} totalmente descartada!`, 'error');
+  if (result && result.status === 'ok') {
+    toast(`📋 Solicitação #${result.id} enviada! Aguardando aprovação do Líder/Admin.`, 'warn');
+    // Badge de aprovações pendentes
+    await atualizarBadgeAprovacoes();
   } else {
-    toast(`✓ Descarte registrado — ${qty} un baixadas. Restam: ${novaQty}`, 'warn');
-  }
-
-  // Alerta de estoque mínimo
-  if (alertaEstoque) {
-    setTimeout(() => {
-      toast(`⚠️ ESTOQUE ABAIXO DO MÍNIMO — ${tool.code} (${novaQty} un / mín: ${estoqueMin}). SOLICITAR REPOSIÇÃO!`, 'error');
-    }, 1500);
+    toast('⚠️ Erro ao enviar solicitação. Tente novamente.', 'error');
   }
 
   clearScan();
   loadBiparPage();
-  loadDashboard();
+}
+
+// Atualiza badge de aprovações pendentes na nav
+async function atualizarBadgeAprovacoes() {
+  const api = await apiCall('getSolicitacoes', { status: 'pendente' });
+  const count = (api && api.data) ? api.data.length : 0;
+  const badge = document.getElementById('nav-badge-aprov');
+  if (badge) badge.textContent = count > 0 ? count : '';
+  return count;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3891,6 +3989,186 @@ async function toggleUser(login, currentStatus) {
   if (result && result.status === 'ok') {
     toast(novoAtivo === 'SIM' ? '✓ Usuário ativado' : '🔒 Usuário bloqueado', 'success');
     loadUsersPage();
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  APROVAÇÕES DE DESCARTE
+// ══════════════════════════════════════════════════════════
+let solicitacaoAtual = null;
+
+async function loadAprovacoes() {
+  // Carrega pendentes
+  const apiPend = await apiCall('getSolicitacoes', { status: 'pendente' });
+  const pendentes = (apiPend && apiPend.data) ? apiPend.data : [];
+
+  const badgeCount = document.getElementById('badge-pend-count');
+  if (badgeCount) badgeCount.textContent = pendentes.length + ' pendente' + (pendentes.length !== 1 ? 's' : '');
+
+  const bodyPend = document.getElementById('aprov-pend-body');
+  if (pendentes.length === 0) {
+    bodyPend.innerHTML = '<tr><td colspan="11" class="empty-state"><span class="icon">✅</span>Nenhuma solicitação pendente</td></tr>';
+  } else {
+    bodyPend.innerHTML = pendentes.map(s => `<tr>
+      <td class="mono highlight">${s.id || '—'}</td>
+      <td class="mono text-xs">${String(s.data_hora || s.timestamp || '').substring(0,16)}</td>
+      <td class="highlight">${s.tool_name || s.toolName || s.tool_code || '—'}</td>
+      <td><span class="badge inspecao">${s.tool_type || s.toolType || '—'}</span></td>
+      <td class="mono">${s.qty_atual ?? s.qtyAtual ?? '—'}</td>
+      <td class="mono text-danger">${s.qty_descarte ?? s.qtyDescarte ?? '—'}</td>
+      <td>${s.motivo || '—'}</td>
+      <td>${s.solicitante || '—'}</td>
+      <td class="mono text-xs">${s.turno || '—'}</td>
+      <td class="text-dim text-xs">${s.obs || s.observacoes || '—'}</td>
+      <td>
+        <button class="btn-primary" style="padding:6px 12px;font-size:11px;white-space:nowrap"
+          onclick="abrirModalAprovacao(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+          📬 DECIDIR
+        </button>
+      </td>
+    </tr>`).join('');
+  }
+
+  // Carrega histórico (aprovadas + rejeitadas)
+  const apiHist = await apiCall('getSolicitacoes', { status: 'historico' });
+  const historico = (apiHist && apiHist.data) ? apiHist.data : [];
+  const bodyHist  = document.getElementById('aprov-hist-body');
+
+  if (!historico.length) {
+    bodyHist.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="icon">📋</span>Nenhum histórico</td></tr>';
+  } else {
+    bodyHist.innerHTML = historico.map(s => {
+      const res = s.status === 'aprovado' ? 'disponivel' : 'bloqueado';
+      return `<tr>
+        <td class="mono">${s.id || '—'}</td>
+        <td class="mono text-xs">${String(s.data_hora || '').substring(0,16)}</td>
+        <td class="mono text-xs">${String(s.data_decisao || '').substring(0,16)}</td>
+        <td class="highlight">${s.tool_name || s.toolName || '—'}</td>
+        <td class="mono">${s.qty_descarte ?? s.qtyDescarte ?? '—'}</td>
+        <td>${s.motivo || '—'}</td>
+        <td>${s.solicitante || '—'}</td>
+        <td>${s.aprovador || '—'}</td>
+        <td><span class="badge ${res}">${(s.status || '').toUpperCase()}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Atualiza badge na nav
+  const navBadge = document.getElementById('nav-badge-aprov');
+  if (navBadge) navBadge.textContent = pendentes.length > 0 ? pendentes.length : '';
+}
+
+function abrirModalAprovacao(solicitacao) {
+  solicitacaoAtual = solicitacao;
+
+  const novaQty = (parseInt(solicitacao.qty_atual ?? solicitacao.qtyAtual) || 0)
+                - (parseInt(solicitacao.qty_descarte ?? solicitacao.qtyDescarte) || 0);
+
+  document.getElementById('modal-aprov-title').textContent =
+    '📬 SOLICITAÇÃO DE DESCARTE — ' + (solicitacao.id || '');
+
+  document.getElementById('modal-aprov-detalhe').innerHTML = `
+    <div class="flex gap-20 flex-wrap">
+      <div class="tool-info-row">
+        <span class="tik">FERRAMENTA</span>
+        <span class="tiv">${solicitacao.tool_name || solicitacao.toolName || '—'}</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">TIPO</span>
+        <span class="tiv">${solicitacao.tool_type || solicitacao.toolType || '—'}</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">SOLICITANTE</span>
+        <span class="tiv">${solicitacao.solicitante || '—'}</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">TURNO</span>
+        <span class="tiv">${solicitacao.turno || '—'}</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">LINHA</span>
+        <span class="tiv">${solicitacao.linha || '—'}</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">MOTIVO</span>
+        <span class="tiv">${solicitacao.motivo || '—'}</span>
+      </div>
+    </div>
+    <hr style="border-color:var(--border-subtle);margin:12px 0">
+    <div class="flex gap-20">
+      <div class="tool-info-row">
+        <span class="tik">QTD ATUAL</span>
+        <span class="tiv">${solicitacao.qty_atual ?? solicitacao.qtyAtual ?? '—'} un</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">QTD A DESCARTAR</span>
+        <span class="tiv text-danger">${solicitacao.qty_descarte ?? solicitacao.qtyDescarte ?? '—'} un</span>
+      </div>
+      <div class="tool-info-row">
+        <span class="tik">SALDO APÓS DESCARTE</span>
+        <span class="tiv ${novaQty <= 0 ? 'text-danger' : novaQty <= (solicitacao.estoque_minimo || 999) ? 'text-warn' : 'text-success'}">${Math.max(0, novaQty)} un</span>
+      </div>
+    </div>
+    <hr style="border-color:var(--border-subtle);margin:12px 0">
+    <div class="tool-info-row">
+      <span class="tik">OBSERVAÇÃO DO OPERADOR</span>
+      <span class="tiv">${solicitacao.obs || solicitacao.observacoes || '—'}</span>
+    </div>
+  `;
+
+  document.getElementById('aprov-justificativa').value = '';
+  document.getElementById('modal-aprov-erro').style.display = 'none';
+  document.getElementById('modal-aprovacao').classList.remove('hidden');
+}
+
+async function decidirDescarte(decisao) {
+  if (!solicitacaoAtual) return;
+
+  const errEl = document.getElementById('modal-aprov-erro');
+  const justificativa = document.getElementById('aprov-justificativa').value.trim();
+
+  if (!justificativa) {
+    errEl.textContent = '✗ Preencha a justificativa antes de ' + (decisao === 'aprovado' ? 'aprovar' : 'rejeitar');
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const result = await apiPost('decidirDescarte', {
+    id:            solicitacaoAtual.id,
+    decisao,
+    aprovador:     currentUser.name,
+    justificativa,
+    timestamp:     new Date().toISOString(),
+    // Dados para executar o descarte se aprovado
+    toolCode:      solicitacaoAtual.tool_code || solicitacaoAtual.toolCode,
+    qtyDescarte:   solicitacaoAtual.qty_descarte ?? solicitacaoAtual.qtyDescarte,
+    novaQty:       Math.max(0,
+                     (parseInt(solicitacaoAtual.qty_atual ?? solicitacaoAtual.qtyAtual) || 0) -
+                     (parseInt(solicitacaoAtual.qty_descarte ?? solicitacaoAtual.qtyDescarte) || 0)
+                   ),
+    motivo:        solicitacaoAtual.motivo,
+    obs:           solicitacaoAtual.obs || solicitacaoAtual.observacoes
+  });
+
+  if (result && result.status === 'ok') {
+    closeModal('modal-aprovacao');
+    solicitacaoAtual = null;
+
+    if (decisao === 'aprovado') {
+      toast('✓ Descarte APROVADO e executado! Estoque atualizado.', 'success');
+      if (result.alertaEstoqueMinimo) {
+        setTimeout(() => toast('⚠️ ESTOQUE ABAIXO DO MÍNIMO — Solicitar reposição!', 'error'), 1500);
+      }
+    } else {
+      toast('✗ Solicitação REJEITADA. Ferramenta mantida no estoque.', 'warn');
+    }
+
+    loadAprovacoes();
+    atualizarBadgeAprovacoes();
+  } else {
+    errEl.textContent = '✗ ' + (result?.error || 'Erro ao processar');
+    errEl.style.display = 'block';
   }
 }
 
