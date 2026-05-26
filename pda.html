@@ -1,0 +1,978 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=240, initial-scale=1">
+<title>SMT/PTH - PDA</title>
+<style type="text/css">
+body {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  background: #111;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+.topo {
+  background: #003344;
+  border-bottom: 2px solid #00aacc;
+  padding: 8px;
+  text-align: center;
+}
+.topo-titulo {
+  font-size: 16px;
+  font-weight: bold;
+  color: #00ccff;
+}
+.topo-sub {
+  font-size: 10px;
+  color: #6699aa;
+}
+.tela {
+  display: none;
+  padding: 8px;
+}
+.tela-ativa {
+  display: block;
+}
+.label {
+  font-size: 11px;
+  color: #00ccff;
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  width: 96%;
+  font-size: 15px;
+  padding: 6px 4px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #00aacc;
+  margin-bottom: 4px;
+}
+select {
+  width: 100%;
+}
+textarea {
+  height: 50px;
+  resize: none;
+}
+.btn {
+  width: 100%;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 10px 4px;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  display: block;
+  text-align: center;
+}
+.btn-azul   { background: #0066aa; color: #fff; }
+.btn-verde  { background: #006633; color: #fff; }
+.btn-laranj { background: #aa5500; color: #fff; }
+.btn-cinza  { background: #333; color: #aaa; border: 1px solid #555; }
+.btn-verm   { background: #aa0022; color: #fff; }
+.menu-item {
+  display: block;
+  width: 100%;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 14px 8px;
+  margin-bottom: 6px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.menu-icone {
+  font-size: 18px;
+  margin-right: 8px;
+}
+.msg-ok {
+  background: #003300;
+  border: 1px solid #00aa44;
+  color: #00ff66;
+  padding: 10px;
+  font-size: 13px;
+  margin-top: 10px;
+  text-align: center;
+}
+.msg-erro {
+  background: #330000;
+  border: 1px solid #aa0022;
+  color: #ff4455;
+  padding: 10px;
+  font-size: 13px;
+  margin-top: 10px;
+  text-align: center;
+}
+.msg-alerta {
+  background: #332200;
+  border: 1px solid #aa6600;
+  color: #ffaa00;
+  padding: 10px;
+  font-size: 13px;
+  margin-top: 10px;
+  text-align: center;
+}
+.divider {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 10px 0;
+}
+.ferramenta-info {
+  background: #1a2233;
+  border: 1px solid #00aacc;
+  padding: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.ferramenta-info-linha {
+  margin-bottom: 4px;
+}
+.ferramenta-label {
+  color: #6699aa;
+  font-size: 11px;
+}
+.ferramenta-valor {
+  color: #ffffff;
+  font-weight: bold;
+}
+.badge-disp   { color: #00ff88; }
+.badge-uso    { color: #00ccff; }
+.badge-pend   { color: #ffaa00; }
+.badge-blk    { color: #ff3355; }
+.badge-man    { color: #aa55ff; }
+.rodape {
+  background: #001a22;
+  border-top: 1px solid #003344;
+  padding: 6px;
+  text-align: center;
+  font-size: 10px;
+  color: #336655;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+.usuario-logado {
+  background: #001a22;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #6699aa;
+  text-align: right;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPO -->
+<div class="topo">
+  <div class="topo-titulo">SMT/PTH TOOL</div>
+  <div class="topo-sub">CONTROLE DE FERRAMENTAS - PDA</div>
+</div>
+
+<!-- USUARIO LOGADO -->
+<div class="usuario-logado" id="usuario-logado">
+  &nbsp;
+</div>
+
+<!-- ══════════════ TELA: LOGIN ══════════════ -->
+<div id="tela-login" class="tela tela-ativa">
+  <span class="label">USUARIO</span>
+  <input type="text" id="login-user" value="">
+
+  <span class="label">SENHA</span>
+  <input type="password" id="login-senha" value="">
+
+  <input type="button" class="btn btn-azul" value="ENTRAR" onclick="fazerLogin()">
+
+  <div id="login-msg"></div>
+
+  <hr class="divider">
+  <div style="font-size:10px; color:#336655; text-align:center;">
+    SMT/PTH Tool Control v1.0 PDA
+  </div>
+</div>
+
+<!-- ══════════════ TELA: MENU PRINCIPAL ══════════════ -->
+<div id="tela-menu" class="tela">
+  <input type="button" class="btn menu-item btn-azul"
+    value="[ RETIRADA ] Retirar ferramenta"
+    onclick="irParaTela('tela-retirada')">
+
+  <input type="button" class="btn menu-item btn-verde"
+    value="[ DEVOLUCAO ] Devolver ferramenta"
+    onclick="irParaTela('tela-devolucao')">
+
+  <input type="button" class="btn menu-item btn-laranj"
+    value="[ TRANSFERENCIA ] Transferir linha"
+    onclick="irParaTela('tela-transferencia')">
+
+  <input type="button" class="btn menu-item btn-verm"
+    value="[ DESCARTE ] Registrar descarte"
+    onclick="irParaTela('tela-descarte')">
+
+  <hr class="divider">
+
+  <input type="button" class="btn btn-cinza"
+    value="SAIR" onclick="sair()">
+</div>
+
+<!-- ══════════════ TELA: RETIRADA ══════════════ -->
+<div id="tela-retirada" class="tela">
+  <span class="label">CODIGO DA FERRAMENTA</span>
+  <input type="text" id="ret-codigo" value="" onchange="buscarFerramenta('ret')">
+
+  <div id="ret-info"></div>
+
+  <span class="label">OPERADOR / MATRICULA</span>
+  <input type="text" id="ret-operador" value="">
+
+  <span class="label">LINHA</span>
+  <select id="ret-linha">
+    <option value="">-- Selecione --</option>
+    <option value="SMT-01">SMT-01</option>
+    <option value="SMT-02">SMT-02</option>
+    <option value="SMT-03">SMT-03</option>
+    <option value="SMT-04">SMT-04</option>
+    <option value="PTH-01">PTH-01</option>
+    <option value="PTH-02">PTH-02</option>
+    <option value="PTH-03">PTH-03</option>
+    <option value="PTH-04">PTH-04</option>
+  </select>
+
+  <span class="label">ORDEM DE PRODUCAO (OP)</span>
+  <input type="text" id="ret-op" value="">
+
+  <span class="label">PRODUTO</span>
+  <input type="text" id="ret-produto" value="">
+
+  <span class="label">QUANTIDADE PRODUZIDA</span>
+  <input type="number" id="ret-qty" value="0">
+
+  <span class="label">TURNO</span>
+  <select id="ret-turno">
+    <option value="A - Manha">A - Manha</option>
+    <option value="B - Tarde">B - Tarde</option>
+    <option value="C - Noite">C - Noite</option>
+  </select>
+
+  <span class="label">OBSERVACOES</span>
+  <textarea id="ret-obs"></textarea>
+
+  <input type="button" class="btn btn-azul"
+    value="CONFIRMAR RETIRADA" onclick="confirmarRetirada()">
+
+  <input type="button" class="btn btn-cinza"
+    value="VOLTAR" onclick="irParaTela('tela-menu')">
+
+  <div id="ret-msg"></div>
+</div>
+
+<!-- ══════════════ TELA: DEVOLUCAO ══════════════ -->
+<div id="tela-devolucao" class="tela">
+  <span class="label">CODIGO DA FERRAMENTA</span>
+  <input type="text" id="dev-codigo" value="" onchange="buscarFerramenta('dev')">
+
+  <div id="dev-info"></div>
+
+  <span class="label">OPERADOR / MATRICULA</span>
+  <input type="text" id="dev-operador" value="">
+
+  <span class="label">TURNO</span>
+  <select id="dev-turno">
+    <option value="A - Manha">A - Manha</option>
+    <option value="B - Tarde">B - Tarde</option>
+    <option value="C - Noite">C - Noite</option>
+  </select>
+
+  <span class="label">OBSERVACOES</span>
+  <textarea id="dev-obs"></textarea>
+
+  <hr class="divider">
+  <div style="font-size:11px; color:#ffaa00; text-align:center;">
+    *** CHECKLIST OBRIGATORIO ***<br>
+    Preencha todos os itens abaixo
+  </div>
+  <hr class="divider">
+
+  <div id="dev-checklist-container">
+    <div style="color:#6699aa; font-size:12px; text-align:center;">
+      Bipe a ferramenta para carregar o checklist
+    </div>
+  </div>
+
+  <div id="dev-checklist-resultado" style="display:none; margin-top:8px;">
+    <span class="label">RESULTADO DO CHECKLIST</span>
+    <select id="dev-resultado">
+      <option value="aprovado">APROVADO - Ferramenta OK</option>
+      <option value="reprovado">REPROVADO - Bloquear ferramenta</option>
+    </select>
+  </div>
+
+  <input type="button" class="btn btn-verde"
+    id="btn-confirmar-dev" style="display:none;"
+    value="CONFIRMAR DEVOLUCAO" onclick="confirmarDevolucao()">
+
+  <input type="button" class="btn btn-cinza"
+    value="DEVOLVER SEM CHECKLIST (pendente)"
+    onclick="devolverSemChecklist()">
+
+  <input type="button" class="btn btn-cinza"
+    value="VOLTAR" onclick="irParaTela('tela-menu')">
+
+  <div id="dev-msg"></div>
+</div>
+
+<!-- ══════════════ TELA: TRANSFERENCIA ══════════════ -->
+<div id="tela-transferencia" class="tela">
+  <span class="label">CODIGO DA FERRAMENTA</span>
+  <input type="text" id="trf-codigo" value="" onchange="buscarFerramenta('trf')">
+
+  <div id="trf-info"></div>
+
+  <span class="label">OPERADOR / MATRICULA</span>
+  <input type="text" id="trf-operador" value="">
+
+  <span class="label">NOVA LINHA</span>
+  <select id="trf-linha">
+    <option value="">-- Selecione --</option>
+    <option value="SMT-01">SMT-01</option>
+    <option value="SMT-02">SMT-02</option>
+    <option value="SMT-03">SMT-03</option>
+    <option value="SMT-04">SMT-04</option>
+    <option value="PTH-01">PTH-01</option>
+    <option value="PTH-02">PTH-02</option>
+    <option value="PTH-03">PTH-03</option>
+    <option value="PTH-04">PTH-04</option>
+    <option value="Almoxarifado">Almoxarifado</option>
+    <option value="Manutencao">Manutencao</option>
+  </select>
+
+  <span class="label">OBSERVACOES</span>
+  <textarea id="trf-obs"></textarea>
+
+  <input type="button" class="btn btn-laranj"
+    value="CONFIRMAR TRANSFERENCIA" onclick="confirmarTransferencia()">
+
+  <input type="button" class="btn btn-cinza"
+    value="VOLTAR" onclick="irParaTela('tela-menu')">
+
+  <div id="trf-msg"></div>
+</div>
+
+<!-- ══════════════ TELA: DESCARTE ══════════════ -->
+<div id="tela-descarte" class="tela">
+  <div class="msg-alerta" style="margin-bottom:8px;">
+    ATENCAO: Esta operacao baixa o estoque!
+  </div>
+
+  <span class="label">CODIGO DA FERRAMENTA</span>
+  <input type="text" id="desc-codigo" value="" onchange="buscarFerramenta('desc')">
+
+  <div id="desc-info"></div>
+
+  <span class="label">OPERADOR / MATRICULA</span>
+  <input type="text" id="desc-operador" value="">
+
+  <span class="label">QUANTIDADE A DESCARTAR</span>
+  <input type="number" id="desc-qty" value="1" min="1">
+
+  <span class="label">MOTIVO</span>
+  <select id="desc-motivo">
+    <option value="danificado">Danificado / Quebrado</option>
+    <option value="desgaste">Desgaste - Fim de vida util</option>
+    <option value="perda">Perda / Extravio</option>
+    <option value="outro">Outro</option>
+  </select>
+
+  <span class="label">OBSERVACOES (obrigatorio)</span>
+  <textarea id="desc-obs"></textarea>
+
+  <input type="button" class="btn btn-verm"
+    value="REGISTRAR DESCARTE" onclick="confirmarDescarte()">
+
+  <input type="button" class="btn btn-cinza"
+    value="VOLTAR" onclick="irParaTela('tela-menu')">
+
+  <div id="desc-msg"></div>
+</div>
+
+<!-- ══════════════ TELA: CONFIRMACAO ══════════════ -->
+<div id="tela-confirmacao" class="tela">
+  <div id="conf-msg" class="msg-ok" style="font-size:16px; padding:20px;">
+    OK
+  </div>
+  <br>
+  <input type="button" class="btn btn-azul"
+    value="NOVA OPERACAO" onclick="irParaTela('tela-menu')">
+  <input type="button" class="btn btn-cinza"
+    value="SAIR" onclick="sair()">
+</div>
+
+<!-- RODAPE -->
+<div class="rodape">SMT/PTH TOOL CONTROL - PDA MODE</div>
+
+<script type="text/javascript">
+// ══════════════════════════════════════════════════════
+//  CONFIGURACAO - ALTERE A URL DO SEU APPS SCRIPT AQUI
+// ══════════════════════════════════════════════════════
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXYpAblApfHyP6uTP6Ei0gx_IjEdK5q99G1VfHEpP_clQ9ftxzRew0rLaGkPwo8dg/exec';
+
+// ══════════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════════════
+var usuarioLogado  = null;
+var ferramentaAtual = {};  // armazena dados da ferramenta bipada por tela
+
+// Checklist templates por tipo
+var CHECKLISTS = {
+  'Wave Tray':         ['Trava','Desgaste','Limpeza'],
+  'Parafusadeira':     ['Integridade'],
+  'Pinboard AUTO FCT': ['Agulha','Placa de comunicacao','Pinos de conexao','Receptaculo','Pino guia contra placa','Pino guia pinboard','Amortecedores'],
+  'Pinboard FCT OLD':  ['Agulha','Placa de comunicacao','Pinos de conexao','Receptaculo','Pino guia'],
+  'Gabarito':          ['Integridade','Limpeza'],
+  'Stencil':           ['Integridade','Limpeza'],
+  'Rodo':              ['Integridade','Limpeza'],
+  'Slot':              ['Integridade','Limpeza']
+};
+
+// ══════════════════════════════════════════════════════
+//  NAVEGACAO ENTRE TELAS
+// ══════════════════════════════════════════════════════
+function irParaTela(id) {
+  var telas = document.getElementsByTagName('div');
+  for (var i = 0; i < telas.length; i++) {
+    if (telas[i].className == 'tela' || telas[i].className == 'tela tela-ativa') {
+      telas[i].className = 'tela';
+    }
+  }
+  document.getElementById(id).className = 'tela tela-ativa';
+
+  // Limpa mensagens ao trocar de tela
+  var msgs = ['ret-msg','dev-msg','trf-msg','desc-msg','login-msg'];
+  for (var m = 0; m < msgs.length; m++) {
+    var el = document.getElementById(msgs[m]);
+    if (el) el.innerHTML = '';
+  }
+
+  // Limpa infos de ferramentas
+  var infos = ['ret-info','dev-info','trf-info','desc-info'];
+  for (var n = 0; n < infos.length; n++) {
+    var el2 = document.getElementById(infos[n]);
+    if (el2) el2.innerHTML = '';
+  }
+
+  // Reseta checklist na devolucao
+  if (id == 'tela-devolucao') {
+    document.getElementById('dev-checklist-container').innerHTML =
+      '<div style="color:#6699aa; font-size:12px; text-align:center;">Bipe a ferramenta para carregar o checklist</div>';
+    document.getElementById('dev-checklist-resultado').style.display = 'none';
+    document.getElementById('btn-confirmar-dev').style.display = 'none';
+    ferramentaAtual['dev'] = null;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════════════
+function fazerLogin() {
+  var user  = document.getElementById('login-user').value;
+  var senha = document.getElementById('login-senha').value;
+  var msg   = document.getElementById('login-msg');
+
+  if (!user || !senha) {
+    msg.innerHTML = '<div class="msg-erro">PREENCHA USUARIO E SENHA</div>';
+    return;
+  }
+
+  msg.innerHTML = '<div class="msg-alerta">VERIFICANDO...</div>';
+
+  // Busca usuarios no Apps Script
+  var url = SCRIPT_URL + '?action=getUsuarios';
+  fazerGet(url, function(resposta) {
+    if (!resposta || !resposta.data) {
+      // Fallback: admin local
+      if (user == 'admin' && senha == 'ahffkdy2') {
+        loginSucesso({nome:'Admin', role:'admin'}, user);
+      } else {
+        msg.innerHTML = '<div class="msg-erro">ERRO DE CONEXAO. Tente: admin / ahffkdy2</div>';
+      }
+      return;
+    }
+
+    var encontrado = null;
+    for (var i = 0; i < resposta.data.length; i++) {
+      var u = resposta.data[i];
+      var uLogin = String(u['usuario'] || u['usu\u00e1rio'] || u['USER'] || '').toLowerCase();
+      var uSenha = String(u['senha'] || '');
+      var uAtivo = String(u['ativo'] || 'SIM').toUpperCase();
+
+      if (uLogin == user.toLowerCase() && uSenha == senha && uAtivo.charAt(0) == 'S') {
+        encontrado = u;
+        break;
+      }
+    }
+
+    if (encontrado) {
+      loginSucesso(encontrado, user);
+    } else {
+      msg.innerHTML = '<div class="msg-erro">USUARIO OU SENHA INCORRETOS</div>';
+    }
+  });
+}
+
+function loginSucesso(userData, loginDigitado) {
+  usuarioLogado = {
+    nome:  String(userData['nome'] || userData['USER'] || loginDigitado),
+    role:  String(userData['role'] || 'operador').toLowerCase()
+  };
+
+  document.getElementById('usuario-logado').innerHTML =
+    'Logado: ' + usuarioLogado.nome + ' [' + usuarioLogado.role.toUpperCase() + ']';
+
+  // Pre-preenche operador nas telas
+  var campos = ['ret-operador','dev-operador','trf-operador','desc-operador'];
+  for (var i = 0; i < campos.length; i++) {
+    var el = document.getElementById(campos[i]);
+    if (el) el.value = usuarioLogado.nome;
+  }
+
+  irParaTela('tela-menu');
+}
+
+function sair() {
+  usuarioLogado = null;
+  document.getElementById('usuario-logado').innerHTML = '&nbsp;';
+  document.getElementById('login-user').value  = '';
+  document.getElementById('login-senha').value = '';
+  irParaTela('tela-login');
+}
+
+// ══════════════════════════════════════════════════════
+//  BUSCAR FERRAMENTA (ao bipar o codigo)
+// ══════════════════════════════════════════════════════
+function buscarFerramenta(prefixo) {
+  var codigo = document.getElementById(prefixo + '-codigo').value;
+  var infoEl = document.getElementById(prefixo + '-info');
+
+  if (!codigo) return;
+
+  infoEl.innerHTML = '<div class="msg-alerta">Buscando...</div>';
+  ferramentaAtual[prefixo] = null;
+
+  var url = SCRIPT_URL + '?action=getTools&search=' + encodeURIComponent(codigo);
+  fazerGet(url, function(resposta) {
+    if (!resposta || !resposta.data || resposta.data.length == 0) {
+      infoEl.innerHTML = '<div class="msg-erro">FERRAMENTA NAO ENCONTRADA: ' + codigo + '</div>';
+      return;
+    }
+
+    // Pega a primeira correspondencia exata ou parcial
+    var ferramenta = null;
+    for (var i = 0; i < resposta.data.length; i++) {
+      var f = resposta.data[i];
+      if (String(f['codigo'] || '').toUpperCase() == codigo.toUpperCase()) {
+        ferramenta = f;
+        break;
+      }
+    }
+    if (!ferramenta) ferramenta = resposta.data[0];
+
+    ferramentaAtual[prefixo] = ferramenta;
+    mostrarInfoFerramenta(prefixo, ferramenta);
+
+    // Se for devolucao, carrega o checklist
+    if (prefixo == 'dev') {
+      carregarChecklistDevolucao(ferramenta);
+    }
+  });
+}
+
+function mostrarInfoFerramenta(prefixo, f) {
+  var infoEl = document.getElementById(prefixo + '-info');
+  var status = String(f['status'] || '');
+  var statusCls = 'badge-disp';
+  if (status == 'Em Uso')            statusCls = 'badge-uso';
+  if (status == 'Checklist Pendente') statusCls = 'badge-pend';
+  if (status == 'Bloqueada')          statusCls = 'badge-blk';
+  if (status == 'Manutencao')         statusCls = 'badge-man';
+
+  var qty      = f['quantidade']  || 0;
+  var ciclos   = f['ciclos']      || 0;
+  var maxCiclos = f['max_ciclos'] || 0;
+  var pct      = maxCiclos > 0 ? Math.round(ciclos / maxCiclos * 100) : 0;
+  var local    = f['localizacao'] || '-';
+  var tipo     = f['tipo']        || '-';
+  var esMin    = f['estoque_minimo'] || 0;
+
+  var alertaQty = '';
+  if (esMin > 0 && qty <= esMin) {
+    alertaQty = '<div class="msg-alerta">ESTOQUE ABAIXO DO MINIMO! (' + qty + '/' + esMin + ')</div>';
+  }
+
+  infoEl.innerHTML =
+    '<div class="ferramenta-info">' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">CODIGO: </span>' +
+      '<span class="ferramenta-valor">' + (f['codigo'] || '-') + '</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">NOME: </span>' +
+      '<span class="ferramenta-valor">' + (f['nome'] || '-') + '</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">TIPO: </span>' +
+      '<span class="ferramenta-valor">' + tipo + '</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">STATUS: </span>' +
+      '<span class="ferramenta-valor ' + statusCls + '">' + status + '</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">QTDE: </span>' +
+      '<span class="ferramenta-valor">' + qty + ' un</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">LOCAL: </span>' +
+      '<span class="ferramenta-valor">' + local + '</span>' +
+    '</div>' +
+    '<div class="ferramenta-info-linha">' +
+      '<span class="ferramenta-label">CICLOS: </span>' +
+      '<span class="ferramenta-valor">' + ciclos + ' / ' + maxCiclos + ' (' + pct + '%)</span>' +
+    '</div>' +
+    '</div>' +
+    alertaQty;
+}
+
+// ══════════════════════════════════════════════════════
+//  CHECKLIST DE DEVOLUCAO
+// ══════════════════════════════════════════════════════
+function carregarChecklistDevolucao(ferramenta) {
+  var tipo = String(ferramenta['tipo'] || ferramenta['checklist_template'] || '');
+  var itens = CHECKLISTS[tipo] || ['Integridade','Limpeza'];
+  var container = document.getElementById('dev-checklist-container');
+  var html = '<div style="font-size:11px; color:#ffaa00; margin-bottom:6px;">TIPO: ' + tipo + '</div>';
+
+  for (var i = 0; i < itens.length; i++) {
+    html +=
+      '<div style="margin-bottom:8px; background:#1a1a22; padding:6px;">' +
+        '<div style="font-size:13px; font-weight:bold; color:#fff; margin-bottom:4px;">' +
+          (i+1) + '. ' + itens[i] +
+        '</div>' +
+        '<select id="chk-item-' + i + '" style="width:100%;font-size:14px;background:#222;color:#fff;border:1px solid #00aacc;padding:4px;">' +
+          '<option value="">-- Selecione --</option>' +
+          '<option value="ok">OK</option>' +
+          '<option value="nok">NOK - Com problema</option>' +
+          '<option value="na">N/A - Nao se aplica</option>' +
+        '</select>' +
+      '</div>';
+  }
+
+  container.innerHTML = html;
+  document.getElementById('dev-checklist-resultado').style.display = 'block';
+  document.getElementById('btn-confirmar-dev').style.display = 'block';
+}
+
+function coletarChecklistItens() {
+  var selects = document.getElementById('dev-checklist-container').getElementsByTagName('select');
+  var itens = [];
+  var temNok = false;
+  var temVazio = false;
+
+  for (var i = 0; i < selects.length; i++) {
+    var val = selects[i].value;
+    if (!val) { temVazio = true; }
+    if (val == 'nok') { temNok = true; }
+    itens.push({ id: 'item' + i, name: 'Item ' + (i+1), value: val });
+  }
+
+  return { itens: itens, temNok: temNok, temVazio: temVazio };
+}
+
+// ══════════════════════════════════════════════════════
+//  OPERACOES
+// ══════════════════════════════════════════════════════
+function confirmarRetirada() {
+  var ferramenta = ferramentaAtual['ret'];
+  if (!ferramenta) {
+    mostrarMsg('ret-msg', 'erro', 'BIPE A FERRAMENTA PRIMEIRO');
+    return;
+  }
+  if (String(ferramenta['status']) == 'Checklist Pendente') {
+    mostrarMsg('ret-msg', 'erro', 'BLOQUEADA: CHECKLIST PENDENTE. Faca a inspecao antes.');
+    return;
+  }
+  if (String(ferramenta['status']) != 'Dispon\u00edvel') {
+    mostrarMsg('ret-msg', 'erro', 'FERRAMENTA NAO DISPONIVEL. Status: ' + ferramenta['status']);
+    return;
+  }
+
+  var linha = document.getElementById('ret-linha').value;
+  if (!linha) {
+    mostrarMsg('ret-msg', 'alerta', 'SELECIONE A LINHA');
+    return;
+  }
+
+  var dados = {
+    action:       'logMovement',
+    toolCode:     ferramenta['codigo'],
+    action2:      'RETIRADA',
+    line:         linha,
+    op:           document.getElementById('ret-op').value,
+    user:         document.getElementById('ret-operador').value || usuarioLogado.nome,
+    shift:        document.getElementById('ret-turno').value,
+    qty:          document.getElementById('ret-qty').value || 0,
+    obs:          document.getElementById('ret-obs').value,
+    timestamp:    new Date().toISOString()
+  };
+
+  mostrarMsg('ret-msg', 'alerta', 'ENVIANDO...');
+  enviarOperacao(dados, 'ret');
+}
+
+function confirmarDevolucao() {
+  var ferramenta = ferramentaAtual['dev'];
+  if (!ferramenta) {
+    mostrarMsg('dev-msg', 'erro', 'BIPE A FERRAMENTA PRIMEIRO');
+    return;
+  }
+
+  var chk = coletarChecklistItens();
+  if (chk.temVazio) {
+    mostrarMsg('dev-msg', 'alerta', 'PREENCHA TODOS OS ITENS DO CHECKLIST');
+    return;
+  }
+
+  var resultado = chk.temNok ? 'reprovado' : 'aprovado';
+
+  var dados = {
+    action:           'logMovement',
+    toolCode:         ferramenta['codigo'],
+    action2:          'DEVOLUCAO',
+    user:             document.getElementById('dev-operador').value || usuarioLogado.nome,
+    shift:            document.getElementById('dev-turno').value,
+    obs:              document.getElementById('dev-obs').value,
+    checklistResult:  resultado,
+    checklistItems:   JSON.stringify(chk.itens),
+    timestamp:        new Date().toISOString()
+  };
+
+  mostrarMsg('dev-msg', 'alerta', 'ENVIANDO...');
+  enviarOperacao(dados, 'dev');
+}
+
+function devolverSemChecklist() {
+  var ferramenta = ferramentaAtual['dev'];
+  if (!ferramenta) {
+    mostrarMsg('dev-msg', 'erro', 'BIPE A FERRAMENTA PRIMEIRO');
+    return;
+  }
+
+  var dados = {
+    action:    'logMovement',
+    toolCode:  ferramenta['codigo'],
+    action2:   'DEVOLUCAO',
+    user:      document.getElementById('dev-operador').value || usuarioLogado.nome,
+    shift:     document.getElementById('dev-turno').value,
+    obs:       document.getElementById('dev-obs').value || 'Checklist nao realizado',
+    timestamp: new Date().toISOString()
+  };
+
+  mostrarMsg('dev-msg', 'alerta', 'ENVIANDO SEM CHECKLIST (ficara pendente)...');
+  enviarOperacao(dados, 'dev');
+}
+
+function confirmarTransferencia() {
+  var ferramenta = ferramentaAtual['trf'];
+  if (!ferramenta) {
+    mostrarMsg('trf-msg', 'erro', 'BIPE A FERRAMENTA PRIMEIRO');
+    return;
+  }
+
+  var linha = document.getElementById('trf-linha').value;
+  if (!linha) {
+    mostrarMsg('trf-msg', 'alerta', 'SELECIONE A NOVA LINHA');
+    return;
+  }
+
+  var dados = {
+    action:    'logMovement',
+    toolCode:  ferramenta['codigo'],
+    action2:   'TRANSFERENCIA',
+    line:      linha,
+    user:      document.getElementById('trf-operador').value || usuarioLogado.nome,
+    obs:       document.getElementById('trf-obs').value,
+    timestamp: new Date().toISOString()
+  };
+
+  mostrarMsg('trf-msg', 'alerta', 'ENVIANDO...');
+  enviarOperacao(dados, 'trf');
+}
+
+function confirmarDescarte() {
+  var ferramenta = ferramentaAtual['desc'];
+  if (!ferramenta) {
+    mostrarMsg('desc-msg', 'erro', 'BIPE A FERRAMENTA PRIMEIRO');
+    return;
+  }
+
+  var obs = document.getElementById('desc-obs').value;
+  if (!obs) {
+    mostrarMsg('desc-msg', 'alerta', 'OBSERVACOES OBRIGATORIAS NO DESCARTE');
+    return;
+  }
+
+  var qtyDescarte = parseInt(document.getElementById('desc-qty').value) || 1;
+  var qtyAtual    = parseInt(ferramenta['quantidade']) || 0;
+  var novaQty     = qtyAtual - qtyDescarte;
+  if (novaQty < 0) novaQty = 0;
+
+  var dados = {
+    action:      'logDescarte',
+    toolCode:    ferramenta['codigo'],
+    qtyDescarte: qtyDescarte,
+    novaQty:     novaQty,
+    motivo:      document.getElementById('desc-motivo').value,
+    user:        document.getElementById('desc-operador').value || usuarioLogado.nome,
+    obs:         obs,
+    timestamp:   new Date().toISOString()
+  };
+
+  mostrarMsg('desc-msg', 'alerta', 'ENVIANDO...');
+  enviarDescarte(dados);
+}
+
+// ══════════════════════════════════════════════════════
+//  ENVIO PARA O APPS SCRIPT (XMLHttpRequest - IE compativel)
+// ══════════════════════════════════════════════════════
+function enviarOperacao(dados, prefixo) {
+  // Monta o JSON com os dados e envia via GET (parametro "data")
+  var payload = {
+    action:          dados.action2,
+    toolCode:        dados.toolCode,
+    line:            dados.line        || '',
+    op:              dados.op          || '',
+    user:            dados.user        || '',
+    shift:           dados.shift       || '',
+    qty:             dados.qty         || 0,
+    obs:             dados.obs         || '',
+    checklistResult: dados.checklistResult || null,
+    checklistItems:  dados.checklistItems  ? JSON.parse(dados.checklistItems) : [],
+    timestamp:       dados.timestamp
+  };
+
+  var url = SCRIPT_URL +
+    '?action=logMovement' +
+    '&data=' + encodeURIComponent(JSON.stringify(payload));
+
+  fazerGet(url, function(resposta) {
+    if (resposta && resposta.status == 'ok') {
+      var novoStatus = resposta.novoStatus || '';
+      var msgExtra = '';
+      if (novoStatus == 'Disponivel' || novoStatus == 'Dispon\u00edvel') {
+        msgExtra = ' | Ferramenta liberada ao almoxarifado';
+      } else if (novoStatus == 'Checklist Pendente') {
+        msgExtra = ' | AGUARDA CHECKLIST';
+      } else if (novoStatus == 'Bloqueada') {
+        msgExtra = ' | FERRAMENTA BLOQUEADA';
+      }
+      mostrarConfirmacao('OPERACAO REGISTRADA COM SUCESSO!' + msgExtra);
+    } else {
+      var errMsg = (resposta && resposta.error) ? resposta.error : 'Erro desconhecido';
+      mostrarMsg(prefixo + '-msg', 'erro', 'ERRO: ' + errMsg);
+    }
+  });
+}
+
+function enviarDescarte(dados) {
+  var url = SCRIPT_URL +
+    '?action=logDescarte' +
+    '&data=' + encodeURIComponent(JSON.stringify(dados));
+
+  fazerGet(url, function(resposta) {
+    if (resposta && resposta.status == 'ok') {
+      var msg = 'DESCARTE REGISTRADO! Qtde restante: ' + resposta.novaQty;
+      if (resposta.alertaEstoqueMinimo) {
+        msg += ' | ALERTA: ESTOQUE ABAIXO DO MINIMO! Solicitar reposicao.';
+      }
+      mostrarConfirmacao(msg);
+    } else {
+      var errMsg = (resposta && resposta.error) ? resposta.error : 'Erro desconhecido';
+      mostrarMsg('desc-msg', 'erro', 'ERRO: ' + errMsg);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  HTTP GET compativel com IE (XMLHttpRequest)
+// ══════════════════════════════════════════════════════
+function fazerGet(url, callback) {
+  var xhr;
+  try {
+    xhr = new XMLHttpRequest();
+  } catch(e) {
+    try { xhr = new ActiveXObject('Msxml2.XMLHTTP'); } catch(e2) {
+      try { xhr = new ActiveXObject('Microsoft.XMLHTTP'); } catch(e3) {
+        callback(null);
+        return;
+      }
+    }
+  }
+
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 200) {
+        try {
+          // IE nao tem JSON.parse nativo em versoes antigas
+          var dados = parseJSON(xhr.responseText);
+          callback(dados);
+        } catch(e) {
+          callback(null);
+        }
+      } else {
+        callback(null);
+      }
+    }
+  };
+  xhr.send(null);
+}
+
+// JSON.parse compativel com IE antigo
+function parseJSON(str) {
+  if (typeof JSON !== 'undefined' && JSON.parse) {
+    return JSON.parse(str);
+  }
+  // Fallback basico para IE muito antigo (nao recomendado em producao)
+  return eval('(' + str + ')');
+}
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+function mostrarMsg(id, tipo, texto) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var cls = 'msg-ok';
+  if (tipo == 'erro')   cls = 'msg-erro';
+  if (tipo == 'alerta') cls = 'msg-alerta';
+  el.innerHTML = '<div class="' + cls + '">' + texto + '</div>';
+}
+
+function mostrarConfirmacao(texto) {
+  var el = document.getElementById('conf-msg');
+  if (el) el.innerHTML = texto;
+  irParaTela('tela-confirmacao');
+}
+</script>
+
+</body>
+</html>
