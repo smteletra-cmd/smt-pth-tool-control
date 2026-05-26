@@ -1149,34 +1149,6 @@
           </div>
         </div>
 
-        <!-- ESTOQUE ABAIXO DO MÍNIMO -->
-        <div class="card" id="dash-card-estoque-minimo">
-          <div class="card-header">
-            <span class="card-title">🔴 FERRAMENTAS ABAIXO DO ESTOQUE MÍNIMO <span class="cn">低于最低库存的工具</span></span>
-            <button class="btn-secondary" style="padding:4px 12px;font-size:11px" onclick="navigate('compras')">🛒 IR PARA COMPRAS · 前往采购</button>
-          </div>
-          <div style="overflow:auto">
-            <table class="data-table" id="dash-estoque-minimo-table">
-              <thead>
-                <tr>
-                  <th>FERRAMENTA<span class="cn">工具</span></th>
-                  <th>TIPO<span class="cn">类型</span></th>
-                  <th>ESTOQUE ATUAL<span class="cn">当前库存</span></th>
-                  <th>ESTOQUE MÍNIMO<span class="cn">最低库存</span></th>
-                  <th>DÉFICIT<span class="cn">缺口</span></th>
-                  <th>FORNECEDOR<span class="cn">供应商</span></th>
-                  <th>LEAD TIME<span class="cn">交货周期</span></th>
-                  <th>STATUS COMPRA<span class="cn">采购状态</span></th>
-                  <th>AÇÃO<span class="cn">操作</span></th>
-                </tr>
-              </thead>
-              <tbody id="dash-estoque-minimo-body">
-                <tr><td colspan="9" class="empty-state"><span class="icon">✅</span>Todos os estoques OK · 所有库存正常</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div class="card">
           <div class="card-header">
             <span class="card-title">⚠️ FERRAMENTAS PRÓXIMAS DO LIMITE <span class="cn">接近使用寿命的工具</span></span>
@@ -1382,7 +1354,7 @@
             <select id="filter-type" onchange="filterTools()"
               style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
               <option value="">所有类型 · Todos tipos</option>
-              <option>Wave Tray</option><option>Parafusadeira</option><option>Pinboard AUTO FCT</option><option>Pinboard FCT OLD</option><option>Gabarito</option><option>Stencil</option><option>Rodo</option><option>Slot</option>
+              <option>Wave Tray</option><option>Parafusadeira</option><option>Pinboard AUTO FCT</option><option>Pinboard FCT OLD</option><option>Gabarito</option>
             </select>
             <select id="filter-status" onchange="filterTools()"
               style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
@@ -2463,15 +2435,6 @@ function renderWearTable(tools){
     <td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div><span class="progress-pct ${cls==='danger'?'text-danger':'text-warn'}">${pct}%</span></div></td>
     <td class="text-dim text-xs">—</td>
     <td><button class="btn-primary" style="padding:4px 10px;font-size:11px" onclick="quickScan('${t.code}')">📷 扫码</button></td></tr>`;
-  }).join('');
-}
-
-async function renderRecentHistory(){
-  const body=document.getElementById('dash-recent-body');if(!body)return;
-  const api=await apiCall('getHistory',{limit:8});
-  const rows=(api&&api.data&&api.data.length)?api.data.slice(0,8).map(r=>({dt:String(r.data_hora||'').substring(0,16),tool:r.codigo_ferramenta,action:r.acao,user:r.operador,line:r.linha,op:r.op})):MOCK_HISTORY.slice(0,8);
-  body.innerHTML=rows.map(h=>`<tr><td class="mono text-xs">${h.dt}</td><td class="highlight">${h.tool}</td><td>${actionBadge(h.action)}</td><td>${h.user||'—'}</td></tr>`).join('')||'<tr><td colspan="4" class="empty-state">无记录</td></tr>';
-}
 function renderEstoqueMinimoDash() {
   const body = document.getElementById('dash-estoque-minimo-body');
   if(!body) return;
@@ -2505,7 +2468,16 @@ function renderEstoqueMinimoDash() {
   }).join('');
 }
 
+  }).join('');
+}
+
 async function renderRecentHistory(){
+  const body=document.getElementById('dash-recent-body');if(!body)return;
+  const api=await apiCall('getHistory',{limit:8});
+  const rows=(api&&api.data&&api.data.length)?api.data.slice(0,8).map(r=>({dt:String(r.data_hora||'').substring(0,16),tool:r.codigo_ferramenta,action:r.acao,user:r.operador,line:r.linha,op:r.op})):MOCK_HISTORY.slice(0,8);
+  body.innerHTML=rows.map(h=>`<tr><td class="mono text-xs">${h.dt}</td><td class="highlight">${h.tool}</td><td>${actionBadge(h.action)}</td><td>${h.user||'—'}</td></tr>`).join('')||'<tr><td colspan="4" class="empty-state">无记录</td></tr>';
+}
+
 const ACTION_CN = {RETIRADA:'领用',DEVOLUÇÃO:'归还',MANUTENÇÃO:'维护',BLOQUEIO:'封锁',CHECKLIST:'检查',DESCARTE:'报废',CADASTRO:'登记'};
 
 function actionBadge(action){
