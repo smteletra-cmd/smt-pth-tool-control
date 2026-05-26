@@ -1608,18 +1608,21 @@
                     <label>QUANTIDADE PRODUZIDA</label>
                     <input type="number" id="oper-qty" placeholder="0" min="0">
                   </div>
-                  
-                  <div class="form-field field-devolucao" id="qty-parcial-field" style="display:none">
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+
+                  <!-- CAMPO QUANTIDADE PARCIAL (devolução com interrupção) -->
+                  <div class="form-field" id="qty-parcial-field" style="display:none">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:rgba(255,170,0,0.05);border:1px solid rgba(255,170,0,0.2);border-radius:2px;padding:8px">
                       <input type="checkbox" id="chk-parcial" onchange="toggleQtdParcial(this)"
-                        style="width:18px;height:18px;cursor:pointer">
-                      <label style="margin:0;font-size:12px;color:var(--accent-warn);cursor:pointer"
-                        onclick="document.getElementById('chk-parcial').click()">
-                        ⚠ PRODUÇÃO INTERROMPIDA — informar quantidade parcial
+                        style="width:18px;height:18px;cursor:pointer;flex-shrink:0">
+                      <label for="chk-parcial" style="margin:0;font-size:12px;color:var(--accent-warn);cursor:pointer;line-height:1.3">
+                        ⚠ PRODUÇÃO INTERROMPIDA — informar quantidade parcial produzida
                       </label>
                     </div>
                     <input type="number" id="oper-qty-parcial" placeholder="quantidade produzida até o momento"
                       min="0" style="display:none" oninput="sincronizarQtd(this)">
+                    <div id="qty-parcial-hint" style="display:none;font-size:10px;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px">
+                      Este valor será usado no cálculo de ciclos da ferramenta
+                    </div>
                   </div>
 
                   <!-- CAMPOS SOMENTE DESCARTE -->
@@ -2610,13 +2613,13 @@ async function getTools() {
 const ROLE_PERMISSIONS = {
   operador: {
     label: 'OPERADOR',
-    pages: ['dashboard','bipar','checklist','smtlines','pthlines'],
+    pages: ['dashboard','bipar','checklist'],
     canCadastrar: false,
     navClasses: []   // não ativa nenhuma classe extra
   },
   lider: {
     label: 'LÍDER PROD.',
-    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','aprovacoes','historico','usuarios','relatorios'],
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],
     canCadastrar: true,
     navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']
   },
@@ -2640,7 +2643,7 @@ const ROLE_PERMISSIONS = {
   },
   engenharia: {
     label: 'ENGENHARIA',
-    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','aprovacoes','checklists-cad','usuarios','relatorios'],
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios'],
     canCadastrar: true,
     navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']
   },
@@ -2913,7 +2916,7 @@ async function loadDashboard() {
 
 function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
 
- 
+async 
 function renderWearTable(tools) {
   const body = document.getElementById('wear-body');
   if (!body) return;
@@ -2942,7 +2945,7 @@ function renderWearTable(tools) {
   }).join('');
 }
 
-async function renderRecentHistory() {
+function renderRecentHistory() {
   const body = document.getElementById('dash-recent-body');
   if (!body) return;
   // Tenta buscar do Sheets, fallback para MOCK
@@ -3063,6 +3066,13 @@ function setOperType(type, el) {
   document.querySelectorAll('.field-descarte').forEach(f => {
     f.style.display = (type === 'descarte') ? '' : 'none';
   });
+
+  // Campo de produção parcial — só na devolução
+  const parcialField = document.getElementById('qty-parcial-field');
+  if (parcialField) parcialField.style.display = (type === 'devolucao') ? '' : 'none';
+  // Reseta o checkbox ao trocar de operação
+  const chkParcial = document.getElementById('chk-parcial');
+  if (chkParcial && chkParcial.checked) { chkParcial.checked = false; toggleQtdParcial(chkParcial); }
 
   const btnLabel = {
     retirada: '✓ CONFIRMAR RETIRADA',
@@ -4183,6 +4193,35 @@ async function decidirDescarte(decisao) {
     errEl.textContent = '✗ ' + (result?.error || 'Erro ao processar');
     errEl.style.display = 'block';
   }
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  QUANTIDADE PARCIAL (produção interrompida)
+// ══════════════════════════════════════════════════════════
+function toggleQtdParcial(chk) {
+  const campo = document.getElementById('oper-qty-parcial');
+  const hint  = document.getElementById('qty-parcial-hint');
+  if (chk.checked) {
+    campo.style.display = '';
+    hint.style.display  = '';
+    campo.focus();
+    // Pré-preenche com 0 para o operador digitar
+    if (!campo.value) campo.value = '';
+  } else {
+    campo.style.display = 'none';
+    hint.style.display  = 'none';
+    campo.value = '';
+    // Zera a qty principal quando desmarca
+    const qtyPrincipal = document.getElementById('oper-qty');
+    if (qtyPrincipal) qtyPrincipal.value = 0;
+  }
+}
+
+function sincronizarQtd(input) {
+  // Sincroniza o valor parcial com o campo principal (usado no cálculo de ciclos)
+  const qtyPrincipal = document.getElementById('oper-qty');
+  if (qtyPrincipal) qtyPrincipal.value = input.value;
 }
 
 </script>
