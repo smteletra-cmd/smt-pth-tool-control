@@ -2164,6 +2164,11 @@ async function doLogin() {
     const role = rawRole==='administrador'?'admin':rawRole;
     const perms = ROLE_PERMISSIONS[role]||ROLE_PERMISSIONS['operador'];
     currentUser = {name:String(userData.nome||userData['NOME']||loginInput),login:loginInput,role,roleLabel:perms.label,funcao:String(userData.funcao||''),perms};
+    // Salva sessão no sessionStorage para sobreviver ao F5
+    sessionStorage.setItem('smt_session', JSON.stringify({
+      name:currentUser.name, login:currentUser.login,
+      role:currentUser.role, roleLabel:currentUser.roleLabel, funcao:currentUser.funcao
+    }));
     _applyRoleUI(currentUser);
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('active');
@@ -2189,6 +2194,7 @@ function _applyRoleUI(user){
 function _canAccess(page){if(!currentUser)return false;return currentUser.perms.pages.includes(page);}
 
 function doLogout(){
+  sessionStorage.removeItem('smt_session');
   document.getElementById('app').classList.remove('active');
   document.getElementById('login-screen').style.display='flex';
   currentUser=null; clearInterval(refreshTimer);
@@ -2666,13 +2672,89 @@ function toast(msg,type='info'){
   setTimeout(()=>el.remove(),4500);
 }
 
+// ══════════════════════════════════════════════════════════
+//  AUTO-REFRESH SILENCIOSO — 10s, zero flash na tela
+//  Só re-renderiza se os dados realmente mudaram (hash diff)
+// ══════════════════════════════════════════════════════════
+let _lastToolsHash='', _lastHistHash='', _bgRefreshing=false;
+function _hashData(obj){try{return JSON.stringify(obj);}catch(e){return '';}}
+
+async function _silentRefresh(){
+  if(_bgRefreshing)return;
+  _bgRefreshing=true;
+  try{
+    const api=await apiCall('getTools');
+    let newTools=null;
+    if(api&&api.data){
+      newTools=api.data.map(t=>({
+        code:t.codigo,name:t.nome,type:t.tipo,qty:t.quantidade,
+        cycles:t.ciclos,maxCycles:t.max_ciclos,status:t.status,
+        location:t.localizacao,checklist:t.checklist_template,product:t.produto,
+        ppc:t.pecas_por_ciclo,lote:t.controle_lote==='Sim',
+        checklistPendente:t.checklist_pendente===true||t.checklist_pendente==='TRUE'
+      }));
+    }
+    const newHash=_hashData(newTools||toolsData);
+    if(newHash!==_lastToolsHash){
+      _lastToolsHash=newHash;
+      if(newTools)toolsData=newTools;
+      const disp=toolsData.filter(t=>t.status==='Disponível').length;
+      const uso=toolsData.filter(t=>t.status==='Em Uso').length;
+      const man=toolsData.filter(t=>t.status==='Manutenção').length;
+      const chkPnd=toolsData.filter(t=>t.status==='Checklist Pendente').length;
+      const bloc=toolsData.filter(t=>t.status==='Bloqueada').length;
+      const critical=toolsData.filter(t=>t.maxCycles>0&&(t.cycles/t.maxCycles)>=CONFIG.wearAlert/100).length;
+      const alertCount=critical+bloc+chkPnd;
+      setText('kpi-disponivel',disp);setText('kpi-alertas',alertCount);setText('kpi-em-uso',uso);
+      const nb1=document.getElementById('nav-badge-check');if(nb1)nb1.textContent=chkPnd>0?chkPnd:'';
+      const nb2=document.getElementById('nav-badge-alertas');if(nb2)nb2.textContent=alertCount>0?alertCount:'';
+      if(currentPage==='dashboard'){setText('dash-total',toolsData.length);setText('dash-disp',disp);setText('dash-uso',uso);setText('dash-man',man);setText('dash-alert',alertCount);renderWearTable(toolsData);await renderRecentHistory();_srfDashLines();_srfAlertStrip();}
+      if(currentPage==='ferramentas')renderToolsTable(toolsData);
+      if(currentPage==='bipar')_srfBiparLists();
+      if(currentPage==='checklist')_srfChecklistPending();
+      if(currentPage==='smtlines')loadLines('smt');
+      if(currentPage==='pthlines')loadLines('pth');
+    }
+    if(currentPage==='dashboard'){
+      const apiH=await apiCall('getHistory',{limit:8});
+      const hHash=_hashData(apiH);
+      if(hHash!==_lastHistHash){_lastHistHash=hHash;await renderRecentHistory();}
+    }
+    await atualizarBadgeAprovacoes();
+  }catch(e){console.warn('[AutoRefresh]',e);}
+  _bgRefreshing=false;
+}
+
+function _srfDashLines(){
+  const g=document.getElementById('dash-lines-grid');if(!g)return;
+  const smt=['SMT-01','SMT-02','SMT-03','SMT-04'],pth=['PTH-01','PTH-02','PTH-03','PTH-04'];
+  g.innerHTML=[...smt,...pth].map(l=>{const lt=toolsData.filter(t=>t.location===l);return renderLineCard(l,lt,smt.includes(l)?'SMT':'PTH');}).join('');
+}
+function _srfAlertStrip(){
+  const el=document.getElementById('alerts-strip-container');if(!el)return;
+  const pend=toolsData.filter(t=>t.status==='Checklist Pendente');
+  const crit=toolsData.filter(t=>t.maxCycles>0&&(t.cycles/t.maxCycles)>=CONFIG.wearCrit/100);
+  let h='';
+  pend.forEach(t=>{h+=`<div class="alert-strip warn"><span class="icon">⚠️</span><span class="msg"><strong>CHECKLIST PENDENTE · 待检</strong><span class="cn">工具 ${t.code} 归还后未完成检查，无法领用</span> — ${t.name}</span><button class="btn-primary" style="padding:4px 12px;font-size:11px;margin-left:auto" onclick="navigate('checklist')">检查 · INSPECIONAR</button></div>`;});
+  crit.forEach(t=>{const pct=Math.round(t.cycles/t.maxCycles*100);h+=`<div class="alert-strip"><span class="icon">🔴</span><span class="msg"><strong>磨损严重 DESGASTE CRÍTICO ${pct}%</strong><span class="cn">${t.name} (${t.code}) 接近使用寿命上限</span></span><span class="time">${t.cycles.toLocaleString()} / ${t.maxCycles.toLocaleString()}</span></div>`;});
+  el.innerHTML=h||'<div class="empty-state" style="padding:14px"><span class="icon">✅</span>无活跃警报 · Sem alertas ativos</div>';
+}
+function _srfBiparLists(){
+  const av=toolsData.filter(t=>t.status==='Disponível'),iu=toolsData.filter(t=>t.status==='Em Uso');
+  const ab=document.getElementById('avail-body'),ib=document.getElementById('inuse-body');
+  if(ab)ab.innerHTML=av.length?av.map(t=>`<tr><td class="mono text-xs">${t.code}</td><td class="highlight">${t.name}</td><td><span class="badge disponivel">OK</span></td></tr>`).join(''):'<tr><td colspan="3" class="empty-state">无可用工具</td></tr>';
+  if(ib)ib.innerHTML=iu.length?iu.map(t=>`<tr><td class="mono text-xs">${t.code}</td><td class="highlight">${t.name}</td><td class="mono text-xs">${t.location}</td></tr>`).join(''):'<tr><td colspan="3" class="empty-state">无使用中工具</td></tr>';
+}
+function _srfChecklistPending(){
+  const p=toolsData.filter(t=>t.status==='Checklist Pendente');
+  const b=document.getElementById('pending-check-body');if(!b)return;
+  b.innerHTML=p.length?p.map(t=>`<tr><td class="mono text-xs">${t.code}</td><td class="highlight">${t.name}</td><td><span class="badge inspecao">待检</span></td><td><button class="btn-primary" style="padding:3px 10px;font-size:11px" onclick="iniciarChecklistPendente('${t.code}')">✓ 检查</button></td></tr>`).join(''):'<tr><td colspan="4" class="empty-state"><span class="icon">✅</span>无待检工具</td></tr>';
+}
+
 function startAutoRefresh(){
   clearInterval(refreshTimer);
-  refreshTimer=setInterval(()=>{
-    if(currentPage==='dashboard') loadDashboard();
-    if(currentPage==='bipar') loadBiparPage();
-    if(currentPage==='checklist') loadChecklistPage();
-  },CONFIG.refreshInterval);
+  _lastToolsHash=_hashData(toolsData);
+  refreshTimer=setInterval(_silentRefresh,10000);
 }
 
 const ROLE_LABELS={operador:'操作员',lider:'组长',manutencao:'维护',almoxarifado:'仓库',compras:'采购',engenharia:'工程',admin:'管理员'};
@@ -2747,6 +2829,35 @@ function toggleQtdParcial(chk){
   if(chk.checked){campo.style.display='';if(hint)hint.style.display='';campo.focus();campo.value='';}
   else{campo.style.display='none';if(hint)hint.style.display='none';campo.value='';const qtyPrincipal=document.getElementById('oper-qty');if(qtyPrincipal)qtyPrincipal.value=0;}
 }
+
+// ══════════════════════════════════════════════════════════
+//  RESTAURAR SESSÃO AO RECARREGAR (F5 / Ctrl+R)
+//  Lê sessionStorage e faz login automático sem precisar
+//  da senha — sessão dura enquanto a aba estiver aberta.
+// ══════════════════════════════════════════════════════════
+(function restoreSession(){
+  try{
+    const saved=sessionStorage.getItem('smt_session');
+    if(!saved)return;
+    const s=JSON.parse(saved);
+    if(!s||!s.role||!s.login)return;
+    const perms=ROLE_PERMISSIONS[s.role]||ROLE_PERMISSIONS['operador'];
+    currentUser={name:s.name,login:s.login,role:s.role,roleLabel:s.roleLabel||perms.label,funcao:s.funcao||'',perms};
+    _applyRoleUI(currentUser);
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').classList.add('active');
+    startClock();
+    loadConfig();
+    // Pequeno delay para DOM estar pronto
+    setTimeout(()=>{
+      navigate(perms.pages[0]||'dashboard');
+      startAutoRefresh();
+    },100);
+  }catch(e){
+    console.warn('[Session restore]',e);
+    sessionStorage.removeItem('smt_session');
+  }
+})();
 
 function sincronizarQtd(input){const qtyPrincipal=document.getElementById('oper-qty');if(qtyPrincipal)qtyPrincipal.value=input.value;}
 </script>
