@@ -2597,13 +2597,13 @@ async function getTools() {
 const ROLE_PERMISSIONS = {
   operador: {
     label: 'OPERADOR',
-    pages: ['dashboard','bipar','checklist'],
+    pages: ['dashboard','bipar','checklist','smtlines','pthlines'],
     canCadastrar: false,
     navClasses: []   // não ativa nenhuma classe extra
   },
   lider: {
     label: 'LÍDER PROD.',
-    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','relatorios'],
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','aprovacoes','historico','usuarios','relatorios'],
     canCadastrar: true,
     navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']
   },
@@ -2627,13 +2627,13 @@ const ROLE_PERMISSIONS = {
   },
   engenharia: {
     label: 'ENGENHARIA',
-    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','relatorios'],
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','aprovacoes','checklists-cad','usuarios','relatorios'],
     canCadastrar: true,
     navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']
   },
   admin: {
     label: 'ADMINISTRADOR',
-    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','relatorios','usuarios','config'],
+    pages: ['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config'],
     canCadastrar: true,
     navClasses: ['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']
   }
