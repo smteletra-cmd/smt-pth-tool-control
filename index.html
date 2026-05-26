@@ -2945,7 +2945,7 @@ async function renderWearTable(tools) {
   }).join('');
 }
 
-function renderRecentHistory() {
+async function renderRecentHistory() {
   const body = document.getElementById('dash-recent-body');
   if (!body) return;
   // Tenta buscar do Sheets, fallback para MOCK
