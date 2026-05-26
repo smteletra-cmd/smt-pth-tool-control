@@ -993,6 +993,10 @@
           <span class="icon">🟩</span>
           <span class="nav-label">Linhas PTH<span class="cn-nav">PTH生产线</span></span>
         </div>
+        <div class="nav-item nav-role-not-operador" onclick="navigate('gravlines')">
+          <span class="icon">💾</span>
+          <span class="nav-label">Gravadoras FW<span class="cn-nav">固件烧录机</span></span>
+        </div>
         <div class="nav-item" onclick="navigate('checklist')">
           <span class="icon">✅</span>
           <span class="nav-label">Checklist<span class="cn-nav">检查清单</span></span>
@@ -1149,6 +1153,34 @@
           </div>
         </div>
 
+        <!-- ESTOQUE ABAIXO DO MÍNIMO -->
+        <div class="card" id="dash-card-estoque-minimo">
+          <div class="card-header">
+            <span class="card-title">🔴 FERRAMENTAS ABAIXO DO ESTOQUE MÍNIMO <span class="cn">低于最低库存的工具</span></span>
+            <button class="btn-secondary" style="padding:4px 12px;font-size:11px" onclick="navigate('compras')">🛒 IR PARA COMPRAS · 前往采购</button>
+          </div>
+          <div style="overflow:auto">
+            <table class="data-table" id="dash-estoque-minimo-table">
+              <thead>
+                <tr>
+                  <th>FERRAMENTA<span class="cn">工具</span></th>
+                  <th>TIPO<span class="cn">类型</span></th>
+                  <th>ESTOQUE ATUAL<span class="cn">当前库存</span></th>
+                  <th>ESTOQUE MÍNIMO<span class="cn">最低库存</span></th>
+                  <th>DÉFICIT<span class="cn">缺口</span></th>
+                  <th>FORNECEDOR<span class="cn">供应商</span></th>
+                  <th>LEAD TIME<span class="cn">交货周期</span></th>
+                  <th>STATUS COMPRA<span class="cn">采购状态</span></th>
+                  <th>AÇÃO<span class="cn">操作</span></th>
+                </tr>
+              </thead>
+              <tbody id="dash-estoque-minimo-body">
+                <tr><td colspan="9" class="empty-state"><span class="icon">✅</span>Todos os estoques OK · 所有库存正常</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="card-title">⚠️ FERRAMENTAS PRÓXIMAS DO LIMITE <span class="cn">接近使用寿命的工具</span></span>
@@ -1255,6 +1287,7 @@
                       <option value="">Selecione a linha · 选择生产线</option>
                       <option>SMT-01</option><option>SMT-02</option><option>SMT-03</option><option>SMT-04</option>
                       <option>PTH-01</option><option>PTH-02</option><option>PTH-03</option><option>PTH-04</option>
+                      <option>Gravadora Firmware 1</option><option>Gravadora Firmware 2</option><option>Gravadora Firmware 3</option>
                     </select>
                   </div>
                   <div class="form-field field-retirada">
@@ -1354,7 +1387,7 @@
             <select id="filter-type" onchange="filterTools()"
               style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
               <option value="">所有类型 · Todos tipos</option>
-              <option>Wave Tray</option><option>Parafusadeira</option><option>Pinboard AUTO FCT</option><option>Pinboard FCT OLD</option><option>Gabarito</option>
+              <option>Wave Tray</option><option>Parafusadeira</option><option>Pinboard AUTO FCT</option><option>Pinboard FCT OLD</option><option>Gabarito</option><option>Stencil</option><option>Rodo</option><option>Slot</option><option>Carrier</option><option>Feeder Especial</option><option>Outro</option>
             </select>
             <select id="filter-status" onchange="filterTools()"
               style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
@@ -1595,6 +1628,18 @@
           </div>
         </div>
         <div class="line-grid" id="pth-lines-grid"></div>
+      </div>
+
+      <!-- ════ GRAVADORAS FIRMWARE ════ -->
+      <div id="page-gravlines" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">GRAVADORAS DE <span>FIRMWARE</span></div>
+            <div class="cn-title">固件烧录机 · 离线设备 · 不属于SMT/PTH生产线</div>
+            <div class="page-sub text-mono">3 máquinas de gravação de firmware · equipamentos offline</div>
+          </div>
+        </div>
+        <div class="line-grid" id="grav-lines-grid"></div>
       </div>
 
       <!-- ════ IMPORTAÇÃO ════ -->
@@ -2203,6 +2248,11 @@ const MOCK_TOOLS = [
   {code:'PAR-001',name:'Parafusadeira Elétrica 1',type:'Parafusadeira',qty:1,cycles:22000,maxCycles:100000,status:'Disponível',location:'Almoxarifado',checklist:'Parafusadeira',product:'GERAL',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'',leadTime:30,price:850.00,purchaseStatus:''},
   {code:'GAB-001',name:'Gabarito SMT-01',type:'Gabarito',qty:1,cycles:5400,maxCycles:20000,status:'Disponível',location:'Almoxarifado',checklist:'Gabarito',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'',leadTime:60,price:420.00,purchaseStatus:''},
   {code:'GAB-002',name:'Gabarito SMT-03',type:'Gabarito',qty:1,cycles:19200,maxCycles:20000,status:'Bloqueada',location:'Manutenção',checklist:'Gabarito',product:'TV_ABC',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'',leadTime:60,price:420.00,purchaseStatus:''},
+  {code:'SLT-001',name:'Slot Gravadora FW 1',type:'Slot',qty:8,cycles:4200,maxCycles:30000,status:'Disponível',location:'Gravadora Firmware 1',checklist:'Gabarito',product:'FW_MAIN',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:45,price:380.00,purchaseStatus:''},
+  {code:'SLT-002',name:'Slot Gravadora FW 2',type:'Slot',qty:1,cycles:8800,maxCycles:30000,status:'Em Uso',location:'Gravadora Firmware 2',checklist:'Gabarito',product:'FW_MAIN',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:45,price:380.00,purchaseStatus:''},
+  {code:'SLT-003',name:'Slot Gravadora FW 3',type:'Slot',qty:8,cycles:1100,maxCycles:30000,status:'Disponível',location:'Gravadora Firmware 3',checklist:'Gabarito',product:'FW_SEC',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:45,price:380.00,purchaseStatus:''},
+  {code:'RDO-001',name:'Rodo Stencil SMT-01',type:'Rodo',qty:3,cycles:1500,maxCycles:5000,status:'Disponível',location:'Almoxarifado',checklist:'Gabarito',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:30,price:85.00,purchaseStatus:''},
+  {code:'STN-001',name:'Stencil SMT-01',type:'Stencil',qty:2,cycles:3200,maxCycles:15000,status:'Disponível',location:'Almoxarifado',checklist:'Stencil',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'Shenzhen SMT Supplies',leadTime:90,price:1200.00,purchaseStatus:''},
 ];
 
 // Pedidos de compra locais (espelhados na planilha via apiPost)
@@ -2227,12 +2277,12 @@ const IMPORT_STEPS = ['comprado','producao','embarcado','transito','alfandega','
 
 const ROLE_PERMISSIONS = {
   operador:    {label:'OPERADOR · 操作员',pages:['dashboard','bipar','checklist'],canCadastrar:false,navClasses:[]},
-  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
-  manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
-  almoxarifado:{label:'ALMOXARIFADO · 仓库',pages:['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','historico','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']},
+  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
+  manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
+  almoxarifado:{label:'ALMOXARIFADO · 仓库',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']},
   compras:     {label:'COMPRAS · 采购',pages:['dashboard','bipar','checklist','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-suprimentos','nav-role-admin-eng']},
-  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
-  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
+  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
+  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
 };
 
 async function apiCall(action,params={}) {
@@ -2381,6 +2431,7 @@ function navigate(page){
     case 'historico':     loadHistory();break;
     case 'checklists-cad':loadChecklistTemplates();break;
     case 'compras':       loadComprasPage();break;
+    case 'gravlines':     loadLines('grav');break;
     case 'config':        loadConfigPage();break;
     case 'usuarios':      loadUsersPage();break;
     case 'aprovacoes':    loadAprovacoes();break;
@@ -2416,8 +2467,8 @@ async function loadDashboard(){
   renderRecentHistory(); renderWearTable(tools); renderEstoqueMinimoDash(); atualizarBadgeAprovacoes();
   const dashGrid=document.getElementById('dash-lines-grid');
   if(dashGrid){
-    const smtLines=['SMT-01','SMT-02','SMT-03','SMT-04'],pthLines=['PTH-01','PTH-02','PTH-03','PTH-04'];
-    dashGrid.innerHTML=[...smtLines,...pthLines].map(l=>{const lTools=toolsData.filter(t=>t.location===l);return renderLineCard(l,lTools,smtLines.includes(l)?'SMT':'PTH');}).join('');
+    const smtLines=['SMT-01','SMT-02','SMT-03','SMT-04'],pthLines=['PTH-01','PTH-02','PTH-03','PTH-04'],gravLines=['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
+    dashGrid.innerHTML=[...smtLines,...pthLines,...gravLines].map(l=>{const lTools=toolsData.filter(t=>t.location===l);const lt=smtLines.includes(l)?'SMT':pthLines.includes(l)?'PTH':'FIRMWARE';return renderLineCard(l,lTools,lt);}).join('');
   }
 }
 
@@ -2773,15 +2824,22 @@ function exportHistory(){
 
 function renderLineCard(lineName,tools,lineType){
   const emUso=tools.filter(t=>t.status==='Em Uso'),pendente=tools.filter(t=>t.status==='Checklist Pendente');
+  const isFW = lineType==='FIRMWARE';
   const hasWarn=pendente.length>0,dotCls=emUso.length>0?(hasWarn?'warn':''):'off';
-  const statusTxt=emUso.length>0?`${emUso.length} 使用中`:'空闲';
+  const statusTxt=emUso.length>0?`${emUso.length} ${isFW?'slots em uso':'使用中'}`:isFW?'offline':'空闲';
   return `<div class="line-card"><div class="line-header"><div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div><div class="line-status"><div class="line-dot ${dotCls}"></div><span style="font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">${statusTxt}</span></div></div><div class="line-body"><div class="line-info-row"><span class="lk">类型 · TIPO</span><span class="lv">${lineType}</span></div><div class="line-info-row"><span class="lk">使用中工具 · EM USO</span><span class="lv">${emUso.length}</span></div>${pendente.length>0?`<div class="line-info-row"><span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span><span class="lv" style="color:var(--accent-warn)">${pendente.length}</span></div>`:''} ${emUso.length>0?`<div class="line-tools"><div class="line-tools-label">当前工具 · FERRAMENTAS ATIVAS</div><div class="tool-chip-row">${emUso.slice(0,6).map(t=>`<span class="tool-chip">${t.code}</span>`).join('')}${emUso.length>6?`<span class="tool-chip">+${emUso.length-6}</span>`:''}</div></div>`:''}</div></div>`;
 }
 
 function loadLines(type){
-  const lines=type==='smt'?['SMT-01','SMT-02','SMT-03','SMT-04']:['PTH-01','PTH-02','PTH-03','PTH-04'];
+  const lines = type==='smt'
+    ? ['SMT-01','SMT-02','SMT-03','SMT-04']
+    : type==='pth'
+    ? ['PTH-01','PTH-02','PTH-03','PTH-04']
+    : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
-  grid.innerHTML=lines.map(l=>{const tools=toolsData.filter(t=>t.location===l);return renderLineCard(l,tools,type.toUpperCase());}).join('');
+  if(!grid) return;
+  const lineType = type==='smt' ? 'SMT' : type==='pth' ? 'PTH' : 'FIRMWARE';
+  grid.innerHTML=lines.map(l=>{const tools=toolsData.filter(t=>t.location===l);return renderLineCard(l,tools,lineType);}).join('');
 }
 
 function loadImports(){
@@ -3169,8 +3227,15 @@ async function _silentRefresh(){
 
 function _srfDashLines(){
   const g=document.getElementById('dash-lines-grid');if(!g)return;
-  const smt=['SMT-01','SMT-02','SMT-03','SMT-04'],pth=['PTH-01','PTH-02','PTH-03','PTH-04'];
-  g.innerHTML=[...smt,...pth].map(l=>{const lt=toolsData.filter(t=>t.location===l);return renderLineCard(l,lt,smt.includes(l)?'SMT':'PTH');}).join('');
+  const smt=['SMT-01','SMT-02','SMT-03','SMT-04'];
+  const pth=['PTH-01','PTH-02','PTH-03','PTH-04'];
+  const grav=['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
+  const all=[...smt,...pth,...grav];
+  g.innerHTML=all.map(l=>{
+    const lt=toolsData.filter(t=>t.location===l);
+    const lType=smt.includes(l)?'SMT':pth.includes(l)?'PTH':'FIRMWARE';
+    return renderLineCard(l,lt,lType);
+  }).join('');
 }
 function _srfAlertStrip(){
   const el=document.getElementById('alerts-strip-container');if(!el)return;
