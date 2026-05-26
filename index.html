@@ -1149,6 +1149,34 @@
           </div>
         </div>
 
+        <!-- ESTOQUE ABAIXO DO MÍNIMO -->
+        <div class="card" id="dash-card-estoque-minimo">
+          <div class="card-header">
+            <span class="card-title">🔴 FERRAMENTAS ABAIXO DO ESTOQUE MÍNIMO <span class="cn">低于最低库存的工具</span></span>
+            <button class="btn-secondary" style="padding:4px 12px;font-size:11px" onclick="navigate('compras')">🛒 IR PARA COMPRAS · 前往采购</button>
+          </div>
+          <div style="overflow:auto">
+            <table class="data-table" id="dash-estoque-minimo-table">
+              <thead>
+                <tr>
+                  <th>FERRAMENTA<span class="cn">工具</span></th>
+                  <th>TIPO<span class="cn">类型</span></th>
+                  <th>ESTOQUE ATUAL<span class="cn">当前库存</span></th>
+                  <th>ESTOQUE MÍNIMO<span class="cn">最低库存</span></th>
+                  <th>DÉFICIT<span class="cn">缺口</span></th>
+                  <th>FORNECEDOR<span class="cn">供应商</span></th>
+                  <th>LEAD TIME<span class="cn">交货周期</span></th>
+                  <th>STATUS COMPRA<span class="cn">采购状态</span></th>
+                  <th>AÇÃO<span class="cn">操作</span></th>
+                </tr>
+              </thead>
+              <tbody id="dash-estoque-minimo-body">
+                <tr><td colspan="9" class="empty-state"><span class="icon">✅</span>Todos os estoques OK · 所有库存正常</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="card-title">⚠️ FERRAMENTAS PRÓXIMAS DO LIMITE <span class="cn">接近使用寿命的工具</span></span>
@@ -2413,7 +2441,7 @@ async function loadDashboard(){
     criticos.forEach(t=>{const pct=Math.round(t.cycles/t.maxCycles*100);html+=`<div class="alert-strip"><span class="icon">🔴</span><span class="msg"><strong>磨损严重 DESGASTE CRÍTICO ${pct}%</strong><span class="cn">${t.name} (${t.code}) 接近使用寿命上限</span></span><span class="time">${t.cycles.toLocaleString()} / ${t.maxCycles.toLocaleString()}</span></div>`;});
     alertsEl.innerHTML=html||'<div class="empty-state" style="padding:14px"><span class="icon">✅</span>无活跃警报 · Sem alertas ativos</div>';
   }
-  renderRecentHistory(); renderWearTable(tools); atualizarBadgeAprovacoes();
+  renderRecentHistory(); renderWearTable(tools); renderEstoqueMinimoDash(); atualizarBadgeAprovacoes();
   const dashGrid=document.getElementById('dash-lines-grid');
   if(dashGrid){
     const smtLines=['SMT-01','SMT-02','SMT-03','SMT-04'],pthLines=['PTH-01','PTH-02','PTH-03','PTH-04'];
@@ -2444,7 +2472,40 @@ async function renderRecentHistory(){
   const rows=(api&&api.data&&api.data.length)?api.data.slice(0,8).map(r=>({dt:String(r.data_hora||'').substring(0,16),tool:r.codigo_ferramenta,action:r.acao,user:r.operador,line:r.linha,op:r.op})):MOCK_HISTORY.slice(0,8);
   body.innerHTML=rows.map(h=>`<tr><td class="mono text-xs">${h.dt}</td><td class="highlight">${h.tool}</td><td>${actionBadge(h.action)}</td><td>${h.user||'—'}</td></tr>`).join('')||'<tr><td colspan="4" class="empty-state">无记录</td></tr>';
 }
+function renderEstoqueMinimoDash() {
+  const body = document.getElementById('dash-estoque-minimo-body');
+  if(!body) return;
+  const baixo = getBelowMinStock();
+  if(!baixo.length) {
+    body.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="icon">✅</span>Todos os estoques OK · 所有库存正常</td></tr>';
+    return;
+  }
+  body.innerHTML = baixo.map(t => {
+    const qty    = parseInt(t.qty)||0;
+    const min    = parseInt(t.minStock)||0;
+    const deficit = min - qty;
+    const temPedido = hasOpenPurchase(t.code);
+    const statusCompra = temPedido
+      ? '<span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:2px 8px;font-size:10px;color:#92400e;font-family:var(--font-mono)">📋 PEDIDO ABERTO · 已有订单</span>'
+      : '<span style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:2px 8px;font-size:10px;color:#991b1b;font-family:var(--font-mono)">⚠ SEM PEDIDO · 无订单</span>';
+    const acao = temPedido
+      ? `<button class="btn-secondary" style="padding:3px 10px;font-size:11px;color:#92400e;border-color:#fde68a" onclick="navigate('compras')">📋 Ver Pedido · 查看</button>`
+      : `<button class="btn-danger" style="padding:3px 10px;font-size:11px" onclick="openPurchaseModal('${t.code}');navigate('compras')">🛒 Comprar · 采购</button>`;
+    return `<tr>
+      <td class="highlight">${t.name}</td>
+      <td><span class="badge inspecao">${t.type}</span></td>
+      <td class="mono" style="color:var(--accent-danger);font-weight:700">${qty}</td>
+      <td class="mono">${min}</td>
+      <td class="mono" style="color:var(--accent-danger);font-weight:700">-${deficit}</td>
+      <td class="text-xs">${t.supplier||'—'}</td>
+      <td class="mono text-xs">${t.leadTime ? t.leadTime+' dias' : '—'}</td>
+      <td>${statusCompra}</td>
+      <td>${acao}</td>
+    </tr>`;
+  }).join('');
+}
 
+async function renderRecentHistory(){
 const ACTION_CN = {RETIRADA:'领用',DEVOLUÇÃO:'归还',MANUTENÇÃO:'维护',BLOQUEIO:'封锁',CHECKLIST:'检查',DESCARTE:'报废',CADASTRO:'登记'};
 
 function actionBadge(action){
