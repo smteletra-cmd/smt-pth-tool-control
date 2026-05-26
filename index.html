@@ -2539,10 +2539,15 @@ async function doLogin() {
         // Procura usuário + senha na planilha
         // Colunas: nome | usuario | senha | funcao | role | ativo
         const found = api.data.find(u => {
-          const uLogin = String(u.usuario || u.USER || '').toLowerCase().trim();
-          const uSenha = String(u.senha   || '').trim();
-          const uAtivo = String(u.ativo   || 'SIM').toUpperCase();
-          return uLogin === loginInput.toLowerCase() && uSenha === passInput && uAtivo !== 'NAO';
+          // Busca o campo usuário com ou sem acento, em qualquer case
+          const uLogin = String(
+            u['usuário'] || u['usuario'] || u['USUÁRIO'] || u['USER'] || u['user'] || ''
+          ).toLowerCase().trim();
+          const uSenha = String(u.senha || u['SENHA'] || '').trim();
+          // Ativo: aceita Sim, SIM, sim, S, true
+          const ativoRaw = String(u.ativo || u['ATIVO'] || 'SIM').toUpperCase().trim();
+          const uAtivo = ativoRaw.startsWith('S') || ativoRaw === 'TRUE';
+          return uLogin === loginInput.toLowerCase() && uSenha === passInput && uAtivo;
         });
         if (found) userData = found;
       }
@@ -2562,12 +2567,19 @@ async function doLogin() {
       return;
     }
 
-    // Login bem-sucedido
-    const role      = String(userData.role || 'operador').toLowerCase();
+    // Login bem-sucedido — normaliza o role (pode vir como 'Admin', 'ADMIN', etc.)
+    const rawRole   = String(
+      userData.role || userData['ROLE'] || userData['perfil'] || 'operador'
+    ).toLowerCase().trim();
+    // Garante que 'administrador' também mapeia para 'admin'
+    const role      = rawRole === 'administrador' ? 'admin' : rawRole;
     const perms     = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['operador'];
 
     currentUser = {
-      name:     String(userData.nome || userData.USER || loginInput),
+      name:     String(
+        userData.nome || userData['NOME'] || 
+        userData.USER || userData.user || loginInput
+      ),
       login:    loginInput,
       role:     role,
       roleLabel: perms.label,
@@ -2607,14 +2619,20 @@ function _applyRoleUI(user) {
   document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
 
   // Ativa classes de navegação conforme o perfil
-  // Primeiro remove tudo
-  document.querySelectorAll('.nav-role-not-operador,.nav-role-cadastro,.nav-role-suprimentos,.nav-role-admin-eng,.nav-role-admin')
-    .forEach(el => el.style.display = 'none');
+  // Primeiro esconde todas as seções controladas por role
+  document.querySelectorAll('.nav-role-not-operador, .nav-role-cadastro, .nav-role-suprimentos, .nav-role-admin-eng, .nav-role-admin')
+    .forEach(el => { el.style.display = 'none'; });
 
-  // Ativa as permitidas
+  // Ativa APENAS as classes permitidas para este perfil
   perms.navClasses.forEach(cls => {
-    document.querySelectorAll('.' + cls).forEach(el => el.style.display = '');
+    document.querySelectorAll('.' + cls).forEach(el => {
+      // nav-section usa block, nav-item também
+      el.style.display = 'block';
+    });
   });
+
+  // Debug: log das permissões no console
+  console.log('[AUTH] Perfil:', user.role, '| NavClasses:', perms.navClasses);
 
   // Badge de perfil na sidebar (insert)
   const sidebar = document.querySelector('.sidebar');
