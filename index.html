@@ -1526,6 +1526,7 @@
                   <div class="tab active" onclick="setOperType('retirada',this)">RETIRADA</div>
                   <div class="tab" onclick="setOperType('devolucao',this)">DEVOLUÇÃO</div>
                   <div class="tab" onclick="setOperType('transferencia',this)">TRANSFERÊNCIA</div>
+                  <div class="tab" onclick="setOperType('descarte',this)" style="color:var(--accent-danger)">⚠ DESCARTE</div>
                 </div>
 
                 <div class="scanner-box" onclick="document.getElementById('scan-input').focus()">
@@ -1567,31 +1568,13 @@
                 </div>
 
                 <div class="form-grid cols-2 mt-16" id="oper-fields">
-                  <div class="form-field">
+
+                  <!-- CAMPOS DE RETIRADA (sempre visíveis) -->
+                  <div class="form-field" id="field-user">
                     <label>OPERADOR / MATRÍCULA</label>
                     <input type="text" id="oper-user" placeholder="nome ou matrícula">
                   </div>
-                  <div class="form-field">
-                    <label>LINHA DE PRODUÇÃO</label>
-                    <select id="oper-line">
-                      <option value="">Selecione a linha</option>
-                      <option>SMT-01</option><option>SMT-02</option><option>SMT-03</option><option>SMT-04</option>
-                      <option>PTH-01</option><option>PTH-02</option><option>PTH-03</option><option>PTH-04</option>
-                    </select>
-                  </div>
-                  <div class="form-field">
-                    <label>ORDEM DE PRODUÇÃO (OP)</label>
-                    <input type="text" id="oper-op" placeholder="OP-XXXXX">
-                  </div>
-                  <div class="form-field">
-                    <label>PRODUTO / REFERÊNCIA</label>
-                    <input type="text" id="oper-product" placeholder="ex: TV_XYZ_BOARD">
-                  </div>
-                  <div class="form-field" id="qty-field">
-                    <label>QUANTIDADE PRODUZIDA</label>
-                    <input type="number" id="oper-qty" placeholder="0" min="0">
-                  </div>
-                  <div class="form-field">
+                  <div class="form-field" id="field-shift">
                     <label>TURNO</label>
                     <select id="oper-shift">
                       <option>A - Manhã</option>
@@ -1599,6 +1582,45 @@
                       <option>C - Noite</option>
                     </select>
                   </div>
+
+                  <!-- CAMPOS SOMENTE RETIRADA -->
+                  <div class="form-field field-retirada field-transferencia">
+                    <label>LINHA DE PRODUÇÃO</label>
+                    <select id="oper-line">
+                      <option value="">Selecione a linha</option>
+                      <option>SMT-01</option><option>SMT-02</option><option>SMT-03</option><option>SMT-04</option>
+                      <option>PTH-01</option><option>PTH-02</option><option>PTH-03</option><option>PTH-04</option>
+                    </select>
+                  </div>
+                  <div class="form-field field-retirada">
+                    <label>ORDEM DE PRODUÇÃO (OP)</label>
+                    <input type="text" id="oper-op" placeholder="OP-XXXXX">
+                  </div>
+                  <div class="form-field field-retirada">
+                    <label>PRODUTO / REFERÊNCIA</label>
+                    <input type="text" id="oper-product" placeholder="ex: TV_XYZ_BOARD">
+                  </div>
+                  <div class="form-field field-retirada" id="qty-field">
+                    <label>QUANTIDADE PRODUZIDA</label>
+                    <input type="number" id="oper-qty" placeholder="0" min="0">
+                  </div>
+
+                  <!-- CAMPOS SOMENTE DESCARTE -->
+                  <div class="form-field field-descarte" style="display:none">
+                    <label>QUANTIDADE A DESCARTAR *</label>
+                    <input type="number" id="oper-qty-descarte" placeholder="ex: 1" min="1" value="1">
+                  </div>
+                  <div class="form-field field-descarte" style="display:none">
+                    <label>MOTIVO DO DESCARTE *</label>
+                    <select id="oper-motivo-descarte">
+                      <option value="danificado">Danificado / Quebrado</option>
+                      <option value="desgaste">Desgaste — Fim de vida útil</option>
+                      <option value="perda">Perda / Extravio</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+
+                  <!-- OBSERVAÇÕES: sempre visível -->
                   <div class="form-field" style="grid-column:1/-1">
                     <label>OBSERVAÇÕES</label>
                     <textarea id="oper-obs" placeholder="observações adicionais..."></textarea>
@@ -2708,16 +2730,28 @@ async function loadDashboard() {
   const bloc   = tools.filter(t => t.status === 'Bloqueada').length;
   const critical = tools.filter(t => t.maxCycles > 0 && (t.cycles / t.maxCycles) >= CONFIG.wearAlert / 100).length;
 
-  setText('kpi-total',    total);
-  setText('kpi-disp',     disp);
-  setText('kpi-uso',      uso);
-  setText('kpi-manut',    man);
-  setText('kpi-critico',  critical);
-  setText('kpi-pendente', chkPnd);
-  setText('kpi-bloc',     bloc);
+  // KPIs — usando IDs corretos do HTML
+  setText('dash-total', total);
+  setText('dash-disp',  disp);
+  setText('dash-uso',   uso);
+  setText('dash-man',   man);
+  setText('dash-alert', critical + bloc + chkPnd);
+  setText('dash-imp',   importsData ? importsData.filter(i => i.status !== 'entregue').length : '—');
+
+  // Topbar chips
+  setText('kpi-disponivel', disp);
+  setText('kpi-alertas',    critical + bloc + chkPnd);
+  setText('kpi-em-uso',     uso);
+  setText('kpi-imports',    importsData ? importsData.filter(i => i.status !== 'entregue').length : '—');
+
+  // Badge de checklist pendente na nav
+  const navBadge = document.getElementById('nav-badge-check');
+  if (navBadge) navBadge.textContent = chkPnd > 0 ? chkPnd : '';
+  const navBadgeA = document.getElementById('nav-badge-alertas');
+  if (navBadgeA) navBadgeA.textContent = (critical + bloc) > 0 ? (critical + bloc) : '';
 
   // Alertas de checklist pendente
-  const alertsEl = document.getElementById('alert-list');
+  const alertsEl = document.getElementById('alerts-strip-container');
   if (alertsEl) {
     const pendentes = tools.filter(t => t.status === 'Checklist Pendente');
     const criticos  = tools.filter(t => t.maxCycles > 0 && (t.cycles / t.maxCycles) >= CONFIG.wearCrit / 100);
@@ -2741,21 +2775,75 @@ async function loadDashboard() {
   }
 
   renderRecentHistory();
+  renderWearTable(tools);
+
+  // Lines grid no dashboard
+  const dashGrid = document.getElementById('dash-lines-grid');
+  if (dashGrid) {
+    const smtLines = ['SMT-01','SMT-02','SMT-03','SMT-04'];
+    const pthLines = ['PTH-01','PTH-02','PTH-03','PTH-04'];
+    const allLines = [...smtLines, ...pthLines];
+    dashGrid.innerHTML = allLines.map(l => {
+      const lTools = toolsData.filter(t => t.location === l);
+      return renderLineCard(l, lTools, smtLines.includes(l) ? 'SMT' : 'PTH');
+    }).join('');
+  }
 }
 
 function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
 
-function renderRecentHistory() {
-  const body = document.getElementById('dash-hist-body');
+async 
+function renderWearTable(tools) {
+  const body = document.getElementById('wear-body');
   if (!body) return;
-  const recent = MOCK_HISTORY.slice(0,5);
-  body.innerHTML = recent.map(h => `<tr>
+  const alertTools = tools
+    .filter(t => t.maxCycles > 0 && (t.cycles / t.maxCycles) >= (CONFIG.wearAlert / 100))
+    .sort((a,b) => (b.cycles/b.maxCycles) - (a.cycles/a.maxCycles));
+  if (!alertTools.length) {
+    body.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="icon">✅</span>Nenhuma ferramenta próxima do limite</td></tr>';
+    return;
+  }
+  body.innerHTML = alertTools.map(t => {
+    const pct = Math.round(t.cycles / t.maxCycles * 100);
+    const cls = pct >= CONFIG.wearCrit ? 'danger' : 'warn';
+    return `<tr>
+      <td class="highlight">${t.name}</td>
+      <td><span class="badge inspecao">${t.type}</span></td>
+      <td class="mono">${(t.cycles||0).toLocaleString()}</td>
+      <td class="mono">${(t.maxCycles||0).toLocaleString()}</td>
+      <td><div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+        <span class="progress-pct ${cls==='danger'?'text-danger':'text-warn'}">${pct}%</span>
+      </div></td>
+      <td class="mono text-xs text-dim">—</td>
+      <td><button class="btn-primary" style="padding:4px 10px;font-size:11px" onclick="quickScan('${t.code}')">📷 BIPAR</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRecentHistory() {
+  const body = document.getElementById('dash-recent-body');
+  if (!body) return;
+  // Tenta buscar do Sheets, fallback para MOCK
+  const api = await apiCall('getHistory', { limit: 8 });
+  const rows = (api && api.data && api.data.length)
+    ? api.data.slice(0,8).map(r => ({
+        dt:     String(r.data_hora || '').substring(0,16),
+        tool:   r.codigo_ferramenta,
+        action: r.acao,
+        user:   r.operador,
+        line:   r.linha,
+        op:     r.op
+      }))
+    : MOCK_HISTORY.slice(0,8);
+
+  body.innerHTML = rows.map(h => `<tr>
     <td class="mono text-xs">${h.dt}</td>
     <td class="highlight">${h.tool}</td>
     <td>${actionBadge(h.action)}</td>
-    <td>${h.user}</td>
+    <td>${h.user || '—'}</td>
     <td class="mono text-xs">${h.line || '—'}</td>
-  </tr>`).join('');
+  </tr>`).join('') || '<tr><td colspan="5" class="empty-state">Sem movimentações</td></tr>';
 }
 
 function actionBadge(action) {
@@ -2841,10 +2929,31 @@ function setOperType(type, el) {
   operationType = type;
   document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('qty-field').style.display = type === 'devolucao' ? 'none' : '';
-  document.getElementById('btn-confirm-oper').textContent =
-    type === 'retirada'     ? '✓ CONFIRMAR RETIRADA' :
-    type === 'devolucao'    ? '✓ CONFIRMAR DEVOLUÇÃO' : '✓ CONFIRMAR TRANSFERÊNCIA';
+
+  // Mostra campos de retirada só na retirada/transferência
+  document.querySelectorAll('.field-retirada').forEach(f => {
+    f.style.display = (type === 'retirada') ? '' : 'none';
+  });
+  document.querySelectorAll('.field-transferencia').forEach(f => {
+    f.style.display = (type === 'retirada' || type === 'transferencia') ? '' : 'none';
+  });
+
+  // Campos de descarte
+  document.querySelectorAll('.field-descarte').forEach(f => {
+    f.style.display = (type === 'descarte') ? '' : 'none';
+  });
+
+  const btnLabel = {
+    retirada: '✓ CONFIRMAR RETIRADA',
+    devolucao: '✓ CONFIRMAR DEVOLUÇÃO',
+    transferencia: '✓ CONFIRMAR TRANSFERÊNCIA',
+    descarte: '⚠ REGISTRAR DESCARTE'
+  };
+  document.getElementById('btn-confirm-oper').textContent = btnLabel[type] || '✓ CONFIRMAR';
+
+  // Estilo do botão muda para perigo no descarte
+  const btn = document.getElementById('btn-confirm-oper');
+  btn.className = type === 'descarte' ? 'btn-danger full-width' : 'btn-success full-width';
 }
 
 async function loadBiparPage() {
@@ -2924,6 +3033,22 @@ function quickScan(code) {
 async function confirmOperation() {
   if (!currentScannedTool) { toast('Bipar uma ferramenta primeiro!', 'warn'); return; }
 
+  const user  = document.getElementById('oper-user').value || currentUser.name;
+  const shift = document.getElementById('oper-shift').value;
+  const obs   = document.getElementById('oper-obs').value;
+  const line  = document.getElementById('oper-line') ? document.getElementById('oper-line').value : '';
+  const op    = document.getElementById('oper-op')   ? document.getElementById('oper-op').value   : '';
+  const qty   = parseInt(document.getElementById('oper-qty')?.value) || 0;
+
+  // ── DESCARTE ─────────────────────────────────────────────
+  if (operationType === 'descarte') {
+    const qtyDescarte = parseInt(document.getElementById('oper-qty-descarte').value) || 1;
+    const motivo      = document.getElementById('oper-motivo-descarte').value;
+    if (!obs && !motivo) { toast('Descreva o motivo do descarte nas observações.', 'warn'); return; }
+    await _registrarDescarte(currentScannedTool, qtyDescarte, motivo, user, obs);
+    return;
+  }
+
   // BLOQUEIO: não permite retirar se checklist pendente
   if (operationType === 'retirada' && currentScannedTool.status === 'Checklist Pendente') {
     toast(`🔒 Impossível retirar — ${currentScannedTool.code} tem CHECKLIST PENDENTE!`, 'error');
@@ -2934,14 +3059,7 @@ async function confirmOperation() {
     return;
   }
 
-  const line  = document.getElementById('oper-line').value;
-  const op    = document.getElementById('oper-op').value;
-  const qty   = parseInt(document.getElementById('oper-qty').value) || 0;
-  const user  = document.getElementById('oper-user').value || currentUser.name;
-  const shift = document.getElementById('oper-shift').value;
-  const obs   = document.getElementById('oper-obs').value;
-
-  if (!line && operationType !== 'manutencao') { toast('Selecione a linha de produção!', 'warn'); return; }
+  if (!line && operationType === 'retirada') { toast('Selecione a linha de produção!', 'warn'); return; }
 
   // DEVOLUÇÃO → abre checklist obrigatório
   if (operationType === 'devolucao') {
@@ -2991,6 +3109,58 @@ function clearScan() {
   ['oper-op','oper-qty','oper-obs','oper-user','oper-product'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  DESCARTE — baixa quantidade + atualiza inventário
+// ══════════════════════════════════════════════════════════
+async function _registrarDescarte(tool, qty, motivo, user, obs) {
+  const novaQty = Math.max(0, (parseInt(tool.qty) || 0) - qty);
+  const estoqueMin = parseInt(tool.minStock) || 0;
+  const alertaEstoque = estoqueMin > 0 && novaQty <= estoqueMin;
+
+  // Envia para o Sheets: action DESCARTE com baixa de quantidade
+  const result = await apiPost('logDescarte', {
+    toolCode:  tool.code,
+    qtyDescarte: qty,
+    novaQty,
+    motivo,
+    user,
+    obs,
+    timestamp: new Date().toISOString()
+  });
+
+  // Atualiza local
+  const idx = toolsData.findIndex(t => t.code === tool.code);
+  if (idx >= 0) {
+    toolsData[idx].qty = novaQty;
+    if (novaQty === 0) toolsData[idx].status = 'Descartada';
+  }
+
+  MOCK_HISTORY.unshift({
+    dt: new Date().toLocaleString('pt-BR').replace(',',''),
+    tool: tool.code, action: 'DESCARTE',
+    user, line: '—', op: '—', qty, cycles: 0,
+    checklistResult: '', obs: `${motivo} | ${obs}`
+  });
+
+  if (novaQty === 0) {
+    toast(`🗑️ Ferramenta ${tool.code} totalmente descartada!`, 'error');
+  } else {
+    toast(`✓ Descarte registrado — ${qty} un baixadas. Restam: ${novaQty}`, 'warn');
+  }
+
+  // Alerta de estoque mínimo
+  if (alertaEstoque) {
+    setTimeout(() => {
+      toast(`⚠️ ESTOQUE ABAIXO DO MÍNIMO — ${tool.code} (${novaQty} un / mín: ${estoqueMin}). SOLICITAR REPOSIÇÃO!`, 'error');
+    }, 1500);
+  }
+
+  clearScan();
+  loadBiparPage();
+  loadDashboard();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3317,6 +3487,46 @@ function exportHistory() {
 // ══════════════════════════════════════════════════════════
 //  LINHAS
 // ══════════════════════════════════════════════════════════
+
+function renderLineCard(lineName, tools, lineType) {
+  const emUso    = tools.filter(t => t.status === 'Em Uso');
+  const pendente = tools.filter(t => t.status === 'Checklist Pendente');
+  const hasWarn  = pendente.length > 0;
+  const dotCls   = emUso.length > 0 ? (hasWarn ? 'warn' : '') : 'off';
+  const statusTxt = emUso.length > 0 ? `${emUso.length} EM USO` : 'LIVRE';
+
+  return `<div class="line-card">
+    <div class="line-header">
+      <div class="line-name">${lineName}</div>
+      <div class="line-status">
+        <div class="line-dot ${dotCls}"></div>
+        <span style="font-size:11px;color:var(--text-mid)">${statusTxt}</span>
+      </div>
+    </div>
+    <div class="line-body">
+      <div class="line-info-row">
+        <span class="lk">TIPO</span>
+        <span class="lv">${lineType}</span>
+      </div>
+      <div class="line-info-row">
+        <span class="lk">FERRAMENTAS EM USO</span>
+        <span class="lv">${emUso.length}</span>
+      </div>
+      ${pendente.length > 0 ? `<div class="line-info-row">
+        <span class="lk" style="color:var(--accent-warn)">⚠ CHK PENDENTE</span>
+        <span class="lv" style="color:var(--accent-warn)">${pendente.length}</span>
+      </div>` : ''}
+      ${emUso.length > 0 ? `<div class="line-tools">
+        <div class="line-tools-label">FERRAMENTAS ATIVAS</div>
+        <div class="tool-chip-row">
+          ${emUso.slice(0,6).map(t => `<span class="tool-chip">${t.code}</span>`).join('')}
+          ${emUso.length > 6 ? `<span class="tool-chip">+${emUso.length-6}</span>` : ''}
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
 function loadLines(type) {
   const lines = type === 'smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : ['PTH-01','PTH-02','PTH-03','PTH-04'];
   const grid  = document.getElementById(`${type}-lines-grid`);
@@ -3408,7 +3618,7 @@ async function saveTool() {
     ppc:      parseInt(document.getElementById('cad-ppc').value) || 1,
     lote:     document.getElementById('cad-ctrl').value === 'lote',
     leadTime: document.getElementById('cad-lead').value,
-    minStock: document.getElementById('cad-estmin').value,
+    minStock: parseInt(document.getElementById('cad-estmin').value) || 0,
     modal:    document.getElementById('cad-modal').value,
     checklistPendente: false
   };
