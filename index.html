@@ -2486,6 +2486,10 @@ function renderWearTable(tools){
     <td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div><span class="progress-pct ${cls==='danger'?'text-danger':'text-warn'}">${pct}%</span></div></td>
     <td class="text-dim text-xs">—</td>
     <td><button class="btn-primary" style="padding:4px 10px;font-size:11px" onclick="quickScan('${t.code}')">📷 扫码</button></td></tr>`;
+
+  }).join('');
+}
+
 function renderEstoqueMinimoDash() {
   const body = document.getElementById('dash-estoque-minimo-body');
   if(!body) return;
