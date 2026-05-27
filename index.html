@@ -57,7 +57,49 @@
     min-height: 100vh;
     overflow-x: hidden;
   }
-
+  /* Estilos da Barra de Progresso de Lead Time */
+  .leadtime-container {
+    width: 100%;
+    max-width: 200px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 4px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  
+  .leadtime-bar-bg {
+    width: 100%;
+    background-color: #0f172a;
+    border-radius: 3px;
+    overflow: hidden;
+    height: 12px;
+    position: relative;
+  }
+  
+  .leadtime-bar-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.4s ease, background-color 0.4s ease;
+  }
+  
+  .leadtime-text {
+    font-size: 11px;
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+  }
+  
+  .text-verde { color: #4ade80; }
+  .text-amarelo { color: #f59e0b; }
+  .text-vermelho { color: #f87171; animation: pulse 1.5s infinite; }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
   /* ── SCROLLBAR ─────────────────────────────────────────────────────── */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--main-bg); }
@@ -2360,7 +2402,73 @@ function startClock(){
   function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR');}
   tick(); setInterval(tick,1000);
 }
-
+  // ============================================================================
+  // FUNÇÃO UTILITÁRIA DE LEAD TIME (ADICIONE ESTE BLOCO AQUI)
+  // ============================================================================
+  function gerarBarraLeadTime(dataCotacaoEnviada, statusAtual, dataStatusAtual, leadTimePadrao = 120) {
+    if (!dataCotacaoEnviada) {
+      return `<div style="color:var(--text-dim); font-size:11px;">⏳ Aguardando Cotação</div>`;
+    }
+  
+    const agora = new Date();
+    const dataInicio = new Date(dataCotacaoEnviada);
+    const dataEtapa = dataStatusAtual ? new Date(dataStatusAtual) : new Date();
+  
+    // 1. Cálculo do Lead Time Geral
+    const diffTempoGeral = agora.getTime() - dataInicio.getTime();
+    const diasDecorridos = Math.floor(diffTempoGeral / (1000 * 60 * 60 * 24));
+    const diasRestantes = leadTimePadrao - diasDecorridos;
+  
+    // 2. Cálculo do tempo na Etapa Atual (Dias e Horas)
+    const diffTempoEtapa = agora.getTime() - dataEtapa.getTime();
+    const diasNaEtapa = Math.floor(diffTempoEtapa / (1000 * 60 * 60 * 24));
+    const horasNaEtapa = Math.floor((diffTempoEtapa / (1000 * 60 * 60)) % 24);
+    
+    let textoEtapa = `${diasNaEtapa}d ${horasNaEtapa}h nesta etapa`;
+  
+    // Definição de cor e porcentagem da barra geral
+    let pctBarra = 100;
+    let corBarra = '#22c55e'; // Verde
+    let classeTexto = 'text-verde';
+    let textoStatus = `${diasRestantes} dias restantes`;
+  
+    if (diasRestantes <= 0) {
+      // ATRASADO
+      pctBarra = 100;
+      corBarra = '#ef4444'; // Vermelho
+      classeTexto = 'text-vermelho';
+      textoStatus = `EM ATRASO POR ${Math.abs(diasRestantes)} DIAS`;
+    } else {
+      // REGREDINDO
+      pctBarra = (diasRestantes / leadTimePadrao) * 100;
+      
+      if (pctBarra > 50) {
+        corBarra = '#22c55e'; // Verde
+        classeTexto = 'text-verde';
+      } else if (pctBarra > 15) {
+        corBarra = '#f59e0b'; // Amarelo
+        classeTexto = 'text-amarelo';
+      } else {
+        corBarra = '#ef4444'; // Vermelho próximo do fim
+        classeTexto = 'text-vermelho';
+      }
+    }
+  
+    // Retorna o HTML estruturado da barra para injetar na tabela
+    return `
+      <div class="leadtime-container">
+        <div class="leadtime-bar-bg">
+          <div class="leadtime-bar-fill" style="width: ${pctBarra}%; background-color: ${corBarra};"></div>
+        </div>
+        <div class="leadtime-text">
+          <span class="${classeTexto}">${textoStatus}</span>
+        </div>
+        <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">
+          📍 ${textoEtapa}
+        </div>
+      </div>
+    `;
+  }
 function navigate(page){
   if(currentUser&&!_canAccess(page)){toast('⛔ 无访问权限 · Acesso não autorizado','error');return;}
   document.querySelectorAll('.page-view').forEach(p=>p.classList.remove('active'));
@@ -3556,15 +3664,14 @@ async function cancelarPedido(purchaseId) {
 }
  
 // ── PÁGINA DE IMPORTAÇÃO — agora mostra o fluxo de compras ───────────────────
+// ── PÁGINA DE IMPORTAÇÃO — COM BARRA DE LEAD TIME EVOLUTIVA ───────────────────
 async function loadImports() {
   await loadPurchasesFromAPI();
- 
   const list = document.getElementById('imports-list');
   if (!list) return;
  
   // Mostra pedidos em andamento (não cancelados, ordenados por data)
   const ativos = purchasesData.filter(p => p.status !== 'cancelado');
- 
   if (!ativos.length) {
     list.innerHTML = '<div class="empty-state"><span class="icon">🚢</span>无进口/采购记录 · Nenhum pedido ativo</div>';
     return;
@@ -3574,6 +3681,7 @@ async function loadImports() {
     const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === p.status);
     const isClosed = p.status === 'recebido' || p.status === 'cadastro_sistema';
  
+    // Montagem do fluxo de etapas (Timeline)
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
       if (i < currentStageIdx)      cls = 'done';
@@ -3586,6 +3694,29 @@ async function loadImports() {
  
     const modalIcon = p.modal === 'navio' ? '🚢 海运 · Navio' : p.modal === 'aviao' ? '✈️ 空运 · Avião' : '🏭 Nacional';
  
+    // ── GERAÇÃO DA BARRA DE LEAD TIME DINÂMICA ──
+    // Encontra o histórico da etapa de cotação para iniciar o contador
+    const historicoCotacao = p.historico ? p.historico.find(h => h.estagio === 'cotacao_enviada') : null;
+    const dataCotacao = historicoCotacao ? historicoCotacao.data : null;
+    
+    // Pega a data de modificação do status atual para o contador da etapa
+    const historicoStatusAtual = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
+    const dataStatusAtual = historicoStatusAtual ? historicoStatusAtual.data : null;
+    
+    // Busca o Lead Time padrão configurado na ferramenta (padrão 120 dias se não houver)
+    const toolObj = toolsData.find(t => t.code === p.toolCode);
+    const leadTimeDefinido = toolObj && toolObj.leadTime ? parseInt(toolObj.leadTime) : 120;
+    
+    // Renderiza o componente visual da barra
+    const barraLeadTimeHtml = gerarBarraLeadTime(dataCotacao, p.status, dataStatusAtual, leadTimeDefinido);
+    // ────────────────────────────────────────────
+
+    // Tratamento para evitar falha de exibição caso o ETA venha como objeto inválido
+    let etaExibicao = '—';
+    if (p.eta) {
+      etaExibicao = typeof p.eta === 'object' ? String(p.eta.value || '—') : String(p.eta).split(' ')[0];
+    }
+ 
     return `<div class="card mb-16">
       <div class="card-header">
         <span class="card-title">${p.id} — ${p.toolName}</span>
@@ -3593,14 +3724,15 @@ async function loadImports() {
           <span class="badge ${isClosed ? 'disponivel' : 'em-uso'}">
             ${_getStageLabel(p.status)}
           </span>
-          ${!isClosed ? `<button class="btn-success" style="padding:4px 10px;font-size:11px"
+          ${!isClosed ?
+            `<button class="btn-success" style="padding:4px 10px;font-size:11px"
                                  onclick="openAdvanceModal('${p.id}');navigate('compras')">
             ▶ AVANÇAR · 推进
           </button>` : ''}
         </div>
       </div>
       <div class="card-body">
-        <div class="flex gap-20 mb-16 flex-wrap">
+        <div class="flex gap-20 mb-16 flex-wrap" style="align-items: center;">
           <div class="tool-info-row"><span class="tik">供应商 FORNECEDOR</span><span class="tiv">${p.supplier || '—'}</span></div>
           <div class="tool-info-row"><span class="tik">发票 INVOICE</span><span class="tiv mono">${p.invoice || '—'}</span></div>
           <div class="tool-info-row"><span class="tik">数量 QTD</span><span class="tiv">${p.qty} un</span></div>
@@ -3608,24 +3740,30 @@ async function loadImports() {
             ${p.valorUsd ? 'USD ' + p.valorUsd.toLocaleString() : (p.total ? 'R$ ' + p.total.toLocaleString('pt-BR') : '—')}
           </span></div>
           <div class="tool-info-row"><span class="tik">运输 MODAL</span><span class="tiv">${modalIcon}</span></div>
-          <div class="tool-info-row"><span class="tik">预计到达 ETA</span><span class="tiv">${p.eta || '—'}</span></div>
+          <div class="tool-info-row"><span class="tik">预计到达 ETA</span><span class="tiv">${etaExibicao}</span></div>
           ${p.ncm ? `<div class="tool-info-row"><span class="tik">NCM</span><span class="tiv mono">${p.ncm}</span></div>` : ''}
+          
+          <div style="flex-grow: 1; min-width: 220px; display: flex; justify-content: flex-end;">
+            ${barraLeadTimeHtml}
+          </div>
         </div>
+        
         <div class="import-track" style="overflow-x:auto">${timelineHtml}</div>
+        
         ${p.historico && p.historico.length > 1 ? `
         <details style="margin-top:12px">
           <summary style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary);cursor:pointer">
             📋 Histórico de estágios (${p.historico.length} etapas)
           </summary>
           <div style="margin-top:8px;font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">
-            ${p.historico.map(h =>
-              `<div style="padding:3px 0;border-bottom:1px solid var(--divider)">
+            ${p.historico.map(h => `
+              <div style="padding:3px 0;border-bottom:1px solid var(--divider)">
                 ${h.data ? String(h.data).split('T')[0] : ''} — 
                 <strong>${_getStageLabel(h.estagio)}</strong>
                 ${h.usuario ? ' · ' + h.usuario : ''}
                 ${h.obs ? ' · ' + h.obs : ''}
-              </div>`
-            ).join('')}
+              </div>
+            `).join('')}
           </div>
         </details>` : ''}
       </div>
