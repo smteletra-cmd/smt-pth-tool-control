@@ -26,7 +26,6 @@
     --grid-line: rgba(34,197,94,0.04);
     --shadow-glow: 0 0 20px rgba(34,197,94,0.15);
     --shadow-deep: 0 8px 32px rgba(0,0,0,0.6);
-
     /* ── ÁREA PRINCIPAL — tema clean/branco ──────────────────────────── */
     --main-bg: #f5f6f8;
     --card-bg: #ffffff;
@@ -75,7 +74,6 @@
     margin-top: 1px;
     line-height: 1.3;
   }
-  /* Versão para sidebar (texto claro) */
   .cn-nav {
     display: block;
     font-family: var(--font-cn);
@@ -86,7 +84,6 @@
     margin-top: 1px;
     line-height: 1.2;
   }
-  /* Versão para títulos de página (levemente maior) */
   .cn-title {
     display: block;
     font-family: var(--font-cn);
@@ -286,7 +283,8 @@
   }
 
   .kpi-chip .label {
-    font-size: 9px; letter-spacing: 1px; color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 1px; color: var(--text-dim);
     font-family: var(--font-mono);
     line-height: 1.2;
   }
@@ -304,7 +302,8 @@
   .topbar-time { font-family: var(--font-mono); font-size: 12px; color: var(--text-mid); }
 
   .user-badge {
-    display: flex; align-items: center; gap: 8px;
+    display: flex;
+    align-items: center; gap: 8px;
     background: rgba(34,197,94,0.08);
     border: 1px solid rgba(34,197,94,0.2);
     border-radius: 4px; padding: 5px 10px;
@@ -313,7 +312,8 @@
   .user-badge .avatar {
     width: 26px; height: 26px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent-primary), #16a34a);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center; justify-content: center;
     font-size: 11px; font-weight: 700; color: #000;
   }
 
@@ -363,7 +363,8 @@
 
   .nav-item {
     display: flex; align-items: center; gap: 9px;
-    padding: 9px 18px; cursor: pointer; transition: all 0.15s;
+    padding: 9px 18px; cursor: pointer;
+    transition: all 0.15s;
     position: relative; font-size: 13px; font-weight: 500;
     color: var(--text-mid); letter-spacing: 0.3px;
     line-height: 1.2;
@@ -390,14 +391,16 @@
 
   /* ═══════════ MAIN CONTENT — branco/clean ══════════════════════════ */
   .main {
-    flex: 1; overflow-y: auto; padding: 24px;
+    flex: 1; overflow-y: auto;
+    padding: 24px;
     display: flex; flex-direction: column; gap: 18px;
     background: var(--main-bg);
   }
 
   /* ═══════════ PAGE HEADER ══════════════════════════════════════════ */
   .page-header {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
   }
 
   .page-title {
@@ -409,7 +412,8 @@
 
   .page-sub {
     font-size: 11px; color: var(--text-secondary);
-    font-family: var(--font-mono); margin-top: 2px;
+    font-family: var(--font-mono);
+    margin-top: 2px;
   }
 
   /* ═══════════ BOTÕES ════════════════════════════════════════════════ */
@@ -418,14 +422,16 @@
     border: none; border-radius: 6px; padding: 9px 18px;
     color: #fff; font-family: var(--font-display);
     font-size: 11px; font-weight: 700; letter-spacing: 2px;
-    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
   }
   .btn-primary:hover { box-shadow: 0 3px 12px rgba(34,197,94,0.4); transform: translateY(-1px); }
 
   .btn-secondary {
     background: #fff; border: 1px solid var(--card-border);
     border-radius: 6px; padding: 9px 18px;
-    color: var(--text-secondary); font-family: var(--font-ui);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
     font-size: 13px; cursor: pointer; transition: all 0.2s;
   }
   .btn-secondary:hover { border-color: #aab5c1; color: var(--text-main); }
@@ -433,7 +439,8 @@
   .btn-success {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     border: none; border-radius: 6px; padding: 9px 18px;
-    color: #fff; font-family: var(--font-display);
+    color: #fff;
+    font-family: var(--font-display);
     font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
   }
   .btn-success:hover { box-shadow: 0 3px 12px rgba(34,197,94,0.4); }
@@ -442,7 +449,8 @@
     background: linear-gradient(135deg, #ef4444, #dc2626);
     border: none; border-radius: 6px; padding: 9px 18px;
     color: #fff; font-family: var(--font-display);
-    font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer;
+    transition: all 0.2s;
   }
 
   /* ═══════════ CARDS ═════════════════════════════════════════════════ */
@@ -503,7 +511,8 @@
   .kpi-card .k-label {
     font-size: 10px; letter-spacing: 1.5px;
     color: var(--text-secondary); font-family: var(--font-mono); margin-bottom: 8px;
-    display: flex; flex-direction: column; gap: 1px;
+    display: flex;
+    flex-direction: column; gap: 1px;
   }
 
   .kpi-card .k-value {
@@ -599,7 +608,8 @@
 
   /* ═══════════ MODAL ════════════════════════════════════════════════ */
   .modal-overlay {
-    position: fixed; inset: 0; z-index: 500;
+    position: fixed; inset: 0;
+    z-index: 500;
     background: rgba(0,0,0,0.45);
     display: flex; align-items: center; justify-content: center;
     animation: fadeIn 0.2s ease;
@@ -629,7 +639,8 @@
 
   .modal-close {
     background: transparent; border: none; color: var(--text-tertiary);
-    font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; transition: color 0.2s;
+    font-size: 20px; cursor: pointer; line-height: 1;
+    padding: 4px; transition: color 0.2s;
   }
   .modal-close:hover { color: var(--text-main); }
 
@@ -666,7 +677,8 @@
 
   .form-field label {
     display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--text-secondary);
-    margin-bottom: 5px; font-family: var(--font-mono); line-height: 1.5;
+    margin-bottom: 5px; font-family: var(--font-mono);
+    line-height: 1.5;
   }
   .form-field label .cn { font-size: 9px; color: var(--text-tertiary); letter-spacing: 0; }
 
@@ -706,7 +718,8 @@
   .radio-group { display: flex; gap: 6px; }
 
   .radio-btn {
-    padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 5px;
+    font-size: 11px; font-weight: 700;
     letter-spacing: 1px; cursor: pointer; border: 1px solid var(--input-border);
     background: #fff; color: var(--text-secondary); font-family: var(--font-mono);
     transition: all 0.15s;
@@ -723,13 +736,15 @@
 
   .line-card {
     background: var(--card-bg); border: 1px solid var(--card-border);
-    border-radius: 10px; box-shadow: var(--card-shadow); overflow: hidden; transition: all 0.2s;
+    border-radius: 10px; box-shadow: var(--card-shadow); overflow: hidden;
+    transition: all 0.2s;
   }
   .line-card:hover { border-color: #a7f3d0; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.09); }
 
   .line-header {
     padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--divider); background: #f8faf9;
+    border-bottom: 1px solid var(--divider);
+    background: #f8faf9;
   }
 
   .line-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--text-main); }
@@ -777,11 +792,12 @@
   #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 
   .toast {
-    background: #fff; border: 1px solid var(--card-border);
-    border-radius: 8px; padding: 13px 18px; min-width: 280px;
+    background: #fff; border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 13px 18px; min-width: 280px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     display: flex; align-items: center; gap: 10px;
-    animation: slideInRight 0.3s ease; font-size: 13px; color: var(--text-main);
+    animation: slideInRight 0.3s ease;
+    font-size: 13px; color: var(--text-main);
   }
 
   @keyframes slideInRight { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
@@ -870,7 +886,6 @@
 </head>
 <body>
 
-<!-- ════ LOGIN ════ -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -891,21 +906,15 @@
 
     <div class="field-group">
       <label>USUÁRIO <span class="cn">用户名</span></label>
-      <input type="text" id="login-user" placeholder="digite seu usuário"
-        autocomplete="off" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
+      <input type="text" id="login-user" placeholder="digite seu usuário" autocomplete="off" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
     </div>
 
     <div class="field-group">
       <label>SENHA <span class="cn">密码</span></label>
-      <input type="password" id="login-pass" placeholder="••••••••"
-        autocomplete="off" onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter') doLogin()">
     </div>
 
-    <div id="login-error" style="
-      display:none; background:#fff5f5; border:1px solid #fca5a5;
-      border-radius:6px; padding:10px 14px; color:var(--accent-danger);
-      font-family:var(--font-cn); font-size:12px; margin-bottom:12px; text-align:center;
-    ">✗ 用户名或密码不正确 · USUÁRIO OU SENHA INCORRETOS</div>
+    <div id="login-error" style="display:none; background:#fff5f5; border:1px solid #fca5a5; border-radius:6px; padding:10px 14px; color:var(--accent-danger); font-family:var(--font-cn); font-size:12px; margin-bottom:12px; text-align:center; ">✗ 用户名或密码不正确 · USUÁRIO OU SENHA INCORRETOS</div>
 
     <button class="btn-login" id="btn-login" onclick="doLogin()">
       ACESSAR SISTEMA <span style="font-family:var(--font-cn);font-size:10px;opacity:0.8;display:block;letter-spacing:2px;margin-top:2px">进入系统</span>
@@ -918,9 +927,7 @@
   </div>
 </div>
 
-<!-- ════ APP ════ -->
 <div id="app">
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-logo" style="display:flex;align-items:center;gap:10px;">
       <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
@@ -962,9 +969,7 @@
     </div>
   </div>
 
-  <!-- LAYOUT -->
   <div class="layout">
-    <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="nav-section nav-role-all">
         <div class="nav-section-label">VISÃO GERAL <span class="cn-nav">总览</span></div>
@@ -1058,10 +1063,8 @@
       </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
     <main class="main" id="main-content">
 
-      <!-- ════ DASHBOARD ════ -->
       <div id="page-dashboard" class="page-view active">
         <div class="page-header">
           <div>
@@ -1153,7 +1156,6 @@
           </div>
         </div>
 
-        <!-- ESTOQUE ABAIXO DO MÍNIMO -->
         <div class="card" id="dash-card-estoque-minimo">
           <div class="card-header">
             <span class="card-title">🔴 FERRAMENTAS ABAIXO DO ESTOQUE MÍNIMO <span class="cn">低于最低库存的工具</span></span>
@@ -1206,7 +1208,6 @@
         </div>
       </div>
 
-      <!-- ════ BIPAR ════ -->
       <div id="page-bipar" class="page-view">
         <div class="page-header">
           <div>
@@ -1234,10 +1235,7 @@
                   <span class="scan-icon">📷</span>
                   <div class="scan-label">APONTE O SCANNER · 扫描工具</div>
                   <div class="scan-sub">请扫描或手动输入工具编码</div>
-                  <input type="text" id="scan-input" class="scanner-input"
-                    placeholder="QR CODE / 工具编码"
-                    onkeydown="if(event.key==='Enter') scanTool()"
-                    autocomplete="off">
+                  <input type="text" id="scan-input" class="scanner-input" placeholder="QR CODE / 工具编码" onkeydown="if(event.key==='Enter') scanTool()" autocomplete="off">
                 </div>
 
                 <div class="tool-info-card" id="tool-info-card">
@@ -1373,7 +1371,6 @@
         </div>
       </div>
 
-      <!-- ════ FERRAMENTAS ════ -->
       <div id="page-ferramentas" class="page-view">
         <div class="page-header">
           <div>
@@ -1382,15 +1379,12 @@
             <div class="page-sub text-mono">Inventário completo · Wave Tray · Parafusadeira · Pinboard · Gabarito</div>
           </div>
           <div class="flex gap-8">
-            <input type="text" id="search-tool" placeholder="🔍 Buscar / 搜索..." oninput="filterTools()"
-              style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:13px;outline:none;width:200px">
-            <select id="filter-type" onchange="filterTools()"
-              style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
+            <input type="text" id="search-tool" placeholder="🔍 Buscar / 搜索..." oninput="filterTools()" style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:13px;outline:none;width:200px">
+            <select id="filter-type" onchange="filterTools()" style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
               <option value="">所有类型 · Todos tipos</option>
               <option>Wave Tray</option><option>Parafusadeira</option><option>Pinboard AUTO FCT</option><option>Pinboard FCT OLD</option><option>Gabarito</option><option>Stencil</option><option>Rodo</option><option>Slot</option><option>Carrier</option><option>Feeder Especial</option><option>Outro</option>
             </select>
-            <select id="filter-status" onchange="filterTools()"
-              style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
+            <select id="filter-status" onchange="filterTools()" style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:8px 12px;color:var(--text-main);font-family:var(--font-mono);font-size:12px;outline:none">
               <option value="">所有状态 · Todos status</option>
               <option>Disponível</option><option>Em Uso</option><option>Manutenção</option><option>Bloqueada</option>
             </select>
@@ -1416,14 +1410,13 @@
                 </tr>
               </thead>
               <tbody id="tools-body">
-                <tr><td colspan="10" class="inline-loader"><span class="loading-spinner"></span> 搜索工具中...</td></tr>
+                <tr><td colspan="11" class="inline-loader"><span class="loading-spinner"></span> 搜索工具中...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ════ CADASTRO ════ -->
       <div id="page-cadastro" class="page-view">
         <div class="page-header">
           <div>
@@ -1543,7 +1536,6 @@
         </div>
       </div>
 
-      <!-- ════ CHECKLIST ════ -->
       <div id="page-checklist" class="page-view">
         <div class="page-header">
           <div>
@@ -1577,7 +1569,7 @@
                 <div id="checklist-items"></div>
                 <div class="form-field mt-16">
                   <label>OBSERVAÇÕES <span class="cn">备注/措施</span></label>
-                  <textarea id="chk-obs" placeholder="descreva danos ou ações realizadas · 描述损坏或已采取措施..."></textarea>
+                  <textarea id="chk-obs" placeholder="descreva danos ou ações realizadas · 描述损坏 or 已采取措施..."></textarea>
                 </div>
                 <div class="flex gap-8 mt-16">
                   <button class="btn-success full-width" onclick="submitChecklist('ok')" style="padding:14px">✓ 合格 · APROVAR OK</button>
@@ -1606,7 +1598,6 @@
         </div>
       </div>
 
-      <!-- ════ LINHAS SMT ════ -->
       <div id="page-smtlines" class="page-view">
         <div class="page-header">
           <div>
@@ -1618,7 +1609,6 @@
         <div class="line-grid" id="smt-lines-grid"></div>
       </div>
 
-      <!-- ════ LINHAS PTH ════ -->
       <div id="page-pthlines" class="page-view">
         <div class="page-header">
           <div>
@@ -1630,7 +1620,6 @@
         <div class="line-grid" id="pth-lines-grid"></div>
       </div>
 
-      <!-- ════ GRAVADORAS FIRMWARE ════ -->
       <div id="page-gravlines" class="page-view">
         <div class="page-header">
           <div>
@@ -1642,7 +1631,6 @@
         <div class="line-grid" id="grav-lines-grid"></div>
       </div>
 
-      <!-- ════ IMPORTAÇÃO ════ -->
       <div id="page-importacao" class="page-view">
         <div class="page-header">
           <div>
@@ -1655,7 +1643,6 @@
         <div id="imports-list"></div>
       </div>
 
-      <!-- ════ ALERTAS ════ -->
       <div id="page-alertas" class="page-view">
         <div class="page-header">
           <div>
@@ -1666,7 +1653,6 @@
         <div id="alerts-full-list"></div>
       </div>
 
-      <!-- ════ HISTÓRICO ════ -->
       <div id="page-historico" class="page-view">
         <div class="page-header">
           <div>
@@ -1699,7 +1685,6 @@
         </div>
       </div>
 
-      <!-- ════ COMPRAS ════ -->
       <div id="page-compras" class="page-view">
         <div class="page-header">
           <div>
@@ -1709,10 +1694,8 @@
           <button class="btn-primary" onclick="openPurchaseModal(null)">+ 新建订单 · NOVO PEDIDO</button>
         </div>
 
-        <!-- Alertas de estoque mínimo -->
         <div id="compras-alertas-estoque"></div>
 
-        <!-- KPIs rápidos -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
           <div class="kpi-card danger">
             <span class="k-label">ABAIXO DO MÍNIMO<span class="cn">低于最低库存</span></span>
@@ -1736,13 +1719,11 @@
           </div>
         </div>
 
-        <!-- Tabela de pedidos -->
         <div class="card">
           <div class="card-header">
             <span class="card-title">📋 PEDIDOS DE COMPRA <span class="cn">采购订单</span></span>
             <div class="flex gap-8">
-              <select id="pc-filter-status" onchange="loadComprasPage()"
-                style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:6px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text-main);outline:none">
+              <select id="pc-filter-status" onchange="loadComprasPage()" style="background:#fff;border:1px solid var(--input-border);border-radius:6px;padding:6px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text-main);outline:none">
                 <option value="">所有状态 · Todos</option>
                 <option value="pedido">🟡 Pedido</option>
                 <option value="entregue">🟢 Entregue</option>
@@ -1776,7 +1757,6 @@
         </div>
       </div>
 
-      <!-- ════ CHECKLISTS CAD ════ -->
       <div id="page-checklists-cad" class="page-view">
         <div class="page-header">
           <div>
@@ -1787,7 +1767,6 @@
         <div id="checklist-templates-grid" class="flex gap-16" style="flex-wrap:wrap;align-items:flex-start"></div>
       </div>
 
-      <!-- ════ RELATÓRIOS ════ -->
       <div id="page-relatorios" class="page-view">
         <div class="page-header">
           <div>
@@ -1799,7 +1778,7 @@
           <div class="kpi-card" style="cursor:pointer" onclick="generateReport('ciclos')">
             <span class="k-label">CICLOS POR FERRAMENTA<span class="cn">工具循环报告</span></span>
             <div class="k-value" style="font-size:22px">📊</div>
-            <div class="k-sub">按工具磨损分析</div>
+            <div class="k-sub">按工具磨损 analysis</div>
           </div>
           <div class="kpi-card green" style="cursor:pointer" onclick="generateReport('disponibilidade')">
             <span class="k-label">DISPONIBILIDADE<span class="cn">可用率报告</span></span>
@@ -1823,7 +1802,6 @@
         </div>
       </div>
 
-      <!-- ════ CONFIG ════ -->
       <div id="page-config" class="page-view">
         <div class="page-header">
           <div>
@@ -1873,7 +1851,6 @@
         </div>
       </div>
 
-      <!-- ════ USUÁRIOS ════ -->
       <div id="page-usuarios" class="page-view">
         <div class="page-header">
           <div>
@@ -1900,7 +1877,6 @@
         </div>
       </div>
 
-      <!-- ════ APROVAÇÕES ════ -->
       <div id="page-aprovacoes" class="page-view">
         <div class="page-header">
           <div>
@@ -1957,7 +1933,6 @@
   </div>
 </div>
 
-<!-- ════ MODAL CHECKLIST DEVOLUÇÃO ════ -->
 <div class="modal-overlay hidden" id="modal-devolucao">
   <div class="modal">
     <div class="modal-header">
@@ -1978,7 +1953,6 @@
   </div>
 </div>
 
-<!-- ════ MODAL IMPORTAÇÃO ════ -->
 <div class="modal-overlay hidden" id="modal-import">
   <div class="modal">
     <div class="modal-header">
@@ -2031,7 +2005,6 @@
   </div>
 </div>
 
-<!-- ════ MODAL USUÁRIO ════ -->
 <div class="modal-overlay hidden" id="modal-usuario">
   <div class="modal" style="max-width:480px">
     <div class="modal-header">
@@ -2085,7 +2058,6 @@
   </div>
 </div>
 
-<!-- ════ MODAL APROVAÇÃO ════ -->
 <div class="modal-overlay hidden" id="modal-aprovacao">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
@@ -2111,7 +2083,6 @@
   </div>
 </div>
 
-<!-- ════ MODAL PEDIDO DE COMPRA ════ -->
 <div class="modal-overlay hidden" id="modal-compra">
   <div class="modal" style="max-width:560px">
     <div class="modal-header">
@@ -2119,7 +2090,6 @@
       <button class="modal-close" onclick="closeModal('modal-compra')">✕</button>
     </div>
     <div class="modal-body">
-      <!-- Aviso de pedido já existente -->
       <div id="compra-dup-warn" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:22px">⚠️</span>
@@ -2200,10 +2170,8 @@ const CONFIG = {
   wearAlert: parseInt(localStorage.getItem('wearAlert') || '80'),
   wearCrit:  parseInt(localStorage.getItem('wearCrit')  || '95'),
 };
-
 let currentUser = null, currentPage = 'dashboard', operationType = 'retirada';
 let toolsData = [], historyData = [], importsData = [], currentScannedTool = null, refreshTimer = null;
-
 const CHECKLIST_TEMPLATES = {
   'Wave Tray': { name:'Wave Tray', items:[
     {id:'trava',name:'Trava · 锁扣',material:'Fenda/Philips/Allen · 一字/十字/内六角',required:true},
@@ -2238,7 +2206,6 @@ const CHECKLIST_TEMPLATES = {
     {id:'limpeza',name:'Limpeza · 清洁',material:'Álcool · 酒精',required:true},
   ]},
 };
-
 const MOCK_TOOLS = [
   {code:'WT-001',name:'Wave Tray Kit A',type:'Wave Tray',qty:3,cycles:12400,maxCycles:50000,status:'Disponível',location:'Almoxarifado',checklist:'Wave Tray',product:'TV_XYZ',ppc:8,lote:true,checklistPendente:false,minStock:5,supplier:'Shenzhen Tools Co.',leadTime:120,price:140.00,purchaseStatus:''},
   {code:'WT-002',name:'Wave Tray Kit B',type:'Wave Tray',qty:60,cycles:45200,maxCycles:50000,status:'Disponível',location:'Almoxarifado',checklist:'Wave Tray',product:'TV_ABC',ppc:8,lote:true,checklistPendente:false,minStock:5,supplier:'Shenzhen Tools Co.',leadTime:120,price:140.00,purchaseStatus:''},
@@ -2254,25 +2221,19 @@ const MOCK_TOOLS = [
   {code:'RDO-001',name:'Rodo Stencil SMT-01',type:'Rodo',qty:3,cycles:1500,maxCycles:5000,status:'Disponível',location:'Almoxarifado',checklist:'Gabarito',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:30,price:85.00,purchaseStatus:''},
   {code:'STN-001',name:'Stencil SMT-01',type:'Stencil',qty:2,cycles:3200,maxCycles:15000,status:'Disponível',location:'Almoxarifado',checklist:'Stencil',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'Shenzhen SMT Supplies',leadTime:90,price:1200.00,purchaseStatus:''},
 ];
-
-// Pedidos de compra locais (espelhados na planilha via apiPost)
-// purchaseStatus em cada tool: '' | 'pedido' | 'entregue'
 const MOCK_PURCHASES = [
   {id:'PC-001',toolCode:'PB-001',toolName:'Pinboard AUTO FCT L1',supplier:'PCB Fixtures Ltd.',qty:2,unitPrice:3200,total:6400,modal:'aviao',dataPedido:'2025-05-20',eta:'2025-06-20',status:'pedido',obs:'Urgente – abaixo do mínimo',solicitante:'Admin'},
   {id:'PC-002',toolCode:'PB-002',toolName:'Pinboard AUTO FCT L2',supplier:'PCB Fixtures Ltd.',qty:1,unitPrice:3200,total:3200,modal:'aviao',dataPedido:'2025-05-20',eta:'2025-06-20',status:'pedido',obs:'',solicitante:'Admin'},
 ];
-
 const MOCK_HISTORY = [
   {dt:'2025-05-25 14:32',tool:'WT-001',action:'RETIRADA',user:'Carlos S.',line:'PTH-01',op:'OP-88231',qty:800,cycles:100,checklistResult:'',obs:''},
   {dt:'2025-05-25 13:10',tool:'PB-001',action:'CHECKLIST',user:'Ana Lima',line:'SMT-01',op:'OP-88220',qty:0,cycles:0,checklistResult:'aprovado',obs:'OK'},
   {dt:'2025-05-25 11:55',tool:'WT-003',action:'RETIRADA',user:'João P.',line:'PTH-01',op:'OP-88198',qty:1200,cycles:150,checklistResult:'',obs:''},
 ];
-
 const MOCK_IMPORTS = [
   {id:'IMP-001',tool:'Wave Tray Kit (60 un)',supplier:'Shenzhen Tools Co.',invoice:'INV-2025-0441',qty:120,value:8400,modal:'navio',embarque:'2025-02-10',eta:'2025-06-10',status:'alfandega',ncm:'8466.94.90'},
   {id:'IMP-002',tool:'Pinboard AUTO FCT',supplier:'PCB Fixtures Ltd.',invoice:'INV-2025-0312',qty:4,value:12000,modal:'aviao',embarque:'2025-04-20',eta:'2025-05-20',status:'entregue',ncm:'8466.94.90'},
 ];
-
 const IMPORT_STEPS = ['comprado','producao','embarcado','transito','alfandega','entregue'];
 
 const ROLE_PERMISSIONS = {
@@ -2284,7 +2245,6 @@ const ROLE_PERMISSIONS = {
   engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
   admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
 };
-
 async function apiCall(action,params={}) {
   if(!CONFIG.scriptUrl) return null;
   try {
@@ -2325,7 +2285,6 @@ async function getTools() {
   return toolsData;
 }
 
-// Retorna tools abaixo do estoque mínimo
 function getBelowMinStock() {
   return toolsData.filter(t => {
     const min = parseInt(t.minStock) || 0;
@@ -2333,7 +2292,6 @@ function getBelowMinStock() {
   });
 }
 
-// Verifica se já existe pedido aberto para uma ferramenta
 function hasOpenPurchase(toolCode) {
   return MOCK_PURCHASES.some(p => p.toolCode === toolCode && p.status === 'pedido');
 }
@@ -2369,7 +2327,6 @@ async function doLogin() {
     const role = rawRole==='administrador'?'admin':rawRole;
     const perms = ROLE_PERMISSIONS[role]||ROLE_PERMISSIONS['operador'];
     currentUser = {name:String(userData.nome||userData['NOME']||loginInput),login:loginInput,role,roleLabel:perms.label,funcao:String(userData.funcao||''),perms};
-    // Salva sessão no sessionStorage para sobreviver ao F5
     sessionStorage.setItem('smt_session', JSON.stringify({
       name:currentUser.name, login:currentUser.login,
       role:currentUser.role, roleLabel:currentUser.roleLabel, funcao:currentUser.funcao
@@ -2486,7 +2443,6 @@ function renderWearTable(tools){
     <td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div><span class="progress-pct ${cls==='danger'?'text-danger':'text-warn'}">${pct}%</span></div></td>
     <td class="text-dim text-xs">—</td>
     <td><button class="btn-primary" style="padding:4px 10px;font-size:11px" onclick="quickScan('${t.code}')">📷 扫码</button></td></tr>`;
-
   }).join('');
 }
 
@@ -2523,7 +2479,6 @@ function renderEstoqueMinimoDash() {
   }).join('');
 }
 
-
 async function renderRecentHistory(){
   const body=document.getElementById('dash-recent-body');if(!body)return;
   const api=await apiCall('getHistory',{limit:8});
@@ -2549,7 +2504,7 @@ async function loadTools(){const tools=await getTools();renderToolsTable(tools);
 
 function renderToolsTable(tools){
   const body=document.getElementById('tools-body');
-  if(!tools.length){body.innerHTML='<tr><td colspan="10" class="empty-state"><span class="icon">🔧</span>无已登记工具</td></tr>';return;}
+  if(!tools.length){body.innerHTML='<tr><td colspan="11" class="empty-state"><span class="icon">🔧</span>无已登记工具</td></tr>';return;}
   const statusMap={'Disponível':'disponivel','Em Uso':'em-uso','Manutenção':'manutencao','Bloqueada':'bloqueado','Descartada':'descartado','Checklist Pendente':'inspecao'};
   body.innerHTML=tools.map(t=>{
     const pct=t.maxCycles>0?Math.round(t.cycles/t.maxCycles*100):0;
@@ -2563,6 +2518,10 @@ function renderToolsTable(tools){
     else if(baixo&&temPedido){estoqueCell=`<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:#92400e;font-weight:700">${qty}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;}
     else if(baixo){estoqueCell=`<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:var(--accent-danger);font-weight:700">${qty}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><button onclick="openPurchaseModal('${t.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;}
     else{estoqueCell=`<td><span class="mono" style="color:#16a34a">${qty}</span><span class="mono text-xs text-dim"> / ${min}</span></td>`;}
+    
+    // String segura para passar o objeto no evento onclick do botão de impressão
+    const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
+
     return `<tr>
       <td class="mono highlight">${t.code}</td><td>${t.name}</td>
       <td><span class="badge inspecao">${t.type}</span></td>
@@ -2574,10 +2533,42 @@ function renderToolsTable(tools){
       <td class="mono text-xs">${t.location}</td>
       <td><span class="badge ${statusMap[t.status]||''}">${t.status}</span></td>
       <td><div class="flex gap-8">
-        <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="quickScan('${t.code}')">📷</button>
-        <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="viewHistory('${t.code}')">📋</button>
+        <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="quickScan('${t.code}')" title="Bipar">📷</button>
+        <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="printToolQRCode(${tString})" title="Imprimir QR Code">🖨️</button>
+        <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="viewHistory('${t.code}')" title="Histórico">📋</button>
       </div></td></tr>`;
   }).join('');
+}
+
+function printToolQRCode(tool) {
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tool.code)}`;
+  const win = window.open('', '_blank', 'width=400,height=400');
+  win.document.write(`
+    <html>
+    <head>
+      <title>Imprimir QR Code — ${tool.code}</title>
+      <style>
+        body { font-family: 'Courier New', monospace; text-align: center; padding: 20px; color: #000; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        img { width: 150px; height: 150px; margin-bottom: 15px; }
+        .label { font-size: 14px; font-weight: bold; max-width: 280px; word-wrap: break-word; line-height: 1.4; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <img src="${qrUrl}" alt="QR Code">
+        <div class="label">${tool.code} — ${tool.name}</div>
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(function() { window.close(); }, 500);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+  win.document.close();
 }
 
 function filterTools(){
@@ -2829,15 +2820,11 @@ function renderLineCard(lineName,tools,lineType){
   const isFW = lineType==='FIRMWARE';
   const hasWarn=pendente.length>0,dotCls=emUso.length>0?(hasWarn?'warn':''):'off';
   const statusTxt=emUso.length>0?`${emUso.length} ${isFW?'slots em uso':'使用中'}`:isFW?'offline':'空闲';
-  return `<div class="line-card"><div class="line-header"><div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div><div class="line-status"><div class="line-dot ${dotCls}"></div><span style="font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">${statusTxt}</span></div></div><div class="line-body"><div class="line-info-row"><span class="lk">类型 · TIPO</span><span class="lv">${lineType}</span></div><div class="line-info-row"><span class="lk">使用中工具 · EM USO</span><span class="lv">${emUso.length}</span></div>${pendente.length>0?`<div class="line-info-row"><span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span><span class="lv" style="color:var(--accent-warn)">${pendente.length}</span></div>`:''} ${emUso.length>0?`<div class="line-tools"><div class="line-tools-label">当前工具 · FERRAMENTAS ATIVAS</div><div class="tool-chip-row">${emUso.slice(0,6).map(t=>`<span class="tool-chip">${t.code}</span>`).join('')}${emUso.length>6?`<span class="tool-chip">+${emUso.length-6}</span>`:''}</div></div>`:''}</div></div>`;
+  return `<div class="line-card"><div class="line-header"><div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div><div class="line-status"><div class="line-dot ${dotCls}"></div><span style="font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">${statusTxt}</span></div></div><div class="line-body"><div class="line-info-row"><span class="lk">类型 · TIPO</span><span class="lv">${lineType}</span></div><div class="line-info-row"><span class="lk">使用中工具 · EM USO</span><span class="lv">${emUso.length}</span></div>${pendente.length>0?`<div class="line-info-row"><span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span><span class="lv" style="color:var(--accent-warn)">${pendente.length}</span></div>`:''} ${emUso.length>0?`<div class="line-tools"><div class="line-tools-label">当前工具 · FERRAMENTAS ATIVAS</div><div class="tool-chip-row">${emUso.slice(0,6).map(t=>`<span class="tool-chip" title="${t.code} — ${t.name}">${t.code} — ${t.name}</span>`).join('')}${emUso.length!=='FIRMWARE' && emUso.length>6?`<span class="tool-chip">+${emUso.length-6}</span>`:''}</div></div>`:''}</div></div>`;
 }
 
 function loadLines(type){
-  const lines = type==='smt'
-    ? ['SMT-01','SMT-02','SMT-03','SMT-04']
-    : type==='pth'
-    ? ['PTH-01','PTH-02','PTH-03','PTH-04']
-    : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
+  const lines = type==='smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : type==='pth' ? ['PTH-01','PTH-02','PTH-03','PTH-04'] : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
   if(!grid) return;
   const lineType = type==='smt' ? 'SMT' : type==='pth' ? 'PTH' : 'FIRMWARE';
@@ -2887,7 +2874,7 @@ function generateReport(type){
   const card=document.getElementById('report-result'),title=document.getElementById('report-title'),body=document.getElementById('report-body');
   card.style.display='block';
   const reports={
-    ciclos:{title:'循环报告 · CICLOS POR FERRAMENTA',content:()=>`<table class="data-table"><thead><tr><th>工具 FERRAMENTA</th><th>类型 TIPO</th><th>循环 CICLOS</th><th>最大 MÁX</th><th>磨损 DESGASTE</th></tr></thead><tbody>${[...toolsData].sort((a,b)=>b.cycles-a.cycles).map(t=>{const pct=t.maxCycles>0?Math.round(t.cycles/t.maxCycles*100):0;return`<tr><td class="highlight">${t.name}</td><td>${t.type}</td><td class="mono">${(t.cycles||0).toLocaleString()}</td><td class="mono">${(t.maxCycles||0).toLocaleString()}</td><td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${pct>90?'danger':pct>75?'warn':''}" style="width:${pct}%"></div></div><span class="progress-pct">${pct}%</span></div></td></tr>`;}).join('')}</tbody></table>`},
+    ciclos:{title:'循环报告 · CICLOS POR FERRAMENTA',content:()=>`<table class="data-table"><thead><tr><th>工具 FERRAMENTA</th><th>类型 TIPO</th><th>循环 CICLOS</th><th>最大 MÁX</th><th>磨损 DESGASTE</th></tr></thead><tbody>${[...toolsData].sort((a,b)=>b.cycles-a.cycles).map(t=>{const pct=t.maxCycles>0?Math.round(t.cycles/t.maxCycles*100):0;return`<tr><td class="highlight">${t.name}</td><td>${t.type}</td><td class="mono">${(t.cycles||0).toLocaleString()}</td><td class="mono">${(t.maxCycles||0).toLocaleString()}</td><td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${pct>90?'danger':pct>75?'warn':''}" style="width:${pct}%"></div></div><span class="progress-pct">${pct}%</span></div></td></tr>`;}).join('')}</tbody></table>` },
     disponibilidade:{title:'可用率报告 · DISPONIBILIDADE',content:()=>{const disp=toolsData.filter(t=>t.status==='Disponível').length,pend=toolsData.filter(t=>t.status==='Checklist Pendente').length,total=toolsData.length,pct=total>0?Math.round(disp/total*100):0;return`<div class="kpi-grid"><div class="kpi-card green"><span class="k-label">可用率 DISPONÍVEIS<span class="cn">可用工具占比</span></span><div class="k-value">${pct}%</div><div class="k-sub">${disp} / ${total}</div></div><div class="kpi-card warn"><span class="k-label">待检 CHECKLIST PENDENTE<span class="cn">等待检查</span></span><div class="k-value">${pend}</div></div></div>`;}},
     importacao:{title:'进口报告 · IMPORTAÇÕES',content:()=>MOCK_IMPORTS.map(i=>`<div style="padding:8px 0;border-bottom:1px solid var(--divider)"><div class="flex justify-between items-center"><span class="text-bright">${i.tool}</span><span class="badge ${i.status==='entregue'?'disponivel':'em-uso'}">${i.status}</span></div><div style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary)">${i.invoice} · ${i.modal==='navio'?'🚢':'✈️'} · ETA: ${i.eta}</div></div>`).join('')},
     perdas:{title:'报废损耗报告 · PERDAS E DESCARTES',content:()=>{const perdas=MOCK_HISTORY.filter(h=>h.action==='DESCARTE'||h.action==='BLOQUEIO'||h.checklistResult==='reprovado');return perdas.length?perdas.map(h=>`<div style="padding:8px 0;border-bottom:1px solid var(--divider)"><span class="text-bright">${h.tool}</span> · <span class="text-danger">${h.action}</span> · ${h.dt} · ${h.obs}</div>`).join(''):'<div class="empty-state"><span class="icon">✅</span>无报废记录</div>';}},
@@ -2922,6 +2909,7 @@ async function testConnection(){
 function loadConfig(){const url=document.getElementById('cfg-script-url');if(url)url.value=CONFIG.scriptUrl||'';}
 
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
+
 // ══════════════════════════════════════════════════════════
 //  MÓDULO DE COMPRAS — Pedido com proteção de duplicidade
 // ══════════════════════════════════════════════════════════
@@ -2971,8 +2959,7 @@ function loadComprasPage() {
               Estoque ABAIXO DO MÍNIMO (${qty} / mín ${min}) — solicite compra agora · 库存不足，请立即采购
             </span>
           </span>
-          <button class="btn-danger" style="margin-left:auto;padding:6px 14px;font-size:11px;white-space:nowrap"
-            onclick="openPurchaseModal('${t.code}')">
+          <button class="btn-danger" style="margin-left:auto;padding:6px 14px;font-size:11px;white-space:nowrap" onclick="openPurchaseModal('${t.code}')">
             🛒 SOLICITAR COMPRA · 立即采购
           </button>
         </div>`;
@@ -3016,7 +3003,6 @@ function loadComprasPage() {
 }
 
 function openPurchaseModal(preToolCode) {
-  // Preenche o select de ferramentas
   const sel = document.getElementById('pc-tool');
   sel.innerHTML = '<option value="">选择工具 · Selecione a ferramenta...</option>' +
     toolsData.map(t => {
@@ -3025,8 +3011,6 @@ function openPurchaseModal(preToolCode) {
       const baixo = min>0 && qty<min ? ' ⚠ ABAIXO DO MÍNIMO' : '';
       return `<option value="${t.code}" ${t.code===preToolCode?'selected':''}>${t.code} — ${t.name}${baixo}</option>`;
     }).join('');
-
-  // Define data de hoje
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('pc-data').value = hoje;
   document.getElementById('pc-eta').value = '';
@@ -3036,13 +3020,11 @@ function openPurchaseModal(preToolCode) {
   document.getElementById('pc-obs').value = '';
   document.getElementById('compra-dup-warn').style.display = 'none';
   document.getElementById('modal-compra-error').style.display = 'none';
-
   if(preToolCode) {
     onCompraToolChange();
   } else {
     document.getElementById('pc-tool-info').style.display = 'none';
   }
-
   document.getElementById('modal-compra').classList.remove('hidden');
 }
 
@@ -3051,10 +3033,8 @@ function onCompraToolChange() {
   const tool = toolsData.find(t=>t.code===code);
   const infoBox = document.getElementById('pc-tool-info');
   const dupWarn = document.getElementById('compra-dup-warn');
-
   if(!tool) { infoBox.style.display='none'; dupWarn.style.display='none'; return; }
 
-  // Mostra informações da ferramenta
   infoBox.style.display = 'block';
   const min = parseInt(tool.minStock)||0;
   const qty = parseInt(tool.qty)||0;
@@ -3065,20 +3045,15 @@ function onCompraToolChange() {
   document.getElementById('pc-info-lead').textContent = tool.leadTime ? tool.leadTime+' dias' : '—';
   document.getElementById('pc-info-price').textContent = tool.price ? 'R$ '+tool.price.toFixed(2) : '—';
 
-  // Pré-preenche fornecedor e preço se cadastrado
   if(tool.supplier) document.getElementById('pc-supplier').value = tool.supplier;
   if(tool.price) document.getElementById('pc-price').value = tool.price.toFixed(2);
-
-  // Calcula ETA sugerida baseada no lead time
   if(tool.leadTime) {
     const eta = new Date();
     eta.setDate(eta.getDate() + parseInt(tool.leadTime));
     document.getElementById('pc-eta').value = eta.toISOString().split('T')[0];
   }
-
   calcTotal();
 
-  // Verifica duplicidade
   const existente = MOCK_PURCHASES.find(p=>p.toolCode===code&&p.status==='pedido');
   if(existente) {
     dupWarn.style.display = 'block';
@@ -3111,7 +3086,6 @@ async function savePurchase() {
   if(!supplier) { errEl.textContent='✗ Informe o fornecedor · 请填写供应商'; errEl.style.display='block'; return; }
   if(qty<=0)    { errEl.textContent='✗ Quantidade inválida · 数量无效'; errEl.style.display='block'; return; }
   errEl.style.display='none';
-
   const tool = toolsData.find(t=>t.code===code);
   const newId = 'PC-' + String(MOCK_PURCHASES.length+1).padStart(3,'0');
   const newPurchase = {
@@ -3122,22 +3096,14 @@ async function savePurchase() {
     modal, dataPedido:data, eta, status:'pedido',
     obs, solicitante: currentUser.name
   };
-
-  // Envia para a planilha
   await apiPost('savePurchase', newPurchase);
-
-  // Atualiza local
   MOCK_PURCHASES.unshift(newPurchase);
-
-  // Marca a ferramenta como tendo pedido aberto
   const idx = toolsData.findIndex(t=>t.code===code);
   if(idx>=0) toolsData[idx].purchaseStatus = 'pedido';
 
   closeModal('modal-compra');
   toast(`✓ Pedido ${newId} registrado! · 订单已提交`, 'success');
   loadComprasPage();
-
-  // Atualiza badge de estoque baixo no dashboard se estiver lá
   if(currentPage==='dashboard') loadDashboard();
 }
 
@@ -3146,7 +3112,6 @@ async function marcarEntregue(purchaseId) {
   if(idx<0) return;
   MOCK_PURCHASES[idx].status = 'entregue';
   await apiPost('updatePurchaseStatus',{id:purchaseId,status:'entregue',aprovador:currentUser.name});
-  // Limpa o purchaseStatus da ferramenta se não há mais pedidos abertos
   const toolCode = MOCK_PURCHASES[idx].toolCode;
   const aindaAberto = MOCK_PURCHASES.some(p=>p.toolCode===toolCode&&p.status==='pedido');
   if(!aindaAberto) { const ti=toolsData.findIndex(t=>t.code===toolCode); if(ti>=0) toolsData[ti].purchaseStatus=''; }
@@ -3307,7 +3272,6 @@ async function saveUser(){
 }
 
 let solicitacaoAtual=null;
-
 async function loadAprovacoes(){
   const apiPend=await apiCall('getSolicitacoes',{status:'pendente'});
   const pendentes=(apiPend&&apiPend.data)?apiPend.data:[];
@@ -3366,7 +3330,6 @@ function toggleQtdParcial(chk){
     document.getElementById('app').classList.add('active');
     startClock();
     loadConfig();
-    // Pequeno delay para DOM estar pronto
     setTimeout(()=>{
       navigate(perms.pages[0]||'dashboard');
       startAutoRefresh();
@@ -3376,7 +3339,6 @@ function toggleQtdParcial(chk){
     sessionStorage.removeItem('smt_session');
   }
 })();
-
 function sincronizarQtd(input){const qtyPrincipal=document.getElementById('oper-qty');if(qtyPrincipal)qtyPrincipal.value=input.value;}
 </script>
 </body>
