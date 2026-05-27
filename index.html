@@ -3524,15 +3524,61 @@ function openAdvanceModal(purchaseId) {
   }
  
   // Preenche a timeline
-  const timelineHtml = FLOW_STAGES.map((s, i) => {
-    let cls = '';
-    if (i < currentStageIdx)     cls = 'done';
-    else if (i === currentStageIdx) cls = 'active';
-    return `<div class="import-step ${cls}">
-      <div class="import-dot">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
-      <div class="import-label">${s.label}</div>
-    </div>`;
-  }).join('');
+  // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
+    const timelineHtml = FLOW_STAGES.map((s, i) => {
+      let cls = '';
+      let styleExtra = '';
+      let tempoEtapaLabel = '—'; 
+
+      const dataEntradaEstaEtapa = historicoMapa[s.key];
+
+      // Determina a classe de cor baseada no progresso
+      if (dataEntradaEstaEtapa) {
+        let dataFim;
+        if (i < currentStageIdx) {
+          cls = 'done';
+          const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
+          dataFim = proximaEtapaComData ? historicoMapa[proximaEtapaComData.key] : null;
+        } else if (i === currentStageIdx) {
+          cls = 'active';
+          dataFim = new Date();
+        }
+
+        // Cálculo do tempo de duração da etapa
+        if (dataEntradaEstaEtapa && dataFim) {
+          const diffMs = dataFim - dataEntradaEstaEtapa;
+          if (diffMs > 0) {
+            const diffHorasTotal = diffMs / (1000 * 60 * 60);
+            const dias = Math.floor(diffHorasTotal / 24);
+            const horas = Math.floor(diffHorasTotal % 24);
+            
+            if (dias > 0) {
+              tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
+            } else {
+              tempoEtapaLabel = `⏱️ ${horas}h`;
+            }
+          } else {
+            tempoEtapaLabel = `⏱️ < 1h`;
+          }
+        }
+      }
+
+      // ── REGRA DO PRÓXIMO PASSO (PISCANDO AGUARDANDO AÇÃO) ──
+      // Se esta etapa é exatamente a etapa seguinte ao status atual, e o processo não foi finalizado
+      if (i === currentStageIdx + 1 && !isClosed) {
+        cls = 'pending-action';
+        styleExtra = 'animation: pulse 1.5s infinite; background-color: rgba(245, 158, 11, 0.15); border-color: var(--accent-warn); color: var(--accent-warn);';
+      }
+
+      // Renderiza a etapa com as durações e animações ajustadas
+      return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+        <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'active' || cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
+          ${cls === 'pending-action' ? '⚡ Próxima' : tempoEtapaLabel}
+        </div>
+        <div class="import-dot" style="${styleExtra}">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
+        <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
+      </div>`;
+    }).join('');
   document.getElementById('adv-timeline').innerHTML =
     `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
  
