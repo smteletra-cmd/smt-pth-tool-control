@@ -3148,10 +3148,10 @@ function closeModal(id){document.getElementById(id).classList.add('hidden');}
 // ══════════════════════════════════════════════════════════
 
 const FLOW_STAGES = [
-  { key: 'solicitado',       label: 'SOLICITADO',       cn: '已申请',   icon: '📋' },
-  { key: 'cotacao_enviada',  label: 'COTAÇÃO ENVIADA',  cn: '询价已发', icon: '📤' },
-  { key: 'cotacao_recebida', label: 'COTAÇÃO RECEBIDA', cn: '收到报价', icon: '📥' },
-  { key: 'ncm_validado',     label: 'NCM VALIDADO',     cn: 'NCM验证', icon: '✅' },
+  { key: 'solicitado',       label: 'SOLICITAR',          cn: '已申请',   icon: '📋' },
+  { key: 'cotacao_enviada',  label: 'REQUISIÇÃO COTAÇÃO', cn: '询价已发', icon: '📤' },
+  { key: 'cotacao_recebida', label: 'RECEBER COTAÇÃO',    cn: '收到报价', icon: '📥' },
+  { key: 'ncm_validado',     label: 'VALIDAR NCM',        cn: 'NCM验证', icon: '✅' },
   { key: 'cadastro_proteus', label: 'PROTEUS SOLICIT.',  cn: 'Proteus申请', icon: '🔧' },
   { key: 'sc_proteus',       label: 'SC PROTEUS',       cn: 'SC已创建', icon: '📝' },
   { key: 'po_emitida',       label: 'PO EMITIDA',       cn: 'PO已发',  icon: '🧾' },
@@ -3525,6 +3525,7 @@ function openAdvanceModal(purchaseId) {
  
   // Preenche a timeline
   // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
+    // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
       let styleExtra = '';
@@ -3532,7 +3533,7 @@ function openAdvanceModal(purchaseId) {
 
       const dataEntradaEstaEtapa = historicoMapa[s.key];
 
-      // Determina a classe de cor baseada no progresso
+      // 1. CALCULO PARA ETAPAS QUE JÁ TÊM HISTÓRICO (Passadas ou Atual)
       if (dataEntradaEstaEtapa) {
         let dataFim;
         if (i < currentStageIdx) {
@@ -3544,36 +3545,43 @@ function openAdvanceModal(purchaseId) {
           dataFim = new Date();
         }
 
-        // Cálculo do tempo de duração da etapa
         if (dataEntradaEstaEtapa && dataFim) {
           const diffMs = dataFim - dataEntradaEstaEtapa;
           if (diffMs > 0) {
             const diffHorasTotal = diffMs / (1000 * 60 * 60);
             const dias = Math.floor(diffHorasTotal / 24);
             const horas = Math.floor(diffHorasTotal % 24);
-            
-            if (dias > 0) {
-              tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
-            } else {
-              tempoEtapaLabel = `⏱️ ${horas}h`;
-            }
+            tempoEtapaLabel = dias > 0 ? `⏱️ ${dias}d ${horas}h` : `⏱️ ${horas}h`;
           } else {
             tempoEtapaLabel = `⏱️ < 1h`;
           }
         }
       }
 
-      // ── REGRA DO PRÓXIMO PASSO (PISCANDO AGUARDANDO AÇÃO) ──
-      // Se esta etapa é exatamente a etapa seguinte ao status atual, e o processo não foi finalizado
+      // 2. REGRA PARA A ETAPA QUE ESTÁ AGUARDANDO AÇÃO (A próxima da fila)
+      // Se é a etapa seguinte à atual e o card ainda não está totalmente fechado/recebido
       if (i === currentStageIdx + 1 && !isClosed) {
         cls = 'pending-action';
-        styleExtra = 'animation: pulse 1.5s infinite; background-color: rgba(245, 158, 11, 0.15); border-color: var(--accent-warn); color: var(--accent-warn);';
+        // Faz o círculo piscar usando o keyframe pulse do seu CSS industrial
+        styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
+        
+        // Pega a data de quando o processo estagnou (última modificação do status atual)
+        const historicoUltimoStatus = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
+        if (historicoUltimoStatus && historicoUltimoStatus.data) {
+          const diffMsAguardando = new Date() - new Date(historicoUltimoStatus.data);
+          if (diffMsAguardando > 0) {
+            const horasAguardando = diffMsAguardando / (1000 * 60 * 60);
+            const dAguarda = Math.floor(horasAguardando / 24);
+            const hAguarda = Math.floor(horasAguardando % 24);
+            tempoEtapaLabel = dAguarda > 0 ? `⏳ ${dAguarda}d ${hAguarda}h` : `⏳ ${hAguarda}h`;
+          }
+        }
       }
 
-      // Renderiza a etapa com as durações e animações ajustadas
+      // Renderiza o componente individual da etapa montando a árvore DOM
       return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
         <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'active' || cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
-          ${cls === 'pending-action' ? '⚡ Próxima' : tempoEtapaLabel}
+          ${tempoEtapaLabel}
         </div>
         <div class="import-dot" style="${styleExtra}">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
         <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
