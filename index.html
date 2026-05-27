@@ -2221,22 +2221,15 @@ const MOCK_TOOLS = [
   {code:'RDO-001',name:'Rodo Stencil SMT-01',type:'Rodo',qty:3,cycles:1500,maxCycles:5000,status:'Disponível',location:'Almoxarifado',checklist:'Gabarito',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:2,supplier:'',leadTime:30,price:85.00,purchaseStatus:''},
   {code:'STN-001',name:'Stencil SMT-01',type:'Stencil',qty:2,cycles:3200,maxCycles:15000,status:'Disponível',location:'Almoxarifado',checklist:'Stencil',product:'TV_XYZ',ppc:1,lote:false,checklistPendente:false,minStock:1,supplier:'Shenzhen SMT Supplies',leadTime:90,price:1200.00,purchaseStatus:''},
 ];
-const MOCK_PURCHASES = [
-  {id:'PC-001',toolCode:'PB-001',toolName:'Pinboard AUTO FCT L1',supplier:'PCB Fixtures Ltd.',qty:2,unitPrice:3200,total:6400,modal:'aviao',dataPedido:'2025-05-20',eta:'2025-06-20',status:'pedido',obs:'Urgente – abaixo do mínimo',solicitante:'Admin'},
-  {id:'PC-002',toolCode:'PB-002',toolName:'Pinboard AUTO FCT L2',supplier:'PCB Fixtures Ltd.',qty:1,unitPrice:3200,total:3200,modal:'aviao',dataPedido:'2025-05-20',eta:'2025-06-20',status:'pedido',obs:'',solicitante:'Admin'},
-];
+let purchasesData = [];
 const MOCK_HISTORY = [
   {dt:'2025-05-25 14:32',tool:'WT-001',action:'RETIRADA',user:'Carlos S.',line:'PTH-01',op:'OP-88231',qty:800,cycles:100,checklistResult:'',obs:''},
   {dt:'2025-05-25 13:10',tool:'PB-001',action:'CHECKLIST',user:'Ana Lima',line:'SMT-01',op:'OP-88220',qty:0,cycles:0,checklistResult:'aprovado',obs:'OK'},
   {dt:'2025-05-25 11:55',tool:'WT-003',action:'RETIRADA',user:'João P.',line:'PTH-01',op:'OP-88198',qty:1200,cycles:150,checklistResult:'',obs:''},
 ];
-const MOCK_IMPORTS = [
-  {id:'IMP-001',tool:'Wave Tray Kit (60 un)',supplier:'Shenzhen Tools Co.',invoice:'INV-2025-0441',qty:120,value:8400,modal:'navio',embarque:'2025-02-10',eta:'2025-06-10',status:'alfandega',ncm:'8466.94.90'},
-  {id:'IMP-002',tool:'Pinboard AUTO FCT',supplier:'PCB Fixtures Ltd.',invoice:'INV-2025-0312',qty:4,value:12000,modal:'aviao',embarque:'2025-04-20',eta:'2025-05-20',status:'entregue',ncm:'8466.94.90'},
-];
-const IMPORT_STEPS = ['comprado','producao','embarcado','transito','alfandega','entregue'];
+let importsData = [];
 
-const ROLE_PERMISSIONS = {
+  const ROLE_PERMISSIONS = {
   operador:    {label:'OPERADOR · 操作员',pages:['dashboard','bipar','checklist'],canCadastrar:false,navClasses:[]},
   lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
   manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
@@ -2293,7 +2286,8 @@ function getBelowMinStock() {
 }
 
 function hasOpenPurchase(toolCode) {
-  return MOCK_PURCHASES.some(p => p.toolCode === toolCode && p.status === 'pedido');
+  const closedStages = ['recebido', 'cancelado', 'cadastro_sistema'];
+  return purchasesData.some(p => p.toolCode === toolCode && !closedStages.includes(p.status));
 }
 
 async function doLogin() {
@@ -2404,9 +2398,11 @@ async function loadDashboard(){
         critical=tools.filter(t=>t.maxCycles>0&&(t.cycles/t.maxCycles)>=CONFIG.wearAlert/100).length;
   setText('dash-total',total);setText('dash-disp',disp);setText('dash-uso',uso);
   setText('dash-man',man);setText('dash-alert',critical+bloc+chkPnd);
-  setText('dash-imp',importsData?importsData.filter(i=>i.status!=='entregue').length:'—');
+   const ativos = purchasesData.filter(p => !['recebido','cancelado','cadastro_sistema'].includes(p.status));
+  setText('dash-imp', ativos.length);
+  setText('kpi-imports', ativos.length);
   setText('kpi-disponivel',disp);setText('kpi-alertas',critical+bloc+chkPnd);
-  setText('kpi-em-uso',uso);setText('kpi-imports',importsData?importsData.filter(i=>i.status!=='entregue').length:'—');
+  setText('kpi-em-uso',uso);
   const navBadge=document.getElementById('nav-badge-check');
   if(navBadge) navBadge.textContent=chkPnd>0?chkPnd:'';
   const navBadgeA=document.getElementById('nav-badge-alertas');
@@ -2831,15 +2827,6 @@ function loadLines(type){
   grid.innerHTML=lines.map(l=>{const tools=toolsData.filter(t=>t.location===l);return renderLineCard(l,tools,lineType);}).join('');
 }
 
-function loadImports(){
-  const list=document.getElementById('imports-list');
-  if(!MOCK_IMPORTS.length){list.innerHTML='<div class="empty-state"><span class="icon">🚢</span>无进口记录</div>';return;}
-  list.innerHTML=MOCK_IMPORTS.map(imp=>{
-    const stepIdx=IMPORT_STEPS.indexOf(imp.status);
-    return `<div class="card mb-16"><div class="card-header"><span class="card-title">${imp.id} — ${imp.tool}</span><span class="badge ${imp.status==='entregue'?'disponivel':'em-uso'}">${imp.status.toUpperCase()}</span></div><div class="card-body"><div class="flex gap-20 mb-16 flex-wrap"><div class="tool-info-row"><span class="tik">供应商 FORNECEDOR</span><span class="tiv">${imp.supplier}</span></div><div class="tool-info-row"><span class="tik">发票 INVOICE</span><span class="tiv mono">${imp.invoice}</span></div><div class="tool-info-row"><span class="tik">数量 QTD</span><span class="tiv">${imp.qty} un</span></div><div class="tool-info-row"><span class="tik">金额 VALOR</span><span class="tiv">USD ${(imp.value||0).toLocaleString()}</span></div><div class="tool-info-row"><span class="tik">运输 MODAL</span><span class="tiv">${imp.modal==='navio'?'🚢 海运 · Navio':'✈️ 空运 · Avião'}</span></div><div class="tool-info-row"><span class="tik">预计到达 ETA</span><span class="tiv">${imp.eta}</span></div></div><div class="import-track">${IMPORT_STEPS.map((s,i)=>`<div class="import-step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="import-dot">${i<stepIdx?'✓':i+1}</div><div class="import-label">${s.toUpperCase()}</div></div>`).join('')}</div></div></div>`;
-  }).join('');
-}
-
 function openImportModal(){
   const sel=document.getElementById('imp-tool');
   sel.innerHTML=toolsData.map(t=>`<option value="${t.code}">${t.code} — ${t.name}</option>`).join('');
@@ -2849,7 +2836,7 @@ function openImportModal(){
 async function saveImport(){
   const data={tool:document.getElementById('imp-tool').value,supplier:document.getElementById('imp-supplier').value,invoice:document.getElementById('imp-invoice').value,qty:document.getElementById('imp-qty').value,value:document.getElementById('imp-value').value,modal:document.getElementById('imp-modal').value,date:document.getElementById('imp-date').value,ncm:document.getElementById('imp-ncm').value};
   await apiPost('saveImport',data);
-  MOCK_IMPORTS.unshift({id:`IMP-${String(MOCK_IMPORTS.length+1).padStart(3,'0')}`,...data,status:'comprado',eta:'—'});
+  purchasesData.unshift({id:`IMP-${String(purchasesData.length+1).padStart(3,'0')}`,...data,status:'comprado',eta:'—'});
   closeModal('modal-import');toast('✓ 进口记录已保存 · Importação registrada!','success');loadImports();
 }
 
@@ -2876,7 +2863,7 @@ function generateReport(type){
   const reports={
     ciclos:{title:'循环报告 · CICLOS POR FERRAMENTA',content:()=>`<table class="data-table"><thead><tr><th>工具 FERRAMENTA</th><th>类型 TIPO</th><th>循环 CICLOS</th><th>最大 MÁX</th><th>磨损 DESGASTE</th></tr></thead><tbody>${[...toolsData].sort((a,b)=>b.cycles-a.cycles).map(t=>{const pct=t.maxCycles>0?Math.round(t.cycles/t.maxCycles*100):0;return`<tr><td class="highlight">${t.name}</td><td>${t.type}</td><td class="mono">${(t.cycles||0).toLocaleString()}</td><td class="mono">${(t.maxCycles||0).toLocaleString()}</td><td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${pct>90?'danger':pct>75?'warn':''}" style="width:${pct}%"></div></div><span class="progress-pct">${pct}%</span></div></td></tr>`;}).join('')}</tbody></table>` },
     disponibilidade:{title:'可用率报告 · DISPONIBILIDADE',content:()=>{const disp=toolsData.filter(t=>t.status==='Disponível').length,pend=toolsData.filter(t=>t.status==='Checklist Pendente').length,total=toolsData.length,pct=total>0?Math.round(disp/total*100):0;return`<div class="kpi-grid"><div class="kpi-card green"><span class="k-label">可用率 DISPONÍVEIS<span class="cn">可用工具占比</span></span><div class="k-value">${pct}%</div><div class="k-sub">${disp} / ${total}</div></div><div class="kpi-card warn"><span class="k-label">待检 CHECKLIST PENDENTE<span class="cn">等待检查</span></span><div class="k-value">${pend}</div></div></div>`;}},
-    importacao:{title:'进口报告 · IMPORTAÇÕES',content:()=>MOCK_IMPORTS.map(i=>`<div style="padding:8px 0;border-bottom:1px solid var(--divider)"><div class="flex justify-between items-center"><span class="text-bright">${i.tool}</span><span class="badge ${i.status==='entregue'?'disponivel':'em-uso'}">${i.status}</span></div><div style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary)">${i.invoice} · ${i.modal==='navio'?'🚢':'✈️'} · ETA: ${i.eta}</div></div>`).join('')},
+    importacao:{title:'进口报告 · IMPORTAÇÕES',content:()=>purchasesData.map(i=>`<div style="padding:8px 0;border-bottom:1px solid var(--divider)"><div class="flex justify-between items-center"><span class="text-bright">${i.tool}</span><span class="badge ${i.status==='entregue'?'disponivel':'em-uso'}">${i.status}</span></div><div style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary)">${i.invoice} · ${i.modal==='navio'?'🚢':'✈️'} · ETA: ${i.eta}</div></div>`).join('')},
     perdas:{title:'报废损耗报告 · PERDAS E DESCARTES',content:()=>{const perdas=MOCK_HISTORY.filter(h=>h.action==='DESCARTE'||h.action==='BLOQUEIO'||h.checklistResult==='reprovado');return perdas.length?perdas.map(h=>`<div style="padding:8px 0;border-bottom:1px solid var(--divider)"><span class="text-bright">${h.tool}</span> · <span class="text-danger">${h.action}</span> · ${h.dt} · ${h.obs}</div>`).join(''):'<div class="empty-state"><span class="icon">✅</span>无报废记录</div>';}},
   };
   const r=reports[type];if(r){title.textContent=r.title;body.innerHTML=r.content();}
@@ -2914,38 +2901,96 @@ function closeModal(id){document.getElementById(id).classList.add('hidden');}
 //  MÓDULO DE COMPRAS — Pedido com proteção de duplicidade
 // ══════════════════════════════════════════════════════════
 
-function loadComprasPage() {
-  const filterStatus = (document.getElementById('pc-filter-status')||{}).value || '';
+const FLOW_STAGES = [
+  { key: 'solicitado',       label: 'SOLICITADO',       cn: '已申请',   icon: '📋' },
+  { key: 'cotacao_enviada',  label: 'COTAÇÃO ENVIADA',  cn: '询价已发', icon: '📤' },
+  { key: 'cotacao_recebida', label: 'COTAÇÃO RECEBIDA', cn: '收到报价', icon: '📥' },
+  { key: 'ncm_validado',     label: 'NCM VALIDADO',     cn: 'NCM验证', icon: '✅' },
+  { key: 'cadastro_proteus', label: 'PROTEUS SOLICIT.',  cn: 'Proteus申请', icon: '🔧' },
+  { key: 'sc_proteus',       label: 'SC PROTEUS',       cn: 'SC已创建', icon: '📝' },
+  { key: 'po_emitida',       label: 'PO EMITIDA',       cn: 'PO已发',  icon: '🧾' },
+  { key: 'po_aprovada',      label: 'PO APROVADA',      cn: 'PO已批',  icon: '✔️' },
+  { key: 'po_enviada_hq',    label: 'PO ENVIADA HQ',    cn: '已发总部', icon: '✉️' },
+  { key: 'em_transito',      label: 'EM TRÂNSITO',      cn: '运输中',   icon: '🚢' },
+  { key: 'recebido',         label: 'RECEBIDO',          cn: '已收货',   icon: '📦' },
+  { key: 'cadastro_sistema', label: 'CAD. SISTEMA',      cn: '系统登记', icon: '🏭' },
+];
+ 
 
+// ── CARREGAMENTO INICIAL ──────────────────────────────────────────────────────
+async function loadPurchasesFromAPI() {
+  const api = await apiCall('getPurchases');
+  if (api && api.data) {
+    purchasesData = api.data.map(p => ({
+      id:          p.id,
+      toolCode:    p.tool_code,
+      toolName:    p.tool_name,
+      supplier:    p.supplier,
+      qty:         parseInt(p.qty) || 0,
+      unitPrice:   parseFloat(p.unit_price) || 0,
+      total:       parseFloat(p.total) || 0,
+      modal:       p.modal || 'navio',
+      dataPedido:  p.data_pedido ? String(p.data_pedido).split(' ')[0] : '',
+      eta:         p.eta || '',
+      status:      p.status_fluxo || 'solicitado',
+      obs:         p.obs || '',
+      solicitante: p.solicitante || '',
+      ncm:         p.ncm || '',
+      invoice:     p.invoice || '',
+      valorUsd:    parseFloat(p.valor_usd) || 0,
+      historico:   (() => { try { return JSON.parse(p.historico_estagios || '[]'); } catch(e){ return []; } })(),
+    }));
+  } else {
+    // modo demo sem backend
+    purchasesData = [];
+  }
+  return purchasesData;
+}
+ 
+function hasOpenPurchase(toolCode) {
+  const closedStages = ['recebido', 'cancelado', 'cadastro_sistema'];
+  return purchasesData.some(p => p.toolCode === toolCode && !closedStages.includes(p.status));
+}
+ 
+// ── PÁGINA DE COMPRAS ─────────────────────────────────────────────────────────
+async function loadComprasPage() {
+  await loadPurchasesFromAPI();
+ 
+  const filterStatus = (document.getElementById('pc-filter-status') || {}).value || '';
+  const closedStages = ['recebido', 'cancelado', 'cadastro_sistema'];
+ 
   // KPIs
-  const abaixo = getBelowMinStock();
-  const abertos   = MOCK_PURCHASES.filter(p=>p.status==='pedido');
-  const entregues = MOCK_PURCHASES.filter(p=>p.status==='entregue');
-  const valorAberto = abertos.reduce((s,p)=>s+(p.total||0),0);
-  setText('pc-kpi-baixo', abaixo.length);
-  setText('pc-kpi-abertos', abertos.length);
-  setText('pc-kpi-entregues', entregues.length);
-  setText('pc-kpi-valor', 'R$ '+valorAberto.toLocaleString('pt-BR',{minimumFractionDigits:2}));
-
+  const abaixo      = getBelowMinStock();
+  const abertos     = purchasesData.filter(p => !closedStages.includes(p.status));
+  const entregues   = purchasesData.filter(p => p.status === 'recebido');
+  const valorAberto = abertos.reduce((s, p) => s + (p.total || 0), 0);
+  setText('pc-kpi-baixo',    abaixo.length);
+  setText('pc-kpi-abertos',  abertos.length);
+  setText('pc-kpi-entregues',entregues.length);
+  setText('pc-kpi-valor',    'R$ ' + valorAberto.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+ 
   // Alertas de estoque baixo
   const alertEl = document.getElementById('compras-alertas-estoque');
-  if(alertEl) {
+  if (alertEl) {
     let html = '';
     abaixo.forEach(t => {
-      const min = parseInt(t.minStock)||0;
-      const qty = parseInt(t.qty)||0;
+      const min = parseInt(t.minStock) || 0;
+      const qty = parseInt(t.qty) || 0;
       const jaTemPedido = hasOpenPurchase(t.code);
-      if(jaTemPedido) {
+      if (jaTemPedido) {
+        const pedido = purchasesData.find(p => p.toolCode === t.code && !closedStages.includes(p.status));
         html += `<div class="alert-strip warn" style="margin-bottom:8px">
           <span class="icon">📦</span>
           <span class="msg">
             <strong>${t.code} — ${t.name}</strong>
             <span class="cn">库存 ${qty} / 最低 ${min} · 已有待处理采购订单</span>
             <span style="font-size:11px;color:#92400e;font-family:var(--font-cn);display:block;margin-top:2px">
-              ⚠ Estoque baixo (${qty}/${min}) — já existe pedido aberto para esta ferramenta · 已有订单，请勿重复下单
+              ⚠ Estoque baixo (${qty}/${min}) — pedido ${pedido ? pedido.id : ''} em andamento
+              · 当前阶段: ${pedido ? _getStageLabel(pedido.status) : '—'}
             </span>
           </span>
-          <span style="margin-left:auto;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:4px 12px;font-family:var(--font-cn);font-size:11px;color:#92400e;white-space:nowrap">
+          <span style="margin-left:auto;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:4px 12px;
+                       font-family:var(--font-cn);font-size:11px;color:#92400e;white-space:nowrap">
             ✓ PEDIDO ABERTO · 订单已提交
           </span>
         </div>`;
@@ -2959,178 +3004,474 @@ function loadComprasPage() {
               Estoque ABAIXO DO MÍNIMO (${qty} / mín ${min}) — solicite compra agora · 库存不足，请立即采购
             </span>
           </span>
-          <button class="btn-danger" style="margin-left:auto;padding:6px 14px;font-size:11px;white-space:nowrap" onclick="openPurchaseModal('${t.code}')">
+          <button class="btn-danger" style="margin-left:auto;padding:6px 14px;font-size:11px;white-space:nowrap"
+                  onclick="openPurchaseModal('${t.code}')">
             🛒 SOLICITAR COMPRA · 立即采购
           </button>
         </div>`;
       }
     });
-    alertEl.innerHTML = html || '';
+    alertEl.innerHTML = html;
   }
-
+ 
   // Tabela de pedidos
   const body = document.getElementById('purchase-body');
-  if(!body) return;
-  let rows = filterStatus ? MOCK_PURCHASES.filter(p=>p.status===filterStatus) : MOCK_PURCHASES;
-  const statusMap = {
-    pedido:   '<span class="badge inspecao">🟡 PEDIDO · 待处理</span>',
-    entregue: '<span class="badge disponivel">🟢 ENTREGUE · 已交付</span>',
-    cancelado:'<span class="badge bloqueado">🔴 CANCELADO · 已取消</span>',
-  };
-  if(!rows.length) {
-    body.innerHTML=`<tr><td colspan="12" class="empty-state"><span class="icon">🛒</span>暂无符合条件的采购订单</td></tr>`;
+  if (!body) return;
+ 
+  let rows = purchasesData;
+  if (filterStatus === 'pedido') rows = rows.filter(p => !closedStages.includes(p.status));
+  else if (filterStatus === 'entregue') rows = rows.filter(p => p.status === 'recebido');
+  else if (filterStatus === 'cancelado') rows = rows.filter(p => p.status === 'cancelado');
+ 
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="12" class="empty-state"><span class="icon">🛒</span>暂无采购订单</td></tr>';
     return;
   }
-  body.innerHTML = rows.map(p => `<tr>
-    <td class="mono highlight">${p.id}</td>
-    <td class="mono text-xs">${p.dataPedido||'—'}</td>
-    <td><strong>${p.toolName||p.toolCode}</strong><br><span class="mono text-xs" style="color:var(--text-tertiary)">${p.toolCode}</span></td>
-    <td>${p.supplier||'—'}</td>
-    <td class="mono">${p.qty}</td>
-    <td class="mono">R$ ${(p.unitPrice||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-    <td class="mono" style="font-weight:700">R$ ${(p.total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-    <td>${p.modal==='navio'?'🚢 Navio':p.modal==='aviao'?'✈️ Avião':'🏭 Nacional'}</td>
-    <td class="mono text-xs">${p.eta||'—'}</td>
-    <td>${statusMap[p.status]||p.status}</td>
-    <td class="text-xs">${p.solicitante||'—'}</td>
-    <td>
-      <div class="flex gap-8">
-        ${p.status==='pedido'?`<button class="btn-secondary" style="padding:3px 8px;font-size:11px;color:#16a34a;border-color:#a7f3d0" onclick="marcarEntregue('${p.id}')">✓ 已收货</button>
-        <button class="btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--accent-danger);border-color:#fca5a5" onclick="cancelarPedido('${p.id}')">✗ 取消</button>`:'—'}
-      </div>
-    </td>
-  </tr>`).join('');
+ 
+  const closedSet = new Set(closedStages);
+  body.innerHTML = rows.map(p => {
+    const stageInfo  = FLOW_STAGES.find(s => s.key === p.status) || { label: p.status, icon: '?' };
+    const isClosed   = closedSet.has(p.status);
+    const statusBadge = p.status === 'cancelado'
+      ? '<span class="badge bloqueado">🔴 CANCELADO · 已取消</span>'
+      : p.status === 'recebido' || p.status === 'cadastro_sistema'
+        ? '<span class="badge disponivel">🟢 ' + stageInfo.label + '</span>'
+        : `<span class="badge inspecao">${stageInfo.icon} ${stageInfo.label}</span>`;
+ 
+    const acoes = isClosed ? '—' : `
+      <button class="btn-success" style="padding:3px 8px;font-size:10px;white-space:nowrap"
+              onclick="openAdvanceModal('${p.id}')">
+        ▶ AVANÇAR · 推进
+      </button>
+      <button class="btn-secondary" style="padding:3px 8px;font-size:10px;margin-left:4px"
+              onclick="cancelarPedido('${p.id}')">
+        ✕
+      </button>`;
+ 
+    return `<tr>
+      <td class="mono">${p.id}</td>
+      <td class="mono" style="font-size:11px">${p.dataPedido}</td>
+      <td><strong>${p.toolCode}</strong><br><span style="font-size:10px;color:var(--text-tertiary)">${p.toolName}</span></td>
+      <td style="font-size:11px">${p.supplier}</td>
+      <td class="mono">${p.qty}</td>
+      <td class="mono">${p.unitPrice ? 'R$ ' + p.unitPrice.toFixed(2) : '—'}</td>
+      <td class="mono">${p.total ? 'R$ ' + p.total.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—'}</td>
+      <td>${p.modal === 'navio' ? '🚢' : p.modal === 'aviao' ? '✈️' : '🏭'} ${p.modal}</td>
+      <td class="mono" style="font-size:11px">${p.eta || '—'}</td>
+      <td>${statusBadge}</td>
+      <td style="font-size:11px">${p.solicitante}</td>
+      <td style="white-space:nowrap">${acoes}</td>
+    </tr>`;
+  }).join('');
 }
-
+ 
+// ── ABRE MODAL DE NOVO PEDIDO ─────────────────────────────────────────────────
 function openPurchaseModal(preToolCode) {
   const sel = document.getElementById('pc-tool');
   sel.innerHTML = '<option value="">选择工具 · Selecione a ferramenta...</option>' +
     toolsData.map(t => {
-      const min = parseInt(t.minStock)||0;
-      const qty = parseInt(t.qty)||0;
-      const baixo = min>0 && qty<min ? ' ⚠ ABAIXO DO MÍNIMO' : '';
-      return `<option value="${t.code}" ${t.code===preToolCode?'selected':''}>${t.code} — ${t.name}${baixo}</option>`;
+      const min = parseInt(t.minStock) || 0;
+      const qty = parseInt(t.qty) || 0;
+      const baixo = min > 0 && qty < min ? ' ⚠ ABAIXO DO MÍNIMO' : '';
+      return `<option value="${t.code}" ${t.code === preToolCode ? 'selected' : ''}>${t.code} — ${t.name}${baixo}</option>`;
     }).join('');
+ 
   const hoje = new Date().toISOString().split('T')[0];
-  document.getElementById('pc-data').value = hoje;
-  document.getElementById('pc-eta').value = '';
-  document.getElementById('pc-qty').value = '';
+  document.getElementById('pc-data').value  = hoje;
+  document.getElementById('pc-eta').value   = '';
+  document.getElementById('pc-qty').value   = '';
   document.getElementById('pc-price').value = '';
   document.getElementById('pc-total').value = '';
-  document.getElementById('pc-obs').value = '';
-  document.getElementById('compra-dup-warn').style.display = 'none';
-  document.getElementById('modal-compra-error').style.display = 'none';
-  if(preToolCode) {
-    onCompraToolChange();
-  } else {
-    document.getElementById('pc-tool-info').style.display = 'none';
-  }
+  document.getElementById('pc-obs').value   = '';
+  document.getElementById('compra-dup-warn').style.display     = 'none';
+  document.getElementById('modal-compra-error').style.display  = 'none';
+ 
+  if (preToolCode) { onCompraToolChange(); }
+  else { document.getElementById('pc-tool-info').style.display = 'none'; }
+ 
   document.getElementById('modal-compra').classList.remove('hidden');
 }
-
+ 
 function onCompraToolChange() {
-  const code = document.getElementById('pc-tool').value;
-  const tool = toolsData.find(t=>t.code===code);
+  const code    = document.getElementById('pc-tool').value;
+  const tool    = toolsData.find(t => t.code === code);
   const infoBox = document.getElementById('pc-tool-info');
   const dupWarn = document.getElementById('compra-dup-warn');
-  if(!tool) { infoBox.style.display='none'; dupWarn.style.display='none'; return; }
-
+  if (!tool) { infoBox.style.display = 'none'; dupWarn.style.display = 'none'; return; }
+ 
   infoBox.style.display = 'block';
-  const min = parseInt(tool.minStock)||0;
-  const qty = parseInt(tool.qty)||0;
+  const min = parseInt(tool.minStock) || 0;
+  const qty = parseInt(tool.qty) || 0;
   const qtyEl = document.getElementById('pc-info-qty');
   qtyEl.textContent = qty;
-  qtyEl.style.color = (min>0&&qty<min) ? 'var(--accent-danger)' : 'var(--text-main)';
-  document.getElementById('pc-info-min').textContent = min || '—';
-  document.getElementById('pc-info-lead').textContent = tool.leadTime ? tool.leadTime+' dias' : '—';
-  document.getElementById('pc-info-price').textContent = tool.price ? 'R$ '+tool.price.toFixed(2) : '—';
-
-  if(tool.supplier) document.getElementById('pc-supplier').value = tool.supplier;
-  if(tool.price) document.getElementById('pc-price').value = tool.price.toFixed(2);
-  if(tool.leadTime) {
+  qtyEl.style.color = (min > 0 && qty < min) ? 'var(--accent-danger)' : 'var(--text-main)';
+  document.getElementById('pc-info-min').textContent   = min || '—';
+  document.getElementById('pc-info-lead').textContent  = tool.leadTime ? tool.leadTime + ' dias' : '—';
+  document.getElementById('pc-info-price').textContent = tool.price ? 'R$ ' + tool.price.toFixed(2) : '—';
+ 
+  if (tool.supplier) document.getElementById('pc-supplier').value = tool.supplier;
+  if (tool.price)    document.getElementById('pc-price').value    = tool.price.toFixed(2);
+  if (tool.leadTime) {
     const eta = new Date();
     eta.setDate(eta.getDate() + parseInt(tool.leadTime));
     document.getElementById('pc-eta').value = eta.toISOString().split('T')[0];
   }
   calcTotal();
-
-  const existente = MOCK_PURCHASES.find(p=>p.toolCode===code&&p.status==='pedido');
-  if(existente) {
+ 
+  const existente = purchasesData.find(p =>
+    p.toolCode === code && !['recebido','cancelado','cadastro_sistema'].includes(p.status)
+  );
+  if (existente) {
     dupWarn.style.display = 'block';
     document.getElementById('compra-dup-detail').innerHTML =
-      `Pedido <strong>${existente.id}</strong> já aberto em ${existente.dataPedido} — ${existente.qty} un · ${existente.supplier} · ETA: ${existente.eta}<br>
-       <span style="color:#92400e">已有订单 ${existente.id} (${existente.dataPedido}) · 请确认是否需要再次下单</span>`;
+      `Pedido <strong>${existente.id}</strong> aberto em ${existente.dataPedido} —
+       ${existente.qty} un · ${existente.supplier} · Estágio: ${_getStageLabel(existente.status)}<br>
+       <span style="color:#92400e">已有订单 ${existente.id} · 请确认是否需要再次下单</span>`;
   } else {
     dupWarn.style.display = 'none';
   }
 }
-
+ 
 function calcTotal() {
-  const qty   = parseFloat(document.getElementById('pc-qty').value)||0;
-  const price = parseFloat(document.getElementById('pc-price').value)||0;
-  document.getElementById('pc-total').value = (qty*price).toFixed(2);
+  const qty   = parseFloat(document.getElementById('pc-qty').value) || 0;
+  const price = parseFloat(document.getElementById('pc-price').value) || 0;
+  document.getElementById('pc-total').value = (qty * price).toFixed(2);
 }
-
+ 
+// ── SALVAR PEDIDO (GRAVA NO BACKEND) ─────────────────────────────────────────
 async function savePurchase() {
   const code     = document.getElementById('pc-tool').value;
   const supplier = document.getElementById('pc-supplier').value.trim();
-  const qty      = parseInt(document.getElementById('pc-qty').value)||0;
-  const price    = parseFloat(document.getElementById('pc-price').value)||0;
+  const qty      = parseInt(document.getElementById('pc-qty').value) || 0;
+  const price    = parseFloat(document.getElementById('pc-price').value) || 0;
   const modal    = document.getElementById('pc-modal').value;
   const data     = document.getElementById('pc-data').value;
   const eta      = document.getElementById('pc-eta').value;
   const obs      = document.getElementById('pc-obs').value;
   const errEl    = document.getElementById('modal-compra-error');
-
-  if(!code)     { errEl.textContent='✗ Selecione uma ferramenta · 请选择工具'; errEl.style.display='block'; return; }
-  if(!supplier) { errEl.textContent='✗ Informe o fornecedor · 请填写供应商'; errEl.style.display='block'; return; }
-  if(qty<=0)    { errEl.textContent='✗ Quantidade inválida · 数量无效'; errEl.style.display='block'; return; }
-  errEl.style.display='none';
-  const tool = toolsData.find(t=>t.code===code);
-  const newId = 'PC-' + String(MOCK_PURCHASES.length+1).padStart(3,'0');
-  const newPurchase = {
-    id: newId,
-    toolCode: code,
-    toolName: tool?tool.name:code,
-    supplier, qty, unitPrice:price, total:qty*price,
-    modal, dataPedido:data, eta, status:'pedido',
-    obs, solicitante: currentUser.name
+ 
+  if (!code)     { errEl.textContent = '✗ Selecione uma ferramenta · 请选择工具'; errEl.style.display = 'block'; return; }
+  if (!supplier) { errEl.textContent = '✗ Informe o fornecedor · 请填写供应商'; errEl.style.display = 'block'; return; }
+  if (qty <= 0)  { errEl.textContent = '✗ Quantidade inválida · 数量无效'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+ 
+  const tool = toolsData.find(t => t.code === code);
+  const payload = {
+    toolCode:    code,
+    toolName:    tool ? tool.name : code,
+    supplier, qty,
+    unitPrice:   price,
+    total:       qty * price,
+    modal, eta, obs,
+    solicitante: currentUser.name,
+    dataPedido:  data,
   };
-  await apiPost('savePurchase', newPurchase);
-  MOCK_PURCHASES.unshift(newPurchase);
-  const idx = toolsData.findIndex(t=>t.code===code);
-  if(idx>=0) toolsData[idx].purchaseStatus = 'pedido';
-
-  closeModal('modal-compra');
-  toast(`✓ Pedido ${newId} registrado! · 订单已提交`, 'success');
-  loadComprasPage();
-  if(currentPage==='dashboard') loadDashboard();
+ 
+  const result = await apiPost('savePurchase', payload);
+ 
+  if (result && result.status === 'ok') {
+    // Atualiza localmente para refletir imediatamente sem esperar reload
+    const newId = result.id || ('PC-' + Date.now());
+    purchasesData.unshift({
+      ...payload,
+      id:         newId,
+      dataPedido: data,
+      status:     'solicitado',
+      historico:  [{ estagio: 'solicitado', data: new Date().toISOString(), usuario: currentUser.name }],
+    });
+    const idx = toolsData.findIndex(t => t.code === code);
+    if (idx >= 0) toolsData[idx].purchaseStatus = 'pedido';
+ 
+    closeModal('modal-compra');
+    toast(`✓ Pedido ${newId} registrado! Estágio: SOLICITADO · 订单已提交`, 'success');
+    loadComprasPage();
+    if (currentPage === 'dashboard') loadDashboard();
+  } else if (result && result.error) {
+    errEl.textContent = '✗ ' + result.error;
+    errEl.style.display = 'block';
+  } else {
+    // Modo offline/demo — salva só localmente
+    const newId = 'PC-' + String(purchasesData.length + 1).padStart(3, '0');
+    purchasesData.unshift({ ...payload, id: newId, dataPedido: data, status: 'solicitado', historico: [] });
+    const idx = toolsData.findIndex(t => t.code === code);
+    if (idx >= 0) toolsData[idx].purchaseStatus = 'pedido';
+    closeModal('modal-compra');
+    toast(`✓ Pedido ${newId} salvo localmente (modo demo)`, 'warn');
+    loadComprasPage();
+  }
 }
-
-async function marcarEntregue(purchaseId) {
-  const idx = MOCK_PURCHASES.findIndex(p=>p.id===purchaseId);
-  if(idx<0) return;
-  MOCK_PURCHASES[idx].status = 'entregue';
-  await apiPost('updatePurchaseStatus',{id:purchaseId,status:'entregue',aprovador:currentUser.name});
-  const toolCode = MOCK_PURCHASES[idx].toolCode;
-  const aindaAberto = MOCK_PURCHASES.some(p=>p.toolCode===toolCode&&p.status==='pedido');
-  if(!aindaAberto) { const ti=toolsData.findIndex(t=>t.code===toolCode); if(ti>=0) toolsData[ti].purchaseStatus=''; }
-  toast('✓ Pedido marcado como ENTREGUE · 已标记为已收货', 'success');
-  loadComprasPage();
+ 
+// ── MODAL DE AVANÇO DE ESTÁGIO ────────────────────────────────────────────────
+let _currentAdvancePurchaseId = null;
+ 
+function openAdvanceModal(purchaseId) {
+  const purchase = purchasesData.find(p => p.id === purchaseId);
+  if (!purchase) return;
+ 
+  _currentAdvancePurchaseId = purchaseId;
+ 
+  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
+  const nextStage        = FLOW_STAGES[currentStageIdx + 1];
+ 
+  // Cria/exibe modal de avanço de estágio inline
+  let modal = document.getElementById('modal-advance-stage');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-advance-stage';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <span class="modal-title" id="adv-title">▶ AVANÇAR ESTÁGIO · 推进阶段</span>
+          <button class="modal-close" onclick="closeModal('modal-advance-stage')">✕</button>
+        </div>
+        <div class="modal-body">
+          <!-- Timeline do fluxo -->
+          <div id="adv-timeline" style="margin-bottom:20px"></div>
+ 
+          <!-- Campos extras opcionais por estágio -->
+          <div id="adv-extra-fields"></div>
+ 
+          <div class="form-field">
+            <label>OBSERVAÇÕES <span class="cn">备注</span></label>
+            <textarea id="adv-obs" placeholder="注意事项... · observações sobre este avanço..."></textarea>
+          </div>
+          <div id="adv-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;
+               border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-size:12px;text-align:center"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-success" id="adv-confirm-btn" onclick="confirmAdvanceStage()">
+            ▶ CONFIRMAR AVANÇO · 确认推进
+          </button>
+          <button class="btn-secondary" onclick="closeModal('modal-advance-stage')">取消 · CANCELAR</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+ 
+  // Preenche a timeline
+  const timelineHtml = FLOW_STAGES.map((s, i) => {
+    let cls = '';
+    if (i < currentStageIdx)     cls = 'done';
+    else if (i === currentStageIdx) cls = 'active';
+    return `<div class="import-step ${cls}">
+      <div class="import-dot">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
+      <div class="import-label">${s.label}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('adv-timeline').innerHTML =
+    `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
+ 
+  // Título do próximo estágio
+  document.getElementById('adv-title').innerHTML =
+    nextStage
+      ? `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>`
+      : '⚠ Último estágio atingido';
+ 
+  // Campos extras por estágio
+  const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase);
+  document.getElementById('adv-extra-fields').innerHTML = extraHtml;
+ 
+  // Botão desabilitado se não há próximo estágio
+  const btn = document.getElementById('adv-confirm-btn');
+  btn.disabled = !nextStage;
+  btn.style.opacity = nextStage ? '1' : '0.4';
+ 
+  document.getElementById('adv-obs').value = '';
+  document.getElementById('adv-error').style.display = 'none';
+  modal.classList.remove('hidden');
 }
-
+ 
+function _getExtraFields(stageKey, purchase) {
+  if (stageKey === 'ncm_validado') {
+    return `<div class="form-field"><label>NCM * <span class="cn">税号</span></label>
+      <input type="text" id="adv-ncm" value="${purchase.ncm || ''}"
+             placeholder="ex: 8466.94.90" style="font-family:var(--font-mono)"></div>`;
+  }
+  if (stageKey === 'po_emitida') {
+    return `<div class="form-grid cols-2">
+      <div class="form-field"><label>Nº INVOICE / PO <span class="cn">发票号</span></label>
+        <input type="text" id="adv-invoice" value="${purchase.invoice || ''}" placeholder="INV-2025-XXXX"></div>
+      <div class="form-field"><label>VALOR USD <span class="cn">金额</span></label>
+        <input type="number" id="adv-valorusd" value="${purchase.valorUsd || ''}" step="0.01" placeholder="0.00"></div>
+    </div>`;
+  }
+  return '';
+}
+ 
+async function confirmAdvanceStage() {
+  const purchase = purchasesData.find(p => p.id === _currentAdvancePurchaseId);
+  if (!purchase) return;
+ 
+  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
+  const nextStage       = FLOW_STAGES[currentStageIdx + 1];
+  if (!nextStage) return;
+ 
+  const obs    = document.getElementById('adv-obs').value;
+  const errEl  = document.getElementById('adv-error');
+ 
+  const payload = {
+    id:          purchase.id,
+    novoEstagio: nextStage.key,
+    usuario:     currentUser.name,
+    obs,
+  };
+ 
+  // Campos extras por estágio
+  if (nextStage.key === 'ncm_validado') {
+    const ncm = (document.getElementById('adv-ncm') || {}).value || '';
+    if (!ncm) { errEl.textContent = '✗ Informe o NCM · 请填写NCM税号'; errEl.style.display = 'block'; return; }
+    payload.ncm = ncm;
+  }
+  if (nextStage.key === 'po_emitida') {
+    payload.invoice  = (document.getElementById('adv-invoice') || {}).value || '';
+    payload.valorUsd = parseFloat((document.getElementById('adv-valorusd') || {}).value) || 0;
+  }
+ 
+  errEl.style.display = 'none';
+ 
+  const result = await apiPost('advancePurchaseStage', payload);
+ 
+  if (result && result.status === 'ok') {
+    // Atualiza localmente
+    purchase.status = nextStage.key;
+    purchase.historico = purchase.historico || [];
+    purchase.historico.push({ estagio: nextStage.key, data: new Date().toISOString(), usuario: currentUser.name, obs });
+    if (payload.ncm)      purchase.ncm      = payload.ncm;
+    if (payload.invoice)  purchase.invoice  = payload.invoice;
+    if (payload.valorUsd) purchase.valorUsd = payload.valorUsd;
+ 
+    closeModal('modal-advance-stage');
+    toast(`✓ Pedido ${purchase.id} avançou para: ${nextStage.icon} ${nextStage.label}`, 'success');
+    loadComprasPage();
+ 
+    // Se recebido, atualiza estoque local
+    if (nextStage.key === 'recebido') {
+      const idx = toolsData.findIndex(t => t.code === purchase.toolCode);
+      if (idx >= 0) {
+        toolsData[idx].qty = (parseInt(toolsData[idx].qty) || 0) + (parseInt(purchase.qty) || 0);
+        toolsData[idx].purchaseStatus = '';
+      }
+      toast(`📦 Estoque de ${purchase.toolCode} atualizado (+${purchase.qty} un)`, 'success');
+    }
+  } else if (result && result.error) {
+    errEl.textContent  = '✗ ' + result.error;
+    errEl.style.display = 'block';
+  } else {
+    // Modo demo — atualiza só localmente
+    purchase.status = nextStage.key;
+    closeModal('modal-advance-stage');
+    toast(`✓ [DEMO] Estágio avançado: ${nextStage.label}`, 'warn');
+    loadComprasPage();
+  }
+}
+ 
+// ── CANCELAR PEDIDO ───────────────────────────────────────────────────────────
 async function cancelarPedido(purchaseId) {
-  const idx = MOCK_PURCHASES.findIndex(p=>p.id===purchaseId);
-  if(idx<0) return;
-  MOCK_PURCHASES[idx].status = 'cancelado';
-  await apiPost('updatePurchaseStatus',{id:purchaseId,status:'cancelado',aprovador:currentUser.name});
-  const toolCode = MOCK_PURCHASES[idx].toolCode;
-  const aindaAberto = MOCK_PURCHASES.some(p=>p.toolCode===toolCode&&p.status==='pedido');
-  if(!aindaAberto) { const ti=toolsData.findIndex(t=>t.code===toolCode); if(ti>=0) toolsData[ti].purchaseStatus=''; }
+  if (!confirm('Cancelar este pedido? · 确认取消此订单？')) return;
+  const idx = purchasesData.findIndex(p => p.id === purchaseId);
+  if (idx < 0) return;
+ 
+  const result = await apiPost('updatePurchaseStatus', {
+    id: purchaseId, status: 'cancelado', aprovador: currentUser.name
+  });
+ 
+  purchasesData[idx].status = 'cancelado';
+  const toolCode    = purchasesData[idx].toolCode;
+  const aindaAberto = purchasesData.some(p =>
+    p.toolCode === toolCode && !['recebido','cancelado','cadastro_sistema'].includes(p.status)
+  );
+  if (!aindaAberto) {
+    const ti = toolsData.findIndex(t => t.code === toolCode);
+    if (ti >= 0) toolsData[ti].purchaseStatus = '';
+  }
   toast('✗ Pedido cancelado · 订单已取消', 'warn');
   loadComprasPage();
 }
-
+ 
+// ── PÁGINA DE IMPORTAÇÃO — agora mostra o fluxo de compras ───────────────────
+async function loadImports() {
+  await loadPurchasesFromAPI();
+ 
+  const list = document.getElementById('imports-list');
+  if (!list) return;
+ 
+  // Mostra pedidos em andamento (não cancelados, ordenados por data)
+  const ativos = purchasesData.filter(p => p.status !== 'cancelado');
+ 
+  if (!ativos.length) {
+    list.innerHTML = '<div class="empty-state"><span class="icon">🚢</span>无进口/采购记录 · Nenhum pedido ativo</div>';
+    return;
+  }
+ 
+  list.innerHTML = ativos.map(p => {
+    const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === p.status);
+    const isClosed = p.status === 'recebido' || p.status === 'cadastro_sistema';
+ 
+    const timelineHtml = FLOW_STAGES.map((s, i) => {
+      let cls = '';
+      if (i < currentStageIdx)      cls = 'done';
+      else if (i === currentStageIdx) cls = 'active';
+      return `<div class="import-step ${cls}">
+        <div class="import-dot">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
+        <div class="import-label">${s.label}</div>
+      </div>`;
+    }).join('');
+ 
+    const modalIcon = p.modal === 'navio' ? '🚢 海运 · Navio' : p.modal === 'aviao' ? '✈️ 空运 · Avião' : '🏭 Nacional';
+ 
+    return `<div class="card mb-16">
+      <div class="card-header">
+        <span class="card-title">${p.id} — ${p.toolName}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge ${isClosed ? 'disponivel' : 'em-uso'}">
+            ${_getStageLabel(p.status)}
+          </span>
+          ${!isClosed ? `<button class="btn-success" style="padding:4px 10px;font-size:11px"
+                                 onclick="openAdvanceModal('${p.id}');navigate('compras')">
+            ▶ AVANÇAR · 推进
+          </button>` : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="flex gap-20 mb-16 flex-wrap">
+          <div class="tool-info-row"><span class="tik">供应商 FORNECEDOR</span><span class="tiv">${p.supplier || '—'}</span></div>
+          <div class="tool-info-row"><span class="tik">发票 INVOICE</span><span class="tiv mono">${p.invoice || '—'}</span></div>
+          <div class="tool-info-row"><span class="tik">数量 QTD</span><span class="tiv">${p.qty} un</span></div>
+          <div class="tool-info-row"><span class="tik">金额 VALOR</span><span class="tiv">
+            ${p.valorUsd ? 'USD ' + p.valorUsd.toLocaleString() : (p.total ? 'R$ ' + p.total.toLocaleString('pt-BR') : '—')}
+          </span></div>
+          <div class="tool-info-row"><span class="tik">运输 MODAL</span><span class="tiv">${modalIcon}</span></div>
+          <div class="tool-info-row"><span class="tik">预计到达 ETA</span><span class="tiv">${p.eta || '—'}</span></div>
+          ${p.ncm ? `<div class="tool-info-row"><span class="tik">NCM</span><span class="tiv mono">${p.ncm}</span></div>` : ''}
+        </div>
+        <div class="import-track" style="overflow-x:auto">${timelineHtml}</div>
+        ${p.historico && p.historico.length > 1 ? `
+        <details style="margin-top:12px">
+          <summary style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary);cursor:pointer">
+            📋 Histórico de estágios (${p.historico.length} etapas)
+          </summary>
+          <div style="margin-top:8px;font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">
+            ${p.historico.map(h =>
+              `<div style="padding:3px 0;border-bottom:1px solid var(--divider)">
+                ${h.data ? String(h.data).split('T')[0] : ''} — 
+                <strong>${_getStageLabel(h.estagio)}</strong>
+                ${h.usuario ? ' · ' + h.usuario : ''}
+                ${h.obs ? ' · ' + h.obs : ''}
+              </div>`
+            ).join('')}
+          </div>
+        </details>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+ 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function _getStageLabel(stageKey) {
+  const s = FLOW_STAGES.find(x => x.key === stageKey);
+  return s ? (s.icon + ' ' + s.label) : stageKey;
+}
 function toast(msg,type='info'){
   const icons={success:'✓',error:'✗',warn:'⚠️',info:'ℹ'};
   const el=document.createElement('div');el.className=`toast ${type}`;
