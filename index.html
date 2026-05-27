@@ -2526,14 +2526,16 @@ function renderToolsTable(tools) {
     const baseCode = master.code.replace('-TYPE', '');
     const children = individualTools.filter(t => t.code.startsWith(baseCode + '-'));
     
+    // MUDANÇA AQUI: Filtra os filhos ignorando quem já foi descartado para calcular o estoque real
+    const activeChildren = children.filter(t => t.status !== 'Descartada');
+    
     const min = parseInt(master.minStock) || 0;
-    const qtyTotal = children.length; // Quantidade física real de filhos ativos
+    const qtyTotal = activeChildren.length; // Quantidade real apenas dos stencils ativos!
     const baixo = min > 0 && qtyTotal < min;
     
-    // Verificar se algum filho tem pedido de compra aberto
-    const temPedido = children.some(c => hasOpenPurchase(master.code)) || hasOpenPurchase(master.code);
+    // Verificar se algum filho ativo ou o mestre tem pedido de compra aberto
+    const temPedido = activeChildren.some(c => hasOpenPurchase(master.code)) || hasOpenPurchase(master.code);
 
-    // CORREÇÃO AQUI: Montando as duas colunas estruturais (Estoque Atual e Estoque Mínimo) para manter o grid alinhado
     let estoqueCells = '';
     if (!min) {
       estoqueCells = `<td class="mono">${qtyTotal}</td><td class="mono text-dim">—</td>`;
@@ -2548,7 +2550,7 @@ function renderToolsTable(tools) {
                       <td class="mono">${min}</td>`;
     }
 
-    // Linha de Cabeçalho do Grupo (O registro -TYPE vira o Pai)
+    // Linha de Cabeçalho do Grupo
     htmlOutput += `
       <tr class="group-header" onclick="toggleGroupRow('${baseCode}')" style="background: #f0fdf4; cursor: pointer; font-weight: bold;">
         <td class="mono highlight" style="color: var(--accent-primary)">
@@ -2568,39 +2570,50 @@ function renderToolsTable(tools) {
       </tr>
     `;
 
-    // 3. Renderizar as linhas dos Filhos (Escondidas por padrão sob a classe 'group-children')
+    // 3. Renderizar as linhas dos Filhos (Mostra inclusive os descartados para fins de histórico, mas com visual apagado)
     children.forEach(t => {
       const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
       const wearCls = pct >= CONFIG.wearCrit ? 'danger' : pct >= CONFIG.wearAlert ? 'warn' : '';
       const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
+      
+      // Se estiver descartada, aplica uma estilização cinza/tachada para indicar visualmente
+      const isDescartada = t.status === 'Descartada';
+      const rowStyle = isDescartada ? 'display: none; background: #f3f4f6; color: var(--text-tertiary); opacity: 0.6;' : 'display: none; background: #fafafa;';
+      const codeStyle = isDescartada ? 'text-decoration: line-through; padding-left: 30px;' : 'padding-left: 30px;';
 
       htmlOutput += `
-        <tr class="group-child-${baseCode}" style="display: none; background: #fafafa;">
-          <td class="mono highlight" style="padding-left: 30px;">↳ ${t.code}</td>
-          <td>${t.name}</td>
+        <tr class="group-child-${baseCode}" style="${rowStyle}">
+          <td class="mono highlight" style="${codeStyle}">↳ ${t.code}</td>
+          <td>${t.name} ${isDescartada ? '(Inativo)' : ''}</td>
           <td><span class="badge inspecao" style="opacity: 0.7;">${t.type}</span></td>
-          <td class="mono">${t.qty}</td>
+          <td class="mono">${isDescartada ? 0 : t.qty}</td>
           <td class="mono text-dim">—</td>
           <td class="mono">${(t.cycles || 0).toLocaleString()}</td>
           <td class="mono">${(t.maxCycles || 0).toLocaleString()}</td>
           <td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ${wearCls}" style="width:${pct}%"></div></div><span class="progress-pct">${pct}%</span></div></td>
           <td class="mono text-xs">${t.location}</td>
           <td><span class="badge ${statusMap[t.status] || ''}">${t.status}</span></td>
-          <td><div class="flex gap-8">
-            <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="quickScan('${t.code}')" title="Bipar">📷</button>
-            <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="printToolQRCode(${tString})" title="Imprimir QR Code">🖨️</button>
-            <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="viewHistory('${t.code}')" title="Histórico">📋</button>
-          </div></td>
+          <td>
+            ${isDescartada ? '—' : `
+            <div class="flex gap-8">
+              <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="quickScan('${t.code}')" title="Bipar">📷</button>
+              <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="printToolQRCode(${tString})" title="Imprimir QR Code">🖨️</button>
+              <button class="btn-secondary" style="padding:3px 8px;font-size:11px" onclick="viewHistory('${t.code}')" title="Histórico">📋</button>
+            </div>`}
+          </td>
         </tr>
       `;
     });
   });
 
-  // 4. Renderizar ferramentas que NÃO pertencem a nenhum grupo -TYPE (Ferramentas normais)
+  // 4. Renderizar ferramentas normais (Sem grupo -TYPE)
   const groupedCodes = typeMasters.map(m => m.code.replace('-TYPE', ''));
   const standaloneTools = individualTools.filter(t => !groupedCodes.some(bc => t.code.startsWith(bc + '-')));
 
   standaloneTools.forEach(t => {
+    // Ignora ferramentas comuns se estiverem descartadas (opcional, mantendo padrão)
+    if (t.status === 'Descartada') return;
+
     const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
     const wearCls = pct >= CONFIG.wearCrit ? 'danger' : pct >= CONFIG.wearAlert ? 'warn' : '';
     const min = parseInt(t.minStock) || 0;
