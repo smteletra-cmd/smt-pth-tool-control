@@ -3523,9 +3523,7 @@ function openAdvanceModal(purchaseId) {
     document.body.appendChild(modal);
   }
  
-  // Preenche a timeline
-  // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
-    // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
+ // Montagem do fluxo de etapas (Timeline) com base no estado do banco de dados
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
       let styleExtra = '';
@@ -3533,19 +3531,21 @@ function openAdvanceModal(purchaseId) {
 
       const dataEntradaEstaEtapa = historicoMapa[s.key];
 
-      // 1. CALCULO PARA ETAPAS QUE JÁ TÊM HISTÓRICO (Passadas ou Atual)
-      if (dataEntradaEstaEtapa) {
-        let dataFim;
-        if (i < currentStageIdx) {
-          cls = 'done';
-          const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
-          dataFim = proximaEtapaComData ? historicoMapa[proximaEtapaComData.key] : null;
+      // 1. ETAPAS CONCLUÍDAS (Tudo o que está para trás ou no mesmo índice atual do banco)
+      if (i <= currentStageIdx) {
+        cls = 'done';
+        
+        // O tempo que ela durou é o espaço entre a entrada dela e a entrada da próxima etapa realizada
+        let dataFim = new Date();
+        const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
+        if (proximaEtapaComData) {
+          dataFim = historicoMapa[proximaEtapaComData.key];
         } else if (i === currentStageIdx) {
-          cls = 'active';
+          // Se for o status atual do banco de dados, o tempo final dela conta até "agora"
           dataFim = new Date();
         }
 
-        if (dataEntradaEstaEtapa && dataFim) {
+        if (dataEntradaEstaEtapa) {
           const diffMs = dataFim - dataEntradaEstaEtapa;
           if (diffMs > 0) {
             const diffHorasTotal = diffMs / (1000 * 60 * 60);
@@ -3555,17 +3555,18 @@ function openAdvanceModal(purchaseId) {
           } else {
             tempoEtapaLabel = `⏱️ < 1h`;
           }
+        } else {
+          // Fallback para o primeiro item de histórico gerado automaticamente sem data explícita
+          tempoEtapaLabel = `⏱️ Pronto`;
         }
-      }
-
-      // 2. REGRA PARA A ETAPA QUE ESTÁ AGUARDANDO AÇÃO (A próxima da fila)
-      // Se é a etapa seguinte à atual e o card ainda não está totalmente fechado/recebido
-      if (i === currentStageIdx + 1 && !isClosed) {
+      } 
+      // 2. ETAPA AGUARDANDO AÇÃO (A próxima imediata da fila que você precisa executar)
+      else if (i === currentStageIdx + 1 && !isClosed) {
         cls = 'pending-action';
-        // Faz o círculo piscar usando o keyframe pulse do seu CSS industrial
+        // Injeta o efeito visual pulsante na bolinha correspondente
         styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
         
-        // Pega a data de quando o processo estagnou (última modificação do status atual)
+        // Calcula há quanto tempo o processo está parado aguardando essa ação específica
         const historicoUltimoStatus = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
         if (historicoUltimoStatus && historicoUltimoStatus.data) {
           const diffMsAguardando = new Date() - new Date(historicoUltimoStatus.data);
@@ -3578,15 +3579,17 @@ function openAdvanceModal(purchaseId) {
         }
       }
 
-      // Renderiza o componente individual da etapa montando a árvore DOM
+      // Renderização do HTML de cada etapa do componente horizontal
       return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
-        <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'active' || cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
+        <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
           ${tempoEtapaLabel}
         </div>
-        <div class="import-dot" style="${styleExtra}">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
+        <div class="import-dot" style="${styleExtra}">${cls === 'done' ? '✓' : s.icon || (i + 1)}</div>
         <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
       </div>`;
     }).join('');
+
+  
   document.getElementById('adv-timeline').innerHTML =
     `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
  
