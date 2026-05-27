@@ -2520,7 +2520,7 @@ function renderToolsTable(tools) {
 
   let htmlOutput = '';
 
-  // 2. Renderizar os Grupos Baseados nos registros -TYPE
+ // 2. Renderizar os Grupos Baseados nos registros -TYPE
   typeMasters.forEach(master => {
     const baseCode = master.code.replace('-TYPE', '');
     const children = individualTools.filter(t => t.code.startsWith(baseCode + '-'));
@@ -2532,22 +2532,25 @@ function renderToolsTable(tools) {
     const qtyTotal = activeChildren.length; // Quantidade real apenas dos stencils ativos!
     const baixo = min > 0 && qtyTotal < min;
     
-    // Verificar se algum filho ativo ou o mestre tem pedido de compra aberto
-    const temPedido = activeChildren.some(c => hasOpenPurchase(master.code)) || hasOpenPurchase(master.code);
+    // === NOVO TRECHO ADICIONADO AQUI ===
+    // Verificar se o mestre ou os filhos já possuem solicitação de compra em andamento
+    const temPedido = hasOpenPurchase(master.code);
 
     let estoqueCells = '';
     if (!min) {
       estoqueCells = `<td class="mono">${qtyTotal}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
+      // SE ESTÁ BAIXO MAS JÁ TEM PEDIDO: Mostra o aviso e ESCONDE o botão de comprar para evitar duplicidade!
       estoqueCells = `<td class="mono"><span style="color:#92400e;font-weight:700">${qtyTotal}</span></td>
-                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
+                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:2px 8px;font-size:10px;color:#92400e;font-weight:bold;font-family:var(--font-mono);white-space:nowrap">📋 EM COMPRA</span></div></td>`;
     } else if (baixo) {
+      // SE ESTÁ BAIXO E NÃO TEM PEDIDO: Libera o botão de compra normalmente
       estoqueCells = `<td class="mono"><span style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span></td>
-                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
+                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:2px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
-      estoqueCells = `<td class="mono" style="color:#16a34a">${qtyTotal}</td>
-                      <td class="mono">${min}</td>`;
+      estoqueCells = `<td class="mono" style="color:#16a34a">${qtyTotal}</td><td class="mono">${min}</td>`;
     }
+    // === FIM DO NOVO TRECHO ===
 
     // Linha de Cabeçalho do Grupo (Gera exatamente as 11 colunas esperadas pelo grid)
     htmlOutput += `
@@ -2568,7 +2571,6 @@ function renderToolsTable(tools) {
         </td>
       </tr>
     `;
-
     // 3. Renderizar as linhas dos Filhos (Escondidas por padrão)
     children.forEach(t => {
       const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
@@ -3084,8 +3086,36 @@ async function loadPurchasesFromAPI() {
 }
  
 function hasOpenPurchase(toolCode) {
-  const closedStages = ['recebido', 'cancelado', 'cadastro_sistema'];
-  return purchasesData.some(p => p.toolCode === toolCode && !closedStages.includes(p.status));
+  // Se não houver dados carregados ou código válido, retorna falso
+  if (!toolCode || !window.purchasesData || !window.purchasesData.length) {
+    // Fallback caso sua variável global se chame apenas 'purchasesData'
+    if (typeof purchasesData !== 'undefined' && purchasesData.length) {
+      window.purchasesData = purchasesData;
+    } else {
+      return false;
+    }
+  }
+  
+  // Extrai a raiz do código (ex: transforma STC-001-TYPE ou STC-001-1 em apenas STC-001)
+  const baseCode = toolCode.replace('-TYPE', '').split('-').slice(0, 2).join('-');
+
+  // Busca se há algum pedido para essa raiz que NÃO esteja concluído ou cancelado
+  return window.purchasesData.some(p => {
+    // Identifica qual propriedade mapeia o código na sua aba Compras (p.tool_code ou p.toolCode)
+    const pCode = p.tool_code || p.toolCode;
+    if (!pCode) return false;
+    
+    const pBase = pCode.replace('-TYPE', '').split('-').slice(0, 2).join('-');
+    
+    // Identifica qual propriedade mapeia o status (p.status_fluxo ou p.status)
+    const pStatus = p.status_fluxo || p.status || '';
+    
+    // Estágios que significam que o processo de compra JÁ FOI CONCLUÍDO/FECHADO
+    const closedStages = ['Entregue', 'Cancelado', 'recebido', 'cancelado', 'cadastro_sistema'];
+    
+    // Se o código base bater e o status NÃO estiver na lista de fechados, significa que está em aberto!
+    return pBase === baseCode && !closedStages.includes(pStatus);
+  });
 }
  
 // ── PÁGINA DE COMPRAS ─────────────────────────────────────────────────────────
