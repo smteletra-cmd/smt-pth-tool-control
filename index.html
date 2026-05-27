@@ -2522,11 +2522,10 @@ function renderToolsTable(tools) {
 
   // 2. Renderizar os Grupos Baseados nos registros -TYPE
   typeMasters.forEach(master => {
-    // Encontrar todos os "filhos" desse tipo (ex: STC-001-1, STC-001-2)
     const baseCode = master.code.replace('-TYPE', '');
     const children = individualTools.filter(t => t.code.startsWith(baseCode + '-'));
     
-    // MUDANÇA AQUI: Filtra os filhos ignorando quem já foi descartado para calcular o estoque real
+    // Filtra os filhos ignorando quem já foi descartado para calcular o estoque real
     const activeChildren = children.filter(t => t.status !== 'Descartada');
     
     const min = parseInt(master.minStock) || 0;
@@ -2540,19 +2539,19 @@ function renderToolsTable(tools) {
     if (!min) {
       estoqueCells = `<td class="mono">${qtyTotal}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
-      estoqueCells = `<td><span class="mono" style="color:#92400e;font-weight:700">${qtyTotal}</span></td>
-                      <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
+      estoqueCells = `<td class="mono"><span style="color:#92400e;font-weight:700">${qtyTotal}</span></td>
+                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
     } else if (baixo) {
-      estoqueCells = `<td><span class="mono" style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span></td>
-                      <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
+      estoqueCells = `<td class="mono"><span style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span></td>
+                      <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
       estoqueCells = `<td class="mono" style="color:#16a34a">${qtyTotal}</td>
                       <td class="mono">${min}</td>`;
     }
 
-    // Linha de Cabeçalho do Grupo
+    // Linha de Cabeçalho do Grupo (Gera exatamente as 11 colunas esperadas pelo grid)
     htmlOutput += `
-      <tr class="group-header" onclick="toggleGroupRow('${baseCode}')" style="background: #f0fdf4; cursor: pointer; font-weight: bold;">
+      <tr class="group-header" data-basecode="${baseCode}" onclick="toggleGroupRow('${baseCode}')" style="background: #f0fdf4; cursor: pointer; font-weight: bold;">
         <td class="mono highlight" style="color: var(--accent-primary)">
           <span id="icon-${baseCode}" style="margin-right: 8px;">➕</span>${baseCode}
         </td>
@@ -2570,19 +2569,18 @@ function renderToolsTable(tools) {
       </tr>
     `;
 
-    // 3. Renderizar as linhas dos Filhos (Mostra inclusive os descartados para fins de histórico, mas com visual apagado)
+    // 3. Renderizar as linhas dos Filhos (Escondidas por padrão)
     children.forEach(t => {
       const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
       const wearCls = pct >= CONFIG.wearCrit ? 'danger' : pct >= CONFIG.wearAlert ? 'warn' : '';
       const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
       
-      // Se estiver descartada, aplica uma estilização cinza/tachada para indicar visualmente
       const isDescartada = t.status === 'Descartada';
       const rowStyle = isDescartada ? 'display: none; background: #f3f4f6; color: var(--text-tertiary); opacity: 0.6;' : 'display: none; background: #fafafa;';
       const codeStyle = isDescartada ? 'text-decoration: line-through; padding-left: 30px;' : 'padding-left: 30px;';
 
       htmlOutput += `
-        <tr class="group-child-${baseCode}" style="${rowStyle}">
+        <tr class="group-child-${baseCode}" data-childof="${baseCode}" style="${rowStyle}">
           <td class="mono highlight" style="${codeStyle}">↳ ${t.code}</td>
           <td>${t.name} ${isDescartada ? '(Inativo)' : ''}</td>
           <td><span class="badge inspecao" style="opacity: 0.7;">${t.type}</span></td>
@@ -2611,7 +2609,6 @@ function renderToolsTable(tools) {
   const standaloneTools = individualTools.filter(t => !groupedCodes.some(bc => t.code.startsWith(bc + '-')));
 
   standaloneTools.forEach(t => {
-    // Ignora ferramentas comuns se estiverem descartadas (opcional, mantendo padrão)
     if (t.status === 'Descartada') return;
 
     const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
@@ -2626,12 +2623,12 @@ function renderToolsTable(tools) {
       estoqueCell = `<td class="mono">${qty}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
       estoqueCell = `<td class="mono" style="color:#92400e;font-weight:700">${qty}</td>
-                     <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
+                     <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
     } else if (baixo) {
       estoqueCell = `<td class="mono" style="color:var(--accent-danger);font-weight:700">${qty}</td>
-                     <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${t.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
+                     <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span>${min}</span><button onclick="openPurchaseModal('${t.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
-      estoqueCell = `<td class="mono" style="color:#16a34a">${qty}</td><td class="mono text-dim">${min}</td>`;
+      estoqueCell = `<td class="mono" style="color:#16a34a">${qty}</td><td class="mono">${min}</td>`;
     }
 
     const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
