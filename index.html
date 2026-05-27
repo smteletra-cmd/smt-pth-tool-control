@@ -2533,18 +2533,22 @@ function renderToolsTable(tools) {
     // Verificar se algum filho tem pedido de compra aberto
     const temPedido = children.some(c => hasOpenPurchase(master.code)) || hasOpenPurchase(master.code);
 
-    let estoqueCell = '';
+    // CORREÇÃO AQUI: Montando as duas colunas estruturais (Estoque Atual e Estoque Mínimo) para manter o grid alinhado
+    let estoqueCells = '';
     if (!min) {
-      estoqueCell = '<td class="mono text-dim">—</td>';
+      estoqueCells = `<td class="mono">${qtyTotal}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
-      estoqueCell = `<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:#92400e;font-weight:700">${qtyTotal}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
+      estoqueCells = `<td><span class="mono" style="color:#92400e;font-weight:700">${qtyTotal}</span></td>
+                      <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
     } else if (baixo) {
-      estoqueCell = `<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
+      estoqueCells = `<td><span class="mono" style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span></td>
+                      <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
-      estoqueCell = `<td><span class="mono" style="color:#16a34a">${qtyTotal}</span><span class="mono text-xs text-dim"> / ${min}</span></td>`;
+      estoqueCells = `<td class="mono" style="color:#16a34a">${qtyTotal}</td>
+                      <td class="mono">${min}</td>`;
     }
 
-    // Linha de Cabeçalho do Grupo (O registro -TYPE vira o Pai com um botão de Expandir)
+    // Linha de Cabeçalho do Grupo (O registro -TYPE vira o Pai)
     htmlOutput += `
       <tr class="group-header" onclick="toggleGroupRow('${baseCode}')" style="background: #f0fdf4; cursor: pointer; font-weight: bold;">
         <td class="mono highlight" style="color: var(--accent-primary)">
@@ -2552,8 +2556,7 @@ function renderToolsTable(tools) {
         </td>
         <td>${master.name} (Agrupado)</td>
         <td><span class="badge inspecao">${master.type}</span></td>
-        <td class="mono">${qtyTotal}</td>
-        ${estoqueCell}
+        ${estoqueCells}
         <td class="mono">—</td>
         <td class="mono">—</td>
         <td>—</td>
@@ -2593,7 +2596,7 @@ function renderToolsTable(tools) {
     });
   });
 
-  // 4. Renderizar ferramentas que NÃO pertencem a nenhum grupo -TYPE (ex: parafusadeiras ou ferramentas individuais comuns)
+  // 4. Renderizar ferramentas que NÃO pertencem a nenhum grupo -TYPE (Ferramentas normais)
   const groupedCodes = typeMasters.map(m => m.code.replace('-TYPE', ''));
   const standaloneTools = individualTools.filter(t => !groupedCodes.some(bc => t.code.startsWith(bc + '-')));
 
@@ -2607,13 +2610,15 @@ function renderToolsTable(tools) {
     
     let estoqueCell = '';
     if (!min) {
-      estoqueCell = '<td class="mono text-dim">—</td>';
+      estoqueCell = `<td class="mono">${qty}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
-      estoqueCell = `<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:#92400e;font-weight:700">${qty}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
+      estoqueCell = `<td class="mono" style="color:#92400e;font-weight:700">${qty}</td>
+                     <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:9px;color:#92400e;font-family:var(--font-mono);white-space:nowrap">📋 PEDIDO</span></div></td>`;
     } else if (baixo) {
-      estoqueCell = `<td><div style="display:flex;align-items:center;gap:6px"><span class="mono" style="color:var(--accent-danger);font-weight:700">${qty}</span><span class="mono text-xs" style="color:var(--text-tertiary)">/ ${min}</span><button onclick="openPurchaseModal('${t.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
+      estoqueCell = `<td class="mono" style="color:var(--accent-danger);font-weight:700">${qty}</td>
+                     <td><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${t.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:1px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
-      estoqueCell = `<td><span class="mono" style="color:#16a34a">${qty}</span><span class="mono text-xs text-dim"> / ${min}</span></td>`;
+      estoqueCell = `<td class="mono" style="color:#16a34a">${qty}</td><td class="mono text-dim">${min}</td>`;
     }
 
     const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
@@ -2623,7 +2628,6 @@ function renderToolsTable(tools) {
         <td class="mono highlight">${t.code}</td>
         <td>${t.name}</td>
         <td><span class="badge inspecao">${t.type}</span></td>
-        <td class="mono">${qty}</td>
         ${estoqueCell}
         <td class="mono">${(t.cycles || 0).toLocaleString()}</td>
         <td class="mono">${(t.maxCycles || 0).toLocaleString()}</td>
@@ -2641,6 +2645,7 @@ function renderToolsTable(tools) {
 
   body.innerHTML = htmlOutput;
 }
+
 function toggleGroupRow(baseCode) {
   const childrenRows = document.querySelectorAll(`.group-child-${baseCode}`);
   const iconEl = document.getElementById(`icon-${baseCode}`);
