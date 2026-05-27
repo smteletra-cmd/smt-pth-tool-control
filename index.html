@@ -3663,8 +3663,7 @@ async function cancelarPedido(purchaseId) {
   loadComprasPage();
 }
  
-// ── PÁGINA DE IMPORTAÇÃO — agora mostra o fluxo de compras ───────────────────
-// ── PÁGINA DE IMPORTAÇÃO — COM BARRA DE LEAD TIME EVOLUTIVA ───────────────────
+// ── PÁGINA DE IMPORTAÇÃO — COM TEMPO POR ETAPA NA TIMELINE ───────────────────
 async function loadImports() {
   await loadPurchasesFromAPI();
   const list = document.getElementById('imports-list');
@@ -3681,12 +3680,61 @@ async function loadImports() {
     const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === p.status);
     const isClosed = p.status === 'recebido' || p.status === 'cadastro_sistema';
  
-    // Montagem do fluxo de etapas (Timeline)
+    // Mapeia o histórico para facilitar a busca de datas por etapa
+    const historicoMapa = {};
+    if (p.historico && Array.isArray(p.historico)) {
+      p.historico.forEach(h => {
+        if (h.estagio && h.data) {
+          historicoMapa[h.estagio] = new Date(h.data);
+        }
+      });
+    }
+
+    // Montagem do fluxo de etapas (Timeline) com duração acima de cada uma
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
-      if (i < currentStageIdx)      cls = 'done';
-      else if (i === currentStageIdx) cls = 'active';
-      return `<div class="import-step ${cls}">
+      let tempoEtapaLabel = '—'; // Padrão se não passou pela etapa
+
+      const dataEntradaEstaEtapa = historicoMapa[s.key];
+
+      if (dataEntradaEstaEtapa) {
+        let dataFim;
+        
+        if (i < currentStageIdx) {
+          // Etapa concluída: o fim dela é a entrada da próxima etapa existente no fluxo
+          cls = 'done';
+          const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
+          dataFim = proximaEtapaComData ? historicoMapa[proximaEtapaComData.key] : null;
+        } else if (i === currentStageIdx) {
+          // Etapa atual: o fim dela é o momento de agora (tempo correndo)
+          cls = 'active';
+          dataFim = new Date();
+        }
+
+        // Se temos o intervalo de tempo completo, calcula a duração
+        if (dataEntradaEstaEtapa && dataFim) {
+          const diffMs = dataFim - dataEntradaEstaEtapa;
+          if (diffMs > 0) {
+            const diffHorasTotal = diffMs / (1000 * 60 * 60);
+            const dias = Math.floor(diffHorasTotal / 24);
+            const horas = Math.floor(diffHorasTotal % 24);
+            
+            if (dias > 0) {
+              tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
+            } else {
+              tempoEtapaLabel = `⏱️ ${horas}h`;
+            }
+          } else {
+            tempoEtapaLabel = `⏱️ < 1h`;
+          }
+        }
+      }
+
+      // Renderiza a etapa com a duração posicionada acima do círculo (.import-dot)
+      return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+        <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'active' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
+          ${tempoEtapaLabel}
+        </div>
         <div class="import-dot">${i < currentStageIdx ? '✓' : s.icon || (i + 1)}</div>
         <div class="import-label">${s.label}</div>
       </div>`;
@@ -3695,23 +3743,18 @@ async function loadImports() {
     const modalIcon = p.modal === 'navio' ? '🚢 海运 · Navio' : p.modal === 'aviao' ? '✈️ 空运 · Avião' : '🏭 Nacional';
  
     // ── GERAÇÃO DA BARRA DE LEAD TIME DINÂMICA ──
-    // Encontra o histórico da etapa de cotação para iniciar o contador
     const historicoCotacao = p.historico ? p.historico.find(h => h.estagio === 'cotacao_enviada') : null;
     const dataCotacao = historicoCotacao ? historicoCotacao.data : null;
     
-    // Pega a data de modificação do status atual para o contador da etapa
     const historicoStatusAtual = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
     const dataStatusAtual = historicoStatusAtual ? historicoStatusAtual.data : null;
     
-    // Busca o Lead Time padrão configurado na ferramenta (padrão 120 dias se não houver)
     const toolObj = toolsData.find(t => t.code === p.toolCode);
     const leadTimeDefinido = toolObj && toolObj.leadTime ? parseInt(toolObj.leadTime) : 120;
     
-    // Renderiza o componente visual da barra
     const barraLeadTimeHtml = gerarBarraLeadTime(dataCotacao, p.status, dataStatusAtual, leadTimeDefinido);
     // ────────────────────────────────────────────
 
-    // Tratamento para evitar falha de exibição caso o ETA venha como objeto inválido
     let etaExibicao = '—';
     if (p.eta) {
       etaExibicao = typeof p.eta === 'object' ? String(p.eta.value || '—') : String(p.eta).split(' ')[0];
@@ -3748,7 +3791,7 @@ async function loadImports() {
           </div>
         </div>
         
-        <div class="import-track" style="overflow-x:auto">${timelineHtml}</div>
+        <div class="import-track" style="overflow-x:auto; padding-top: 15px;">${timelineHtml}</div>
         
         ${p.historico && p.historico.length > 1 ? `
         <details style="margin-top:12px">
