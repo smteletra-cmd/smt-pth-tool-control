@@ -3057,12 +3057,59 @@ function exportHistory(){
   toast('📥 导出成功 · Exportado!','success');
 }
 
-function renderLineCard(lineName,tools,lineType){
-  const emUso=tools.filter(t=>t.status==='Em Uso'),pendente=tools.filter(t=>t.status==='Checklist Pendente');
-  const isFW = lineType==='FIRMWARE';
-  const hasWarn=pendente.length>0,dotCls=emUso.length>0?(hasWarn?'warn':''):'off';
-  const statusTxt=emUso.length>0?`${emUso.length} ${isFW?'slots em uso':'使用中'}`:isFW?'offline':'空闲';
-  return `<div class="line-card"><div class="line-header"><div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div><div class="line-status"><div class="line-dot ${dotCls}"></div><span style="font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">${statusTxt}</span></div></div><div class="line-body"><div class="line-info-row"><span class="lk">类型 · TIPO</span><span class="lv">${lineType}</span></div><div class="line-info-row"><span class="lk">使用中工具 · EM USO</span><span class="lv">${emUso.length}</span></div>${pendente.length>0?`<div class="line-info-row"><span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span><span class="lv" style="color:var(--accent-warn)">${pendente.length}</span></div>`:''} ${emUso.length>0?`<div class="line-tools"><div class="line-tools-label">当前工具 · FERRAMENTAS ATIVAS</div><div class="tool-chip-row">${emUso.slice(0,6).map(t=>`<span class="tool-chip" title="${t.code} — ${t.name}">${t.code} — ${t.name}</span>`).join('')}${emUso.length!=='FIRMWARE' && emUso.length>6?`<span class="tool-chip">+${emUso.length-6}</span>`:''}</div></div>`:''}</div></div>`;
+function renderLineCard(lineName, tools, lineType) {
+  const emUso = tools.filter(t => t.status === 'Em Uso');
+  const pendente = tools.filter(t => t.status === 'Checklist Pendente');
+  const isFW = lineType === 'FIRMWARE';
+  const hasWarn = pendente.length > 0;
+  const dotCls = emUso.length > 0 ? (hasWarn ? 'warn' : '') : 'off';
+  const statusTxt = emUso.length > 0 ? `${emUso.length} ${isFW ? 'slots em uso' : '使用中'}` : (isFW ? 'offline' : '空闲');
+
+  // Mapeia as OPs únicas vinculadas às ferramentas em uso nesta linha
+  // Caso a ferramenta não possua uma propriedade '.product' ou '.op' direta no objeto, 
+  // ela exibirá o produto associado ao cadastro do item.
+  const opsAtivas = [...new Set(emUso.map(t => t.product || '—'))].join(', ');
+
+  return `
+    <div class="line-card">
+      <div class="line-header">
+        <div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div>
+        <div class="line-status">
+          <div class="line-dot ${dotCls}"></div>
+          <span style="font-size:11px;font-family:var(--font-cn);color:var(--text-secondary)">${statusTxt}</span>
+        </div>
+      </div>
+      <div class="line-body">
+        <div class="line-info-row">
+          <span class="lk">类型 · TIPO</span>
+          <span class="lv">${lineType}</span>
+        </div>
+        <div class="line-info-row">
+          <span class="lk">使用中工具 · EM USO</span>
+          <span class="lv">${emUso.length}</span>
+        </div>
+        
+        <div class="line-info-row">
+          <span class="lk">生产工单 · OP / PROD</span>
+          <span class="lv" style="color: var(--accent-primary); font-weight: bold;">${emUso.length > 0 ? opsAtivas : '—'}</span>
+        </div>
+
+        ${pendente.length > 0 ? `
+        <div class="line-info-row">
+          <span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span>
+          <span class="lv" style="color:var(--accent-warn)">${pendente.length}</span>
+        </div>` : ''} 
+
+        ${emUso.length > 0 ? `
+        <div class="line-tools">
+          <div class="line-tools-label">当前工具 · FERRAMENTAS ATIVAS</div>
+          <div class="tool-chip-row">
+            ${emUso.slice(0, 6).map(t => `<span class="tool-chip" title="${t.code} — ${t.name}">${t.code} — ${t.name}</span>`).join('')}
+            ${emUso.length > 6 ? `<span class="tool-chip">+${emUso.length - 6}</span>` : ''}
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
 }
 
 function loadLines(type){
