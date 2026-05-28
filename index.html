@@ -3066,7 +3066,9 @@ function renderLineCard(lineName, tools, lineType) {
   const statusTxt = emUso.length > 0 ? `${emUso.length} ${isFW ? 'slots em uso' : '使用中'}` : (isFW ? 'offline' : '空闲');
 
   // CORREÇÃO AQUI: Mudado de t.product para t.op que é a propriedade real do seu código
-  const opsAtivas = [...new Set(emUso.map(t => t.op || '—'))].filter(op => op !== '—').join(', ');
+ const opsAtivas = [...new Set(emUso.map(t => t.op || t.OP || ''))]
+                        .filter(op => op && op.trim() !== '' && op !== '—')
+                        .join(', ');
 
   return `
     <div class="line-card">
@@ -3086,7 +3088,10 @@ function renderLineCard(lineName, tools, lineType) {
           <span class="lk">使用中工具 · EM USO</span>
           <span class="lv">${emUso.length}</span>
         </div>
-        
+        <div class="line-info-row">
+          <span class="lk">生产工单 · OP</span>
+          <span class="lv" style="color: var(--accent-secondary); font-weight: bold; font-family: 'Share Tech Mono', monospace;">${opsAtivas ? opsAtivas : '—'}</span>
+        </div>
         <div class="line-info-row">
           <span class="lk">生产工单 · OP</span>
           <span class="lv" style="color: var(--accent-secondary); font-weight: bold; font-family: 'Share Tech Mono', monospace;">${emUso.length > 0 && opsAtivas ? opsAtivas : '—'}</span>
