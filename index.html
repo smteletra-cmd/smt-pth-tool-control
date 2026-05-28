@@ -3529,26 +3529,54 @@ function openAdvanceModal(purchaseId) {
       let styleExtra = '';
       let tempoEtapaLabel = '—'; 
 
-      // Pegamos a data em que esta etapa específica foi registrada no histórico
-      const dataEntradaEstaEtapa = historicoMapa[s.key];
+      // Função auxiliar para garantir que a conversão de string para Date funcione perfeitamente
+      const parseDataHistorico = (input) => {
+        if (!input) return null;
+        if (input instanceof Date) return input;
+        
+        // Se vier no formato ISO do banco (com T ou Z)
+        let str = String(input).replace('Z', '').replace('T', ' ');
+        
+        // Divide data e hora "YYYY-MM-DD HH:MM:SS"
+        const partes = str.trim().split(' ');
+        if (partes.length >= 2) {
+          const dPartes = partes[0].split('-');
+          const hPartes = partes[1].split(':');
+          if (dPartes.length === 3 && hPartes.length >= 2) {
+            return new Date(
+              parseInt(dPartes[0]), 
+              parseInt(dPartes[1]) - 1, 
+              parseInt(dPartes[2]), 
+              parseInt(hPartes[0]), 
+              parseInt(hPartes[1]), 
+              hPartes[2] ? parseInt(hPartes[2].split('.')[0]) : 0
+            );
+          }
+        }
+        
+        const tentativaDireta = new Date(input);
+        return isNaN(tentativaDireta.getTime()) ? null : tentativaDireta;
+      };
 
-      // 1. ETAPAS CONCLUÍDAS (Tudo o que está para trás ou no mesmo nível do status atual)
+      // Resgata e força a conversão correta das datas do mapa de histórico
+      const dataEntradaEstaEtapa = parseDataHistorico(historicoMapa[s.key]);
+
+      // 1. ETAPAS CONCLUÍDAS
       if (i <= currentStageIdx) {
         cls = 'done';
         
-        // Define o fim do intervalo para calcular quanto tempo ESTA etapa levou
         let dataFim = new Date();
         
-        // Procuramos a próxima etapa IMEDIATA que possua uma data registrada no histórico
+        // Busca a próxima etapa válida no fluxo para ser o limite final do cálculo
         const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
         
         if (proximaEtapaComData) {
-          dataFim = historicoMapa[proximaEtapaComData.key];
+          dataFim = parseDataHistorico(historicoMapa[proximaEtapaComData.key]) || new Date();
         } else if (i === currentStageIdx) {
-          dataFim = new Date(); // Se for a etapa atual, conta até "agora"
+          dataFim = new Date();
         }
 
-        if (dataEntradaEstaEtapa) {
+        if (dataEntradaEstaEtapa && dataFim) {
           const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime();
           if (diffMs > 0) {
             const totalSegundos = Math.floor(diffMs / 1000);
@@ -3557,19 +3585,16 @@ function openAdvanceModal(purchaseId) {
             const dias          = Math.floor(totalHoras / 24);
             
             const horas    = totalHoras % 24;
-            const minutos  = totalMinutos % 60;
+            const minutes  = totalMinutos % 60;
             const segundos = totalSegundos % 60;
 
             if (dias > 0) {
               tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
-            } else if (horas > 0) {
-              // Mostra horas e minutos se houver mais de 1 hora
-              tempoEtapaLabel = `⏱️ ${horas}h ${minutos}m`;
-            } else if (minutos > 0) {
-              // Mostra minutos e segundos se for menos de 1 hora
-              tempoEtapaLabel = `⏱️ ${minutos}m ${segundos}s`;
+            } else if (totalHoras > 0) {
+              tempoEtapaLabel = `⏱️ ${horas}h ${minutes}m`;
+            } else if (totalMinutos > 0) {
+              tempoEtapaLabel = `⏱️ ${minutes}m ${segundos}s`;
             } else {
-              // Mostra apenas segundos se for menos de 1 minuto
               tempoEtapaLabel = `⏱️ ${segundos}s`;
             }
           } else {
@@ -3579,12 +3604,13 @@ function openAdvanceModal(purchaseId) {
           tempoEtapaLabel = `⏱️ Pronto`;
         }
       } 
-      // 2. ETAPA AGUARDANDO AÇÃO (A próxima imediata após o status atual do banco)
+      // 2. ETAPA AGUARDANDO AÇÃO (Pendente)
       else if (i === currentStageIdx + 1 && !isClosed) {
         cls = 'pending-action';
         styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
         
-        const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date();
+        const etapaAtualChave = FLOW_STAGES[currentStageIdx].key;
+        const dataUltimoAvanco = parseDataHistorico(historicoMapa[etapaAtualChave]) || new Date();
         const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime();
         
         if (diffMsAguardando > 0) {
