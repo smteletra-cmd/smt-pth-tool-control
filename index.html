@@ -3523,63 +3523,88 @@ function openAdvanceModal(purchaseId) {
     document.body.appendChild(modal);
   }
  
- // Montagem do fluxo de etapas (Timeline) com base no estado do banco de dados
+ // Montagem do fluxo de etapas (Timeline) com base na nova regra operacional
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
       let styleExtra = '';
       let tempoEtapaLabel = '—'; 
 
+      // Pegamos a data em que esta etapa específica foi registrada no histórico
       const dataEntradaEstaEtapa = historicoMapa[s.key];
 
-      // 1. ETAPAS CONCLUÍDAS (Tudo o que está para trás ou no mesmo índice atual do banco)
+      // 1. ETAPAS CONCLUÍDAS (Tudo o que está para trás ou no mesmo nível do status atual)
       if (i <= currentStageIdx) {
         cls = 'done';
         
-        // O tempo que ela durou é o espaço entre a entrada dela e a entrada da próxima etapa realizada
+        // Define o fim do intervalo para calcular quanto tempo ESTA etapa levou
         let dataFim = new Date();
+        
+        // Procuramos a próxima etapa IMEDIATA que possua uma data registrada no histórico
         const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
+        
         if (proximaEtapaComData) {
           dataFim = historicoMapa[proximaEtapaComData.key];
         } else if (i === currentStageIdx) {
-          // Se for o status atual do banco de dados, o tempo final dela conta até "agora"
-          dataFim = new Date();
+          dataFim = new Date(); // Se for a etapa atual, conta até "agora"
         }
 
         if (dataEntradaEstaEtapa) {
-          const diffMs = dataFim - dataEntradaEstaEtapa;
+          const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime();
           if (diffMs > 0) {
-            const diffHorasTotal = diffMs / (1000 * 60 * 60);
-            const dias = Math.floor(diffHorasTotal / 24);
-            const horas = Math.floor(diffHorasTotal % 24);
-            tempoEtapaLabel = dias > 0 ? `⏱️ ${dias}d ${horas}h` : `⏱️ ${horas}h`;
+            const diffSegundosTotal = Math.floor(diffMs / 1000);
+            const diffMinutosTotal  = Math.floor(diffSegundosTotal / 60);
+            const diffHorasTotal    = Math.floor(diffMinutosTotal / 60);
+            const dias              = Math.floor(diffHorasTotal / 24);
+            
+            const horas    = diffHorasTotal % 24;
+            const minutos  = diffMinutosTotal % 60;
+            const segundos = diffSegundosTotal % 60;
+
+            if (dias > 0) {
+              tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
+            } else if (horas > 0) {
+              tempoEtapaLabel = `⏱️ ${horas}h ${minutos}m`;
+            } else if (minutos > 0) {
+              tempoEtapaLabel = `⏱️ ${minutos}m ${segundos}s`;
+            } else {
+              tempoEtapaLabel = `⏱️ ${segundos}s`;
+            }
           } else {
-            tempoEtapaLabel = `⏱️ < 1h`;
+            tempoEtapaLabel = `⏱️ < 1s`;
           }
         } else {
-          // Fallback para o primeiro item de histórico gerado automaticamente sem data explícita
           tempoEtapaLabel = `⏱️ Pronto`;
         }
       } 
-      // 2. ETAPA AGUARDANDO AÇÃO (A próxima imediata da fila que você precisa executar)
+      // 2. ETAPA AGUARDANDO AÇÃO (A próxima imediata após o status atual do banco)
       else if (i === currentStageIdx + 1 && !isClosed) {
         cls = 'pending-action';
-        // Injeta o efeito visual pulsante na bolinha correspondente
+        // Aplica a animação nativa pulse para piscar a bolinha amarela
         styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
         
-        // Calcula há quanto tempo o processo está parado aguardando essa ação específica
-        const historicoUltimoStatus = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
-        if (historicoUltimoStatus && historicoUltimoStatus.data) {
-          const diffMsAguardando = new Date() - new Date(historicoUltimoStatus.data);
-          if (diffMsAguardando > 0) {
-            const horasAguardando = diffMsAguardando / (1000 * 60 * 60);
-            const dAguarda = Math.floor(horasAguardando / 24);
-            const hAguarda = Math.floor(horasAguardando % 24);
-            tempoEtapaLabel = dAguarda > 0 ? `⏳ ${dAguarda}d ${hAguarda}h` : `⏳ ${hAguarda}h`;
+        // O tempo parado aguardando essa etapa conta a partir da data em que a última etapa foi fechada
+        const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date();
+        const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime();
+        
+        if (diffMsAguardando > 0) {
+          const diffMinutosTotal = Math.floor(diffMsAguardando / (1000 * 60));
+          const horasAguardando   = Math.floor(diffMinutosTotal / 60);
+          const dAguarda          = Math.floor(horasAguardando / 24);
+          
+          const hAguarda = horasAguardando % 24;
+          const mAguarda = diffMinutosTotal % 60;
+
+          if (dAguarda > 0) {
+            tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`;
+          } else if (horasAguardando > 0) {
+            tempoEtapaLabel = `⏳ ${hAguarda}h ${mAguarda}m`;
+          } else {
+            tempoEtapaLabel = `⏳ ${mAguarda}m`;
           }
         }
       }
 
-      // Renderização do HTML de cada etapa do componente horizontal
+      // Renderização estruturada de cada etapa da timeline
       return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
         <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
           ${tempoEtapaLabel}
