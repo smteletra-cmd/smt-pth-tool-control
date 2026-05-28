@@ -3065,10 +3065,8 @@ function renderLineCard(lineName, tools, lineType) {
   const dotCls = emUso.length > 0 ? (hasWarn ? 'warn' : '') : 'off';
   const statusTxt = emUso.length > 0 ? `${emUso.length} ${isFW ? 'slots em uso' : '使用中'}` : (isFW ? 'offline' : '空闲');
 
-  // Mapeia as OPs únicas vinculadas às ferramentas em uso nesta linha
-  // Caso a ferramenta não possua uma propriedade '.product' ou '.op' direta no objeto, 
-  // ela exibirá o produto associado ao cadastro do item.
-  const opsAtivas = [...new Set(emUso.map(t => t.product || '—'))].join(', ');
+  // CORREÇÃO AQUI: Mudado de t.product para t.op que é a propriedade real do seu código
+  const opsAtivas = [...new Set(emUso.map(t => t.op || '—'))].filter(op => op !== '—').join(', ');
 
   return `
     <div class="line-card">
@@ -3090,8 +3088,8 @@ function renderLineCard(lineName, tools, lineType) {
         </div>
         
         <div class="line-info-row">
-          <span class="lk">生产工单 · OP / PROD</span>
-          <span class="lv" style="color: var(--accent-primary); font-weight: bold;">${emUso.length > 0 ? opsAtivas : '—'}</span>
+          <span class="lk">生产工单 · OP</span>
+          <span class="lv" style="color: var(--accent-secondary); font-weight: bold; font-family: 'Share Tech Mono', monospace;">${emUso.length > 0 && opsAtivas ? opsAtivas : '—'}</span>
         </div>
 
         ${pendente.length > 0 ? `
@@ -3111,7 +3109,6 @@ function renderLineCard(lineName, tools, lineType) {
       </div>
     </div>`;
 }
-
 function loadLines(type){
   const lines = type==='smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : type==='pth' ? ['PTH-01','PTH-02','PTH-03','PTH-04'] : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
