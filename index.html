@@ -3475,24 +3475,22 @@ async function savePurchase() {
   }
 }
  
-// ── MODAL DE AVANÇO DE ESTÁGIO ────────────────────────────────────────────────
 let _currentAdvancePurchaseId = null;
  
 function openAdvanceModal(purchaseId) {
-  const purchase = purchasesData.find(p => p.id === purchaseId); [cite: 636]
-  if (!purchase) return; [cite: 636]
+  const purchase = purchasesData.find(p => p.id === purchaseId);
+  if (!purchase) return;
  
-  _currentAdvancePurchaseId = purchaseId; [cite: 636]
-  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status); [cite: 637]
-  const nextStage        = FLOW_STAGES[currentStageIdx + 1]; [cite: 637]
+  _currentAdvancePurchaseId = purchaseId;
+  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
+  const nextStage        = FLOW_STAGES[currentStageIdx + 1];
  
-  // Cria/exibe modal de avanço de estágio inline
-  let modal = document.getElementById('modal-advance-stage'); [cite: 638]
-  if (!modal) { [cite: 639]
-    modal = document.createElement('div'); [cite: 639]
-    modal.id = 'modal-advance-stage'; [cite: 639]
-    modal.className = 'modal-overlay'; [cite: 639]
-    modal.innerHTML = ` [cite: 640]
+  let modal = document.getElementById('modal-advance-stage');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-advance-stage';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
       <div class="modal" style="max-width:520px">
         <div class="modal-header">
           <span class="modal-title" id="adv-title">▶ AVANÇAR ESTÁGIO · 推进阶段</span>
@@ -3500,26 +3498,21 @@ function openAdvanceModal(purchaseId) {
         </div>
         <div class="modal-body">
           <div id="adv-timeline" style="margin-bottom:20px"></div>
-          <div id="adv-extra-fields"></div> [cite: 641]
+          <div id="adv-extra-fields"></div>
           <div class="form-field">
-            <label>OBSERVAÇÕES <span class="cn">备注</span></label>
-            <textarea id="adv-obs" placeholder="注意事项... · observações sobre este avanço..."></textarea> [cite: 641]
+            <label>USUÁRIO <span class="cn">用户</span></label>
+            <textarea id="adv-obs" placeholder="observações sobre este avanço..."></textarea>
           </div>
-          <div id="adv-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-size:12px;text-align:center"></div> [cite: 641, 642]
+          <div id="adv-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-size:12px;text-align:center"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn-success" id="adv-confirm-btn" onclick="confirmAdvanceStage()">
-            ▶ CONFIRMAR AVANÇO · 确认推进 [cite: 642]
-          </button>
-          <button class="btn-secondary" onclick="closeModal('modal-advance-stage')">取消 · CANCELAR</button> [cite: 642]
+          <button class="btn-success" id="adv-confirm-btn" onclick="confirmAdvanceStage()">▶ CONFIRMAR AVANÇO</button>
+          <button class="btn-secondary" onclick="closeModal('modal-advance-stage')">CANCELAR</button>
         </div>
       </div>`;
-    document.body.appendChild(modal); [cite: 643]
+    document.body.appendChild(modal);
   }
  
-  // --- DAQUI PARA BAIXO É ONDE ESTAVA O ERRO DE REFERÊNCIA ---
-  
-  // Função auxiliar de conversão para o escopo desta função
   const parseDataHistorico = (input) => {
     if (!input) return null;
     if (input instanceof Date) return input;
@@ -3543,122 +3536,119 @@ function openAdvanceModal(purchaseId) {
     return isNaN(tentativaDireta.getTime()) ? null : tentativaDireta;
   };
 
-  // Criamos e mapeamos o historicoMapa localmente com base no pedido atual (purchase) [cite: 694]
-  const historicoMapa = {}; [cite: 694]
-  if (purchase.historico && Array.isArray(purchase.historico)) { [cite: 694]
-    purchase.historico.forEach(h => { [cite: 694]
-      if (h.estagio && h.data) { [cite: 694]
-        historicoMapa[h.estagio] = parseDataHistorico(h.data); [cite: 695]
+  const historicoMapa = {};
+  if (purchase.historico && Array.isArray(purchase.historico)) {
+    purchase.historico.forEach(h => {
+      if (h.estagio && h.data) {
+        historicoMapa[h.estagio] = parseDataHistorico(h.data);
       }
     });
   }
 
-  if (!historicoMapa['solicitado'] && purchase.dataPedido) { [cite: 695]
-    historicoMapa['solicitado'] = parseDataHistorico(purchase.dataPedido); [cite: 695]
+  if (!historicoMapa['solicitado'] && purchase.dataPedido) {
+    historicoMapa['solicitado'] = parseDataHistorico(purchase.dataPedido);
   }
 
-  const isClosed = purchase.status === 'recebido' || purchase.status === 'cadastro_sistema'; [cite: 694]
+  const isClosed = purchase.status === 'recebido' || purchase.status === 'cadastro_sistema';
 
-  // Montagem do fluxo de etapas (Timeline) horizontal interno do Modal
-  const timelineHtml = FLOW_STAGES.map((s, i) => { [cite: 695, 696]
+  const timelineHtml = FLOW_STAGES.map((s, i) => {
     let cls = '';
     let styleExtra = '';
-    let tempoEtapaLabel = '—'; [cite: 696, 697]
+    let tempoEtapaLabel = '—';
 
-    const dataEntradaEstaEtapa = historicoMapa[s.key]; [cite: 643]
+    const dataEntradaEstaEtapa = historicoMapa[s.key];
 
-    if (i <= currentStageIdx) { [cite: 643, 697]
-      cls = 'done'; [cite: 644, 697]
-      let dataFim = new Date(); [cite: 644, 698]
-      const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]); [cite: 644, 699]
+    if (i <= currentStageIdx) {
+      cls = 'done';
+      let dataFim = new Date();
+      const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
       
-      if (proximaEtapaComData) { [cite: 644, 699]
-        dataFim = historicoMapa[proximaEtapaComData.key]; [cite: 700]
-      } else if (i === currentStageIdx) { [cite: 645, 700]
-        dataFim = new Date(); [cite: 645, 701]
+      if (proximaEtapaComData) {
+        dataFim = historicoMapa[proximaEtapaComData.key];
+      } else if (i === currentStageIdx) {
+        dataFim = new Date();
       }
 
-      if (dataEntradaEstaEtapa && dataFim) { [cite: 645, 701]
-        const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime(); [cite: 645, 702]
-        if (diffMs > 0) { [cite: 646, 702]
-          const totalSegundos = Math.floor(diffMs / 1000); [cite: 703]
-          const totalMinutos  = Math.floor(totalSegundos / 60); [cite: 703]
-          const totalHoras    = Math.floor(totalMinutos / 60); [cite: 703]
-          const dias          = Math.floor(totalHoras / 24); [cite: 704]
+      if (dataEntradaEstaEtapa && dataFim) {
+        const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime();
+        if (diffMs > 0) {
+          const totalSegundos = Math.floor(diffMs / 1000);
+          const totalMinutos  = Math.floor(totalSegundos / 60);
+          const totalHoras    = Math.floor(totalMinutos / 60);
+          const dias          = Math.floor(totalHoras / 24);
           
-          const horas    = totalHoras % 24; [cite: 704]
-          const minutes  = totalMinutos % 60; [cite: 704]
-          const segundos = totalSegundos % 60; [cite: 704]
+          const horas    = totalHoras % 24;
+          const minutes  = totalMinutos % 60;
+          const segundos = totalSegundos % 60;
 
-          if (dias > 0) { [cite: 704]
-            tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`; [cite: 705]
-          } else if (totalHoras > 0) { [cite: 705]
-            tempoEtapaLabel = `⏱️ ${horas}h ${minutes}m`; [cite: 705]
-          } else if (totalMinutos > 0) { [cite: 705]
-            tempoEtapaLabel = `⏱️ ${minutes}m ${segundos}s`; [cite: 705]
-          } else { [cite: 705]
-            tempoEtapaLabel = `⏱️ ${segundos}s`; [cite: 705]
+          if (dias > 0) {
+            tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
+          } else if (totalHoras > 0) {
+            tempoEtapaLabel = `⏱️ ${horas}h ${minutes}m`;
+          } else if (totalMinutos > 0) {
+            tempoEtapaLabel = `⏱️ ${totalMinutos}m ${segundos}s`;
+          } else {
+            tempoEtapaLabel = `⏱️ ${segundos}s`;
           }
         } else {
-          tempoEtapaLabel = `⏱️ < 1s`; [cite: 705, 706]
+          tempoEtapaLabel = `⏱️ < 1s`;
         }
       } else {
-        tempoEtapaLabel = `⏱️ Pronto`; [cite: 706]
+        tempoEtapaLabel = `⏱️ Pronto`;
       }
     } 
-    else if (i === currentStageIdx + 1 && !isClosed) { [cite: 650, 707]
-      cls = 'pending-action'; [cite: 650, 707]
-      styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);'; [cite: 651, 652, 708, 709]
+    else if (i === currentStageIdx + 1 && !isClosed) {
+      cls = 'pending-action';
+      styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
       
-      const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date(); [cite: 709, 710]
-      const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime(); [cite: 710]
+      const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date();
+      const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime();
       
-      if (diffMsAguardando > 0) { [cite: 710]
-        const totalMinutosAguardando = Math.floor(diffMsAguardando / (1000 * 60)); [cite: 710]
-        const totalHorasAguardando   = Math.floor(totalMinutosAguardando / 60); [cite: 710]
-        const dAguarda                = Math.floor(totalHorasAguardando / 24); [cite: 711]
+      if (diffMsAguardando > 0) {
+        const totalMinutosAguardando = Math.floor(diffMsAguardando / (1000 * 60));
+        const totalHorasAguardando   = Math.floor(totalMinutosAguardando / 60);
+        const dAguarda                = Math.floor(totalHorasAguardando / 24);
         
-        const hAguarda = totalHorasAguardando % 24; [cite: 711]
-        const mAguarda = totalMinutosAguardando % 60; [cite: 711]
+        const hAguarda = totalHorasAguardando % 24;
+        const mAguarda = totalMinutosAguardando % 60;
 
-        if (dAguarda > 0) { [cite: 711]
-          tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`; [cite: 712]
-        } else if (totalHorasAguardando > 0) { [cite: 712]
-          tempoEtapaLabel = `⏳ ${hAguarda}h ${mAguarda}m`; [cite: 712]
+        if (dAguarda > 0) {
+          tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`;
+        } else if (totalHorasAguardando > 0) {
+          tempoEtapaLabel = `⏳ ${hAguarda}h ${mAguarda}m`;
         } else {
-          tempoEtapaLabel = `⏳ ${mAguarda}m`; [cite: 712]
+          tempoEtapaLabel = `⏳ ${mAguarda}m`;
         }
       }
     }
 
     return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
       <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
-        ${tempoEtapaLabel} [cite: 712]
-      </div> [cite: 712]
-      <div class="import-dot" style="${styleExtra}">${cls === 'done' ? '✓' : s.icon || (i + 1)}</div> [cite: 713]
-      <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div> [cite: 713, 714]
-    </div>`; [cite: 714]
-  }).join(''); [cite: 714]
+        ${tempoEtapaLabel}
+      </div>
+      <div class="import-dot" style="${styleExtra}">${cls === 'done' ? '✓' : s.icon || (i + 1)}</div>
+      <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
+    </div>`;
+  }).join('');
 
   document.getElementById('adv-timeline').innerHTML =
-    `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`; [cite: 659]
+    `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
   
-  document.getElementById('adv-title').innerHTML = [cite: 660]
-    nextStage [cite: 660]
-      ? [cite: 660]
-        `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>` [cite: 661]
-      : '⚠ Último estágio atingido'; [cite: 661]
+  document.getElementById('adv-title').innerHTML =
+    nextStage
+      ? `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>`
+      : '⚠ Último estágio atingido';
       
-  const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase); [cite: 662]
-  document.getElementById('adv-extra-fields').innerHTML = extraHtml; [cite: 662]
+  const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase);
+  document.getElementById('adv-extra-fields').innerHTML = extraHtml;
   
-  const btn = document.getElementById('adv-confirm-btn'); [cite: 663]
-  btn.disabled = !nextStage; [cite: 663]
-  btn.style.opacity = nextStage ? '1' : '0.4'; [cite: 663, 664]
+  const btn = document.getElementById('adv-confirm-btn');
+  btn.disabled = !nextStage;
+  btn.style.opacity = nextStage ? '1' : '0.4';
  
-  document.getElementById('adv-obs').value = ''; [cite: 664]
-  document.getElementById('adv-error').style.display = 'none'; [cite: 664]
-  modal.classList.remove('hidden'); [cite: 664]
+  document.getElementById('adv-obs').value = '';
+  document.getElementById('adv-error').style.display = 'none';
+  modal.classList.remove('hidden');
 }
  
 function _getExtraFields(stageKey, purchase) {
