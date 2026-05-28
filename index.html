@@ -3479,189 +3479,186 @@ async function savePurchase() {
 let _currentAdvancePurchaseId = null;
  
 function openAdvanceModal(purchaseId) {
-  const purchase = purchasesData.find(p => p.id === purchaseId);
-  if (!purchase) return;
+  const purchase = purchasesData.find(p => p.id === purchaseId); [cite: 636]
+  if (!purchase) return; [cite: 636]
  
-  _currentAdvancePurchaseId = purchaseId;
- 
-  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
-  const nextStage        = FLOW_STAGES[currentStageIdx + 1];
+  _currentAdvancePurchaseId = purchaseId; [cite: 636]
+  const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status); [cite: 637]
+  const nextStage        = FLOW_STAGES[currentStageIdx + 1]; [cite: 637]
  
   // Cria/exibe modal de avanço de estágio inline
-  let modal = document.getElementById('modal-advance-stage');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'modal-advance-stage';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
+  let modal = document.getElementById('modal-advance-stage'); [cite: 638]
+  if (!modal) { [cite: 639]
+    modal = document.createElement('div'); [cite: 639]
+    modal.id = 'modal-advance-stage'; [cite: 639]
+    modal.className = 'modal-overlay'; [cite: 639]
+    modal.innerHTML = ` [cite: 640]
       <div class="modal" style="max-width:520px">
         <div class="modal-header">
           <span class="modal-title" id="adv-title">▶ AVANÇAR ESTÁGIO · 推进阶段</span>
           <button class="modal-close" onclick="closeModal('modal-advance-stage')">✕</button>
         </div>
         <div class="modal-body">
-          <!-- Timeline do fluxo -->
           <div id="adv-timeline" style="margin-bottom:20px"></div>
- 
-          <!-- Campos extras opcionais por estágio -->
-          <div id="adv-extra-fields"></div>
- 
+          <div id="adv-extra-fields"></div> [cite: 641]
           <div class="form-field">
             <label>OBSERVAÇÕES <span class="cn">备注</span></label>
-            <textarea id="adv-obs" placeholder="注意事项... · observações sobre este avanço..."></textarea>
+            <textarea id="adv-obs" placeholder="注意事项... · observações sobre este avanço..."></textarea> [cite: 641]
           </div>
-          <div id="adv-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;
-               border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-size:12px;text-align:center"></div>
+          <div id="adv-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-size:12px;text-align:center"></div> [cite: 641, 642]
         </div>
         <div class="modal-footer">
           <button class="btn-success" id="adv-confirm-btn" onclick="confirmAdvanceStage()">
-            ▶ CONFIRMAR AVANÇO · 确认推进
+            ▶ CONFIRMAR AVANÇO · 确认推进 [cite: 642]
           </button>
-          <button class="btn-secondary" onclick="closeModal('modal-advance-stage')">取消 · CANCELAR</button>
+          <button class="btn-secondary" onclick="closeModal('modal-advance-stage')">取消 · CANCELAR</button> [cite: 642]
         </div>
       </div>`;
-    document.body.appendChild(modal);
+    document.body.appendChild(modal); [cite: 643]
   }
  
-// Montagem do fluxo de etapas (Timeline) com base na nova regra operacional
-    const timelineHtml = FLOW_STAGES.map((s, i) => {
-      let cls = '';
-      let styleExtra = '';
-      let tempoEtapaLabel = '—'; 
+  // --- DAQUI PARA BAIXO É ONDE ESTAVA O ERRO DE REFERÊNCIA ---
+  
+  // Função auxiliar de conversão para o escopo desta função
+  const parseDataHistorico = (input) => {
+    if (!input) return null;
+    if (input instanceof Date) return input;
+    let str = String(input).replace('Z', '').replace('T', ' ');
+    const partes = str.trim().split(' ');
+    if (partes.length >= 2) {
+      const dPartes = partes[0].split('-');
+      const hPartes = partes[1].split(':');
+      if (dPartes.length === 3 && hPartes.length >= 2) {
+        return new Date(
+          parseInt(dPartes[0]), 
+          parseInt(dPartes[1]) - 1, 
+          parseInt(dPartes[2]), 
+          parseInt(hPartes[0]), 
+          parseInt(hPartes[1]), 
+          hPartes[2] ? parseInt(hPartes[2].split('.')[0]) : 0
+        );
+      }
+    }
+    const tentativaDireta = new Date(input);
+    return isNaN(tentativaDireta.getTime()) ? null : tentativaDireta;
+  };
 
-      // Função auxiliar para garantir que a conversão de string para Date funcione perfeitamente
-      const parseDataHistorico = (input) => {
-        if (!input) return null;
-        if (input instanceof Date) return input;
-        
-        // Se vier no formato ISO do banco (com T ou Z)
-        let str = String(input).replace('Z', '').replace('T', ' ');
-        
-        // Divide data e hora "YYYY-MM-DD HH:MM:SS"
-        const partes = str.trim().split(' ');
-        if (partes.length >= 2) {
-          const dPartes = partes[0].split('-');
-          const hPartes = partes[1].split(':');
-          if (dPartes.length === 3 && hPartes.length >= 2) {
-            return new Date(
-              parseInt(dPartes[0]), 
-              parseInt(dPartes[1]) - 1, 
-              parseInt(dPartes[2]), 
-              parseInt(hPartes[0]), 
-              parseInt(hPartes[1]), 
-              hPartes[2] ? parseInt(hPartes[2].split('.')[0]) : 0
-            );
-          }
-        }
-        
-        const tentativaDireta = new Date(input);
-        return isNaN(tentativaDireta.getTime()) ? null : tentativaDireta;
-      };
+  // Criamos e mapeamos o historicoMapa localmente com base no pedido atual (purchase) [cite: 694]
+  const historicoMapa = {}; [cite: 694]
+  if (purchase.historico && Array.isArray(purchase.historico)) { [cite: 694]
+    purchase.historico.forEach(h => { [cite: 694]
+      if (h.estagio && h.data) { [cite: 694]
+        historicoMapa[h.estagio] = parseDataHistorico(h.data); [cite: 695]
+      }
+    });
+  }
 
-      // Resgata e força a conversão correta das datas do mapa de histórico
-      const dataEntradaEstaEtapa = parseDataHistorico(historicoMapa[s.key]);
+  if (!historicoMapa['solicitado'] && purchase.dataPedido) { [cite: 695]
+    historicoMapa['solicitado'] = parseDataHistorico(purchase.dataPedido); [cite: 695]
+  }
 
-      // 1. ETAPAS CONCLUÍDAS
-      if (i <= currentStageIdx) {
-        cls = 'done';
-        
-        let dataFim = new Date();
-        
-        // Busca a próxima etapa válida no fluxo para ser o limite final do cálculo
-        const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
-        
-        if (proximaEtapaComData) {
-          dataFim = parseDataHistorico(historicoMapa[proximaEtapaComData.key]) || new Date();
-        } else if (i === currentStageIdx) {
-          dataFim = new Date();
-        }
+  const isClosed = purchase.status === 'recebido' || purchase.status === 'cadastro_sistema'; [cite: 694]
 
-        if (dataEntradaEstaEtapa && dataFim) {
-          const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime();
-          if (diffMs > 0) {
-            const totalSegundos = Math.floor(diffMs / 1000);
-            const totalMinutos  = Math.floor(totalSegundos / 60);
-            const totalHoras    = Math.floor(totalMinutos / 60);
-            const dias          = Math.floor(totalHoras / 24);
-            
-            const horas    = totalHoras % 24;
-            const minutes  = totalMinutos % 60;
-            const segundos = totalSegundos % 60;
+  // Montagem do fluxo de etapas (Timeline) horizontal interno do Modal
+  const timelineHtml = FLOW_STAGES.map((s, i) => { [cite: 695, 696]
+    let cls = '';
+    let styleExtra = '';
+    let tempoEtapaLabel = '—'; [cite: 696, 697]
 
-            if (dias > 0) {
-              tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
-            } else if (totalHoras > 0) {
-              tempoEtapaLabel = `⏱️ ${horas}h ${minutes}m`;
-            } else if (totalMinutos > 0) {
-              tempoEtapaLabel = `⏱️ ${minutes}m ${segundos}s`;
-            } else {
-              tempoEtapaLabel = `⏱️ ${segundos}s`;
-            }
-          } else {
-            tempoEtapaLabel = `⏱️ < 1s`;
-          }
-        } else {
-          tempoEtapaLabel = `⏱️ Pronto`;
-        }
-      } 
-      // 2. ETAPA AGUARDANDO AÇÃO (Pendente)
-      else if (i === currentStageIdx + 1 && !isClosed) {
-        cls = 'pending-action';
-        styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
-        
-        const etapaAtualChave = FLOW_STAGES[currentStageIdx].key;
-        const dataUltimoAvanco = parseDataHistorico(historicoMapa[etapaAtualChave]) || new Date();
-        const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime();
-        
-        if (diffMsAguardando > 0) {
-          const totalMinutosAguardando = Math.floor(diffMsAguardando / (1000 * 60));
-          const totalHorasAguardando   = Math.floor(totalMinutosAguardando / 60);
-          const dAguarda                = Math.floor(totalHorasAguardando / 24);
-          
-          const hAguarda = totalHorasAguardando % 24;
-          const mAguarda = totalMinutosAguardando % 60;
+    const dataEntradaEstaEtapa = historicoMapa[s.key]; [cite: 643]
 
-          if (dAguarda > 0) {
-            tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`;
-          } else if (totalHorasAguardando > 0) {
-            tempoEtapaLabel = `⏳ ${hAguarda}h ${mAguarda}m`;
-          } else {
-            tempoEtapaLabel = `⏳ ${mAguarda}m`;
-          }
-        }
+    if (i <= currentStageIdx) { [cite: 643, 697]
+      cls = 'done'; [cite: 644, 697]
+      let dataFim = new Date(); [cite: 644, 698]
+      const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]); [cite: 644, 699]
+      
+      if (proximaEtapaComData) { [cite: 644, 699]
+        dataFim = historicoMapa[proximaEtapaComData.key]; [cite: 700]
+      } else if (i === currentStageIdx) { [cite: 645, 700]
+        dataFim = new Date(); [cite: 645, 701]
       }
 
-      return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
-        <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
-          ${tempoEtapaLabel}
-        </div>
-        <div class="import-dot" style="${styleExtra}">${cls === 'done' ? '✓' : s.icon || (i + 1)}</div>
-        <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
-      </div>`;
-    }).join('');
+      if (dataEntradaEstaEtapa && dataFim) { [cite: 645, 701]
+        const diffMs = dataFim.getTime() - dataEntradaEstaEtapa.getTime(); [cite: 645, 702]
+        if (diffMs > 0) { [cite: 646, 702]
+          const totalSegundos = Math.floor(diffMs / 1000); [cite: 703]
+          const totalMinutos  = Math.floor(totalSegundos / 60); [cite: 703]
+          const totalHoras    = Math.floor(totalMinutos / 60); [cite: 703]
+          const dias          = Math.floor(totalHoras / 24); [cite: 704]
+          
+          const horas    = totalHoras % 24; [cite: 704]
+          const minutes  = totalMinutos % 60; [cite: 704]
+          const segundos = totalSegundos % 60; [cite: 704]
 
-  
+          if (dias > 0) { [cite: 704]
+            tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`; [cite: 705]
+          } else if (totalHoras > 0) { [cite: 705]
+            tempoEtapaLabel = `⏱️ ${horas}h ${minutes}m`; [cite: 705]
+          } else if (totalMinutos > 0) { [cite: 705]
+            tempoEtapaLabel = `⏱️ ${minutes}m ${segundos}s`; [cite: 705]
+          } else { [cite: 705]
+            tempoEtapaLabel = `⏱️ ${segundos}s`; [cite: 705]
+          }
+        } else {
+          tempoEtapaLabel = `⏱️ < 1s`; [cite: 705, 706]
+        }
+      } else {
+        tempoEtapaLabel = `⏱️ Pronto`; [cite: 706]
+      }
+    } 
+    else if (i === currentStageIdx + 1 && !isClosed) { [cite: 650, 707]
+      cls = 'pending-action'; [cite: 650, 707]
+      styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);'; [cite: 651, 652, 708, 709]
+      
+      const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date(); [cite: 709, 710]
+      const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime(); [cite: 710]
+      
+      if (diffMsAguardando > 0) { [cite: 710]
+        const totalMinutosAguardando = Math.floor(diffMsAguardando / (1000 * 60)); [cite: 710]
+        const totalHorasAguardando   = Math.floor(totalMinutosAguardando / 60); [cite: 710]
+        const dAguarda                = Math.floor(totalHorasAguardando / 24); [cite: 711]
+        
+        const hAguarda = totalHorasAguardando % 24; [cite: 711]
+        const mAguarda = totalMinutosAguardando % 60; [cite: 711]
+
+        if (dAguarda > 0) { [cite: 711]
+          tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`; [cite: 712]
+        } else if (totalHorasAguardando > 0) { [cite: 712]
+          tempoEtapaLabel = `⏳ ${hAguarda}h ${mAguarda}m`; [cite: 712]
+        } else {
+          tempoEtapaLabel = `⏳ ${mAguarda}m`; [cite: 712]
+        }
+      }
+    }
+
+    return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+      <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
+        ${tempoEtapaLabel} [cite: 712]
+      </div> [cite: 712]
+      <div class="import-dot" style="${styleExtra}">${cls === 'done' ? '✓' : s.icon || (i + 1)}</div> [cite: 713]
+      <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div> [cite: 713, 714]
+    </div>`; [cite: 714]
+  }).join(''); [cite: 714]
+
   document.getElementById('adv-timeline').innerHTML =
-    `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
+    `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`; [cite: 659]
+  
+  document.getElementById('adv-title').innerHTML = [cite: 660]
+    nextStage [cite: 660]
+      ? [cite: 660]
+        `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>` [cite: 661]
+      : '⚠ Último estágio atingido'; [cite: 661]
+      
+  const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase); [cite: 662]
+  document.getElementById('adv-extra-fields').innerHTML = extraHtml; [cite: 662]
+  
+  const btn = document.getElementById('adv-confirm-btn'); [cite: 663]
+  btn.disabled = !nextStage; [cite: 663]
+  btn.style.opacity = nextStage ? '1' : '0.4'; [cite: 663, 664]
  
-  // Título do próximo estágio
-  document.getElementById('adv-title').innerHTML =
-    nextStage
-      ? `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>`
-      : '⚠ Último estágio atingido';
- 
-  // Campos extras por estágio
-  const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase);
-  document.getElementById('adv-extra-fields').innerHTML = extraHtml;
- 
-  // Botão desabilitado se não há próximo estágio
-  const btn = document.getElementById('adv-confirm-btn');
-  btn.disabled = !nextStage;
-  btn.style.opacity = nextStage ? '1' : '0.4';
- 
-  document.getElementById('adv-obs').value = '';
-  document.getElementById('adv-error').style.display = 'none';
-  modal.classList.remove('hidden');
+  document.getElementById('adv-obs').value = ''; [cite: 664]
+  document.getElementById('adv-error').style.display = 'none'; [cite: 664]
+  modal.classList.remove('hidden'); [cite: 664]
 }
  
 function _getExtraFields(stageKey, purchase) {
