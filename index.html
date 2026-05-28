@@ -3092,11 +3092,6 @@ function renderLineCard(lineName, tools, lineType) {
           <span class="lk">生产工单 · OP</span>
           <span class="lv" style="color: var(--accent-secondary); font-weight: bold; font-family: 'Share Tech Mono', monospace;">${opsAtivas ? opsAtivas : '—'}</span>
         </div>
-        <div class="line-info-row">
-          <span class="lk">生产工单 · OP</span>
-          <span class="lv" style="color: var(--accent-secondary); font-weight: bold; font-family: 'Share Tech Mono', monospace;">${emUso.length > 0 && opsAtivas ? opsAtivas : '—'}</span>
-        </div>
-
         ${pendente.length > 0 ? `
         <div class="line-info-row">
           <span class="lk" style="color:var(--accent-warn)">⚠ 待检 · CHK PENDENTE</span>
