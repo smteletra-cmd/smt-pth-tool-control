@@ -1761,7 +1761,11 @@ function buscarImpressorasZebra() {
 }
 
 function selecionarImpressoraZebra(device) {
-  zebraImpressoraSelecionada = device;
+  // Reconstrói como instância real de Device (o objeto recebido via onclick
+  // perdeu os métodos no processo de JSON.stringify/parse do atributo HTML)
+  zebraImpressoraSelecionada = (typeof BrowserPrint !== 'undefined' && BrowserPrint.Device)
+    ? new BrowserPrint.Device(device)
+    : device;
   localStorage.setItem('zebraPrinterUid', device.uid);
   localStorage.setItem('zebraPrinterName', device.name || device.uid);
   const lbl = device.name || device.uid;
@@ -2340,8 +2344,9 @@ function printToolQRCode(tool) {
     return;
   }
 
-  if (!zebraImpressoraSelecionada) {
-    toast('⚠️ Nenhuma impressora selecionada — clique no ícone 🖨️ no topo', 'warn');
+  if (!zebraImpressoraSelecionada || typeof zebraImpressoraSelecionada.send !== 'function') {
+    toast('⚠️ Selecione a impressora novamente — clique no ícone 🖨️ no topo', 'warn');
+    zebraImpressoraSelecionada = null;
     togglePrinterDropdown();
     return;
   }
