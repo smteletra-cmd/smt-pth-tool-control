@@ -6,9 +6,73 @@
 <title>SMT/PTH TOOL CONTROL — Sistema Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-<!-- Zebra Browser Print SDK — baixe BrowserPrint-3.0.216.min.js do site oficial da Zebra
-     e coloque na mesma pasta deste HTML -->
-<script src="BrowserPrint-3.0.216.min.js"></script>
+<!-- ═══════════════════════════════════════════════════════════════════
+     MINI-CLIENTE ZEBRA BROWSER PRINT (substitui o SDK oficial)
+     Fala diretamente com o app Zebra Browser Print via HTTP local
+     (portas 9100/9101), sem precisar baixar BrowserPrint.js da Zebra.
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+  const ZebraBrowserPrintLite = (function(){
+    const PORTS = [9100, 9101];
+
+    async function _tryPorts(path, opts) {
+      for (const port of PORTS) {
+        try {
+          const r = await fetch(`http://localhost:${port}${path}`, opts);
+          if (r.ok) return await r.text();
+        } catch(e) { /* tenta a próxima porta */ }
+      }
+      throw new Error('Zebra Browser Print não respondeu em nenhuma porta local (9100/9101). Verifique se o app está aberto.');
+    }
+
+    async function getLocalDevices(onSuccess, onError, deviceType) {
+      try {
+        const text = await _tryPorts(`/default?type=${deviceType||'printer'}`, { method: 'GET' });
+        let data;
+        try { data = JSON.parse(text); } catch(e) { data = null; }
+        // Endpoint padrão devolve só o default; tenta também o endpoint de lista completa
+        let list = [];
+        try {
+          const allText = await _tryPorts(`/available?type=${deviceType||'printer'}`, { method: 'GET' });
+          const allData = JSON.parse(allText);
+          list = allData.printer || allData.devices || (Array.isArray(allData) ? allData : []);
+        } catch(e) {
+          if (data) list = [data];
+        }
+        if (!list.length && data) list = [data];
+        onSuccess(list.map(d => new Device(d)));
+      } catch(err) {
+        onError(err.message || String(err));
+      }
+    }
+
+    function Device(raw) {
+      this.uid = raw.uid || raw.deviceId || raw.printer_uid || JSON.stringify(raw);
+      this.name = raw.name || raw.deviceName || this.uid;
+      this.connection = raw.connection || 'usb';
+      this.deviceType = raw.deviceType || 'printer';
+      this._raw = raw;
+    }
+    Device.prototype.send = async function(data, onSuccess, onError) {
+      try {
+        await _tryPorts('/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: data
+        });
+        onSuccess();
+      } catch(err) {
+        onError(err.message || String(err));
+      }
+    };
+
+    return { getLocalDevices, getDefaultDevice: function(type, onSuccess, onError, deviceType){
+        getLocalDevices(function(list){ onSuccess(list[0]||null); }, onError, deviceType);
+      }, Device };
+  })();
+  // Disponibiliza com o mesmo nome global que o SDK oficial usaria
+  window.BrowserPrint = ZebraBrowserPrintLite;
+</script>
 <style>
   :root {
     --bg-void: #0a0f0a;
