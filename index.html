@@ -7,71 +7,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <!-- ═══════════════════════════════════════════════════════════════════
-     MINI-CLIENTE ZEBRA BROWSER PRINT (substitui o SDK oficial)
-     Fala diretamente com o app Zebra Browser Print via HTTP local
-     (portas 9100/9101), sem precisar baixar BrowserPrint.js da Zebra.
+     CLIENTE ZEBRA BRIDGE — fala com o serviço local (porta 8585)
+     que roda em CADA estação com impressora. Funciona mesmo o site
+     estando hospedado em HTTPS remoto (GitHub Pages), pois o serviço
+     local responde os headers corretos de Private Network Access.
      ═══════════════════════════════════════════════════════════════════ -->
 <script>
-  const ZebraBrowserPrintLite = (function(){
-    const PORTS = [9100, 9101];
+  const ZEBRA_BRIDGE_URL = 'http://localhost:8585';
 
-    async function _tryPorts(path, opts) {
-      for (const port of PORTS) {
-        try {
-          const r = await fetch(`http://localhost:${port}${path}`, opts);
-          if (r.ok) return await r.text();
-        } catch(e) { /* tenta a próxima porta */ }
-      }
-      throw new Error('Zebra Browser Print não respondeu em nenhuma porta local (9100/9101). Verifique se o app está aberto.');
+  async function zebraBridgeHealthCheck() {
+    try {
+      const r = await fetch(`${ZEBRA_BRIDGE_URL}/health`, { method: 'GET' });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch (e) {
+      return null;
     }
+  }
 
-    async function getLocalDevices(onSuccess, onError, deviceType) {
-      try {
-        const text = await _tryPorts(`/default?type=${deviceType||'printer'}`, { method: 'GET' });
-        let data;
-        try { data = JSON.parse(text); } catch(e) { data = null; }
-        // Endpoint padrão devolve só o default; tenta também o endpoint de lista completa
-        let list = [];
-        try {
-          const allText = await _tryPorts(`/available?type=${deviceType||'printer'}`, { method: 'GET' });
-          const allData = JSON.parse(allText);
-          list = allData.printer || allData.devices || (Array.isArray(allData) ? allData : []);
-        } catch(e) {
-          if (data) list = [data];
-        }
-        if (!list.length && data) list = [data];
-        onSuccess(list.map(d => new Device(d)));
-      } catch(err) {
-        onError(err.message || String(err));
-      }
-    }
-
-    function Device(raw) {
-      this.uid = raw.uid || raw.deviceId || raw.printer_uid || JSON.stringify(raw);
-      this.name = raw.name || raw.deviceName || this.uid;
-      this.connection = raw.connection || 'usb';
-      this.deviceType = raw.deviceType || 'printer';
-      this._raw = raw;
-    }
-    Device.prototype.send = async function(data, onSuccess, onError) {
-      try {
-        await _tryPorts('/write', {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: data
-        });
-        onSuccess();
-      } catch(err) {
-        onError(err.message || String(err));
-      }
-    };
-
-    return { getLocalDevices, getDefaultDevice: function(type, onSuccess, onError, deviceType){
-        getLocalDevices(function(list){ onSuccess(list[0]||null); }, onError, deviceType);
-      }, Device };
-  })();
-  // Disponibiliza com o mesmo nome global que o SDK oficial usaria
-  window.BrowserPrint = ZebraBrowserPrintLite;
+  async function zebraBridgePrint(zpl) {
+    const r = await fetch(`${ZEBRA_BRIDGE_URL}/print`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zpl })
+    });
+    return await r.json();
+  }
 </script>
 <style>
   :root {
@@ -469,20 +430,11 @@
       </div>
     </div>
     <div class="topbar-right">
-      <!-- ═══ SELETOR DE IMPRESSORA ZEBRA ═══ -->
+      <!-- ═══ STATUS DO SERVIÇO DE IMPRESSÃO ZEBRA (local desta estação) ═══ -->
       <div class="printer-select-wrap">
-        <button class="btn-secondary" id="btn-printer-select" onclick="togglePrinterDropdown()" style="padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:6px">
-          🖨️ <span id="printer-select-label">Selecionar impressora</span>
+        <button class="btn-secondary" id="btn-printer-select" onclick="checarStatusImpressora(true)" style="padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:6px">
+          🖨️ <span id="printer-select-label">Verificando impressora...</span>
         </button>
-        <div id="printer-dropdown">
-          <div class="pd-head">IMPRESSORAS ZEBRA · 斑马打印机</div>
-          <div id="printer-list">
-            <div style="padding:14px;text-align:center;color:var(--text-tertiary);font-size:12px">Buscando...</div>
-          </div>
-          <div class="pd-foot">
-            <button class="btn-secondary" style="width:100%;padding:6px;font-size:11px" onclick="buscarImpressorasZebra()">⟳ Atualizar lista</button>
-          </div>
-        </div>
       </div>
       <div class="topbar-time" id="clock">--:--:--</div>
       <div class="user-badge">
@@ -1378,12 +1330,12 @@
             <div class="form-section-title mt-12">🖨️ IMPRESSORA DE ETIQUETAS (ZEBRA) <span class="cn">标签打印机</span></div>
             <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <div style="font-size:13px;color:var(--text-secondary)">
-                Impressora atual: <strong id="cfg-printer-label" style="color:var(--text-main)">Nenhuma selecionada</strong>
+                Status nesta estação: <strong id="cfg-printer-label" style="color:var(--text-main)">Verificando...</strong>
               </div>
-              <button class="btn-secondary" onclick="togglePrinterDropdown()" style="padding:6px 14px;font-size:12px">🖨️ Selecionar / Trocar</button>
+              <button class="btn-secondary" onclick="checarStatusImpressora(true)" style="padding:6px 14px;font-size:12px">⟳ Verificar novamente</button>
             </div>
             <div style="font-size:11px;color:var(--text-tertiary);font-family:var(--font-cn);margin-top:6px">
-              需要先安装 Zebra Browser Print · Requer o app Zebra Browser Print instalado no computador.
+              每台电脑需安装并运行本地打印服务（端口8585） · Cada computador com impressora precisa ter o "Zebra Bridge" (servidor local) instalado e rodando na porta 8585. A impressora é fixa por estação — não precisa selecionar manualmente.
             </div>
           </div>
         </div>
@@ -1714,83 +1666,24 @@ let toolsData = [], historyData = [], importsData = [], currentScannedTool = nul
 /* ═══════════════════════════════════════════════════════════
    INTEGRAÇÃO ZEBRA BROWSER PRINT — seleção de impressora local
    ═══════════════════════════════════════════════════════════ */
-let zebraImpressoraSelecionada = null;
+let zebraEstacaoOnline = false;
 
-function togglePrinterDropdown() {
-  const dd = document.getElementById('printer-dropdown');
-  const willOpen = dd.style.display === 'none' || dd.style.display === '';
-  dd.style.display = willOpen ? 'block' : 'none';
-  if (willOpen) buscarImpressorasZebra();
-}
-
-document.addEventListener('click', function(e) {
-  const wrap = document.querySelector('.printer-select-wrap');
-  const dd = document.getElementById('printer-dropdown');
-  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
-});
-
-function buscarImpressorasZebra() {
-  const lista = document.getElementById('printer-list');
-  if (typeof BrowserPrint === 'undefined') {
-    lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--accent-danger)">
-      ⚠️ Zebra Browser Print não detectado.<br>
-      <a href="https://www.zebra.com/us/en/support-downloads/software/printer-software/browser-print.html" target="_blank" style="color:var(--accent-primary)">Baixar e instalar →</a>
-    </div>`;
-    return;
-  }
-  BrowserPrint.getLocalDevices(function (deviceList) {
-    if (!deviceList || !deviceList.length) {
-      lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--text-tertiary)">
-        Nenhuma impressora encontrada.<br>Verifique se está ligada e conectada (USB ou rede).
-      </div>`;
-      return;
-    }
-    lista.innerHTML = deviceList.map(d => {
-      const isSelected = zebraImpressoraSelecionada && zebraImpressoraSelecionada.uid === d.uid;
-      return `<div onclick='selecionarImpressoraZebra(${JSON.stringify(d).replace(/'/g, "&apos;")})'
-        style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:space-between;
-        ${isSelected ? 'background:#f0fdf4;color:var(--accent-primary);font-weight:600' : 'color:var(--text-main)'}"
-        onmouseover="this.style.background='#f7f9fc'" onmouseout="this.style.background='${isSelected ? '#f0fdf4' : 'transparent'}'">
-        <span>${d.name || d.uid}</span>
-        ${isSelected ? '<span>✓</span>' : ''}
-      </div>`;
-    }).join('');
-  }, function (err) {
-    lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--accent-danger)">Erro ao buscar impressoras: ${err}</div>`;
-  }, 'printer');
-}
-
-function selecionarImpressoraZebra(device) {
-  // Reconstrói como instância real de Device (o objeto recebido via onclick
-  // perdeu os métodos no processo de JSON.stringify/parse do atributo HTML)
-  zebraImpressoraSelecionada = (typeof BrowserPrint !== 'undefined' && BrowserPrint.Device)
-    ? new BrowserPrint.Device(device)
-    : device;
-  localStorage.setItem('zebraPrinterUid', device.uid);
-  localStorage.setItem('zebraPrinterName', device.name || device.uid);
-  const lbl = device.name || device.uid;
-  document.getElementById('printer-select-label').textContent = lbl;
-  const cfgLbl = document.getElementById('cfg-printer-label');
-  if (cfgLbl) cfgLbl.textContent = lbl;
-  document.getElementById('printer-dropdown').style.display = 'none';
-  toast(`✓ Impressora selecionada: ${lbl}`, 'success');
-}
-
-function restaurarImpressoraZebra() {
-  const uid = localStorage.getItem('zebraPrinterUid');
-  const name = localStorage.getItem('zebraPrinterName');
-  if (uid && name) {
-    const lblEl = document.getElementById('printer-select-label');
-    if (lblEl) lblEl.textContent = name;
-    const cfgLbl = document.getElementById('cfg-printer-label');
-    if (cfgLbl) cfgLbl.textContent = name;
-    if (typeof BrowserPrint !== 'undefined') {
-      try {
-        zebraImpressoraSelecionada = new BrowserPrint.Device({
-          uid: uid, name: name, connection: 'usb', deviceType: 'printer'
-        });
-      } catch(e) { console.warn('[Zebra] erro ao restaurar device:', e); }
-    }
+async function checarStatusImpressora(manual) {
+  const lbl = document.getElementById('printer-select-label');
+  if (manual) lbl.textContent = 'Verificando...';
+  const status = await zebraBridgeHealthCheck();
+  if (status && status.status === 'ok') {
+    zebraEstacaoOnline = true;
+    lbl.textContent = `${status.estacao || 'Conectado'} ✓`;
+    document.getElementById('btn-printer-select').style.borderColor = '#a7f3d0';
+    document.getElementById('btn-printer-select').style.color = '#16a34a';
+    if (manual) toast(`✓ Serviço de impressão ativo (${status.estacao})`, 'success');
+  } else {
+    zebraEstacaoOnline = false;
+    lbl.textContent = 'Serviço offline';
+    document.getElementById('btn-printer-select').style.borderColor = '#fca5a5';
+    document.getElementById('btn-printer-select').style.color = '#991b1b';
+    if (manual) toast('⚠️ Serviço Zebra Bridge não detectado nesta estação (porta 8585)', 'warn');
   }
 }
 
@@ -1950,7 +1843,7 @@ async function doLogin() {
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('active');
     startClock(); loadDashboard(); startAutoRefresh(); loadConfig();
-    restaurarImpressoraZebra();
+    checarStatusImpressora(false);
     navigate(perms.pages[0]||'dashboard');
   } catch(err){console.error(err);}
   btnEl.classList.remove('loading');
@@ -2336,26 +2229,27 @@ function gerarZPL(tool) {
 }
 
 /* ── IMPRESSÃO via Zebra Browser Print (impressora local selecionada) ── */
-function printToolQRCode(tool) {
+async function printToolQRCode(tool) {
   const zpl = gerarZPL(tool);
 
-  if (typeof BrowserPrint === 'undefined') {
-    toast('⚠️ Zebra Browser Print não instalado — veja o ícone 🖨️ no topo', 'warn');
+  if (!zebraEstacaoOnline) {
+    await checarStatusImpressora(false);
+  }
+  if (!zebraEstacaoOnline) {
+    toast('⚠️ Serviço de impressão não encontrado nesta estação — verifique se o Zebra Bridge está rodando', 'error');
     return;
   }
 
-  if (!zebraImpressoraSelecionada || typeof zebraImpressoraSelecionada.send !== 'function') {
-    toast('⚠️ Selecione a impressora novamente — clique no ícone 🖨️ no topo', 'warn');
-    zebraImpressoraSelecionada = null;
-    togglePrinterDropdown();
-    return;
+  try {
+    const result = await zebraBridgePrint(zpl);
+    if (result.status === 'ok') {
+      toast(`✓ Etiqueta ${tool.code} enviada à impressora · 已发送打印`, 'success');
+    } else {
+      toast(`✗ Erro ao imprimir: ${result.error || 'erro desconhecido'}`, 'error');
+    }
+  } catch (e) {
+    toast(`✗ Erro de comunicação com o serviço de impressão: ${e.message}`, 'error');
   }
-
-  zebraImpressoraSelecionada.send(zpl, function () {
-    toast(`✓ Etiqueta ${tool.code} enviada à impressora · 已发送打印`, 'success');
-  }, function (err) {
-    toast(`✗ Erro ao imprimir: ${err}`, 'error');
-  });
 }
 
 function filterTools(){
@@ -2707,8 +2601,10 @@ function loadConfigPage(){
   document.getElementById('cfg-refresh').value=CONFIG.refreshInterval/1000;
   document.getElementById('cfg-wear-alert').value=CONFIG.wearAlert;
   document.getElementById('cfg-wear-crit').value=CONFIG.wearCrit;
-  const cfgLbl = document.getElementById('cfg-printer-label');
-  if (cfgLbl) cfgLbl.textContent = localStorage.getItem('zebraPrinterName') || 'Nenhuma selecionada';
+  checarStatusImpressora(false).then(()=>{
+    const cfgLbl = document.getElementById('cfg-printer-label');
+    if (cfgLbl) cfgLbl.textContent = zebraEstacaoOnline ? document.getElementById('printer-select-label').textContent : 'Serviço offline nesta estação';
+  });
 }
 
 function saveConfig(){
@@ -3652,7 +3548,7 @@ function toggleQtdParcial(chk){
     document.getElementById('app').classList.add('active');
     startClock();
     loadConfig();
-    restaurarImpressoraZebra();
+    checarStatusImpressora(false);
     setTimeout(()=>{
       navigate(perms.pages[0]||'dashboard');
       startAutoRefresh();
