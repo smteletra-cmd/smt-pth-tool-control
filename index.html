@@ -2220,24 +2220,25 @@ function toggleGroupRow(baseCode) {
 /* ── GERAÇÃO DE ZPL ── */
 function gerarZPL(tool) {
   // Etiqueta 50mm x 15mm @ 203dpi (8 dots/mm) = 400 x 120 dots
-  const nome = (tool.name || '').substring(0, 20);
+  // QR code ~12x12mm à esquerda, informações empilhadas à direita
+  const nome = (tool.name || '').substring(0, 24);
   return `^XA
 ^MMT
 ^PW400
 ^LL120
 ^LS0
 
-^FO10,10^BQN,2,3
+^FO8,4^BQN,2,4
 ^FDQA,${tool.code}^FS
 
-^CF0,24
-^FO140,12^FD${tool.code}^FS
+^CF0,30
+^FO130,8^FD${tool.code}^FS
+
+^CF0,20
+^FO130,42^FD${nome}^FS
 
 ^CF0,16
-^FO140,42^FD${nome}^FS
-
-^CF0,13
-^FO140,66^FD${(tool.type || '').substring(0,24)}^FS
+^FO130,70^FD${(tool.type || '').substring(0,28)}^FS
 
 ^XZ`;
 }
