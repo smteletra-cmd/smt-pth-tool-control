@@ -531,6 +531,10 @@
           <span class="nav-label">Aprovações<span class="cn-nav">审批</span></span>
           <span class="nav-badge warn" id="nav-badge-aprov"></span>
         </div>
+        <div class="nav-item nav-role-admin-eng" onclick="navigate('etiqueta-editor')">
+          <span class="icon">🏷️</span>
+          <span class="nav-label">Editor de Etiqueta<span class="cn-nav">标签编辑器</span></span>
+        </div>
         <div class="nav-item nav-role-admin" onclick="navigate('usuarios')">
           <span class="icon">👥</span>
           <span class="nav-label">Usuários<span class="cn-nav">用户管理</span></span>
@@ -1281,6 +1285,85 @@
         </div>
       </div>
 
+      <div id="page-etiqueta-editor" class="page-view">
+        <div class="page-header">
+          <div>
+            <div class="page-title">EDITOR DE <span>ETIQUETA</span></div>
+            <div class="cn-title">标签编辑器 · 拖拽调整布局</div>
+            <div class="page-sub text-mono">Arraste os blocos para ajustar a posição do QR code e do texto</div>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn-secondary" onclick="restaurarLayoutEtiquetaPadrao()">↺ RESTAURAR PADRÃO</button>
+            <button class="btn-success" onclick="salvarLayoutEtiqueta()">💾 SALVAR LAYOUT</button>
+          </div>
+        </div>
+
+        <div class="flex gap-16" style="align-items:flex-start">
+          <div style="flex:1.4">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">DIMENSÕES DA ETIQUETA <span class="cn">标签尺寸</span></span>
+              </div>
+              <div class="card-body">
+                <div class="form-grid cols-3 mb-16">
+                  <div class="form-field">
+                    <label>LARGURA (mm) <span class="cn">单个标签宽度</span></label>
+                    <input type="number" id="et-largura" value="50" min="10" max="150" oninput="layoutEtiquetaCanvas()">
+                  </div>
+                  <div class="form-field">
+                    <label>ALTURA (mm) <span class="cn">高度</span></label>
+                    <input type="number" id="et-altura" value="15" min="5" max="100" oninput="layoutEtiquetaCanvas()">
+                  </div>
+                  <div class="form-field">
+                    <label>COLUNAS LADO A LADO <span class="cn">并排列数</span></label>
+                    <input type="number" id="et-colunas" value="2" min="1" max="6" oninput="layoutEtiquetaCanvas()">
+                  </div>
+                </div>
+
+                <div id="et-canvas-wrap" style="position:relative;background:#fafafa;border:1px solid var(--card-border);border-radius:6px;overflow:auto;padding:16px">
+                  <div id="et-colunas-container" style="position:relative;display:inline-flex;gap:4px"></div>
+                </div>
+                <div class="text-xs text-dim mt-8">
+                  Apenas a <strong>primeira coluna (destacada)</strong> é editável — as demais são apenas referência visual, pra você confirmar que o conteúdo não vai vazar pra coluna vizinha. O ZPL gerado imprime sempre uma etiqueta individual.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:320px;flex-shrink:0">
+            <div class="card mb-16">
+              <div class="card-header"><span class="card-title">AJUSTES <span class="cn">调整</span></span></div>
+              <div class="card-body">
+                <div class="form-field mb-16">
+                  <label>TAMANHO DO QR CODE (mm) <span class="cn">二维码尺寸</span></label>
+                  <input type="range" id="et-qrsize" min="5" max="40" value="12" oninput="renderEtiquetaCanvas()">
+                  <div class="text-xs text-mono" id="et-qrsize-out">12mm</div>
+                </div>
+                <div class="form-field mb-16">
+                  <label>FONTE CÓDIGO (pt) <span class="cn">编码字号</span></label>
+                  <input type="range" id="et-fontcode" min="10" max="60" value="22" oninput="renderEtiquetaCanvas()">
+                  <div class="text-xs text-mono" id="et-fontcode-out">22</div>
+                </div>
+                <div class="form-field">
+                  <label>FONTE NOME (pt) <span class="cn">名称字号</span></label>
+                  <input type="range" id="et-fontnome" min="8" max="40" value="16" oninput="renderEtiquetaCanvas()">
+                  <div class="text-xs text-mono" id="et-fontnome-out">16</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><span class="card-title">COORDENADAS (dots) <span class="cn">坐标</span></span></div>
+              <div class="card-body">
+                <div id="et-coords-out" class="text-mono text-sm"></div>
+                <hr class="form-divider mt-12 mb-12">
+                <button class="btn-secondary full-width" onclick="testarImpressaoEtiqueta()">🖨️ IMPRIMIR TESTE</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="page-config" class="page-view">
         <div class="page-header">
           <div>
@@ -1745,12 +1828,12 @@ const MOCK_HISTORY = [
 
 const ROLE_PERMISSIONS = {
   operador:    {label:'OPERADOR · 操作员',pages:['dashboard','bipar','checklist'],canCadastrar:false,navClasses:[]},
-  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
+  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
   manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
   almoxarifado:{label:'ALMOXARIFADO · 仓库',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']},
   compras:     {label:'COMPRAS · 采购',pages:['dashboard','bipar','checklist','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-suprimentos','nav-role-admin-eng']},
-  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
-  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
+  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
+  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
 };
 async function apiCall(action,params={}) {
   if(!CONFIG.scriptUrl) return null;
@@ -1950,6 +2033,7 @@ function navigate(page){
     case 'config':        loadConfigPage();break;
     case 'usuarios':      loadUsersPage();break;
     case 'aprovacoes':    loadAprovacoes();break;
+    case 'etiqueta-editor': loadEtiquetaEditorPage();break;
   }
 }
 
@@ -2217,30 +2301,201 @@ function toggleGroupRow(baseCode) {
   }
 }
 
+/* ── CONFIGURAÇÃO E EDITOR VISUAL DE ETIQUETA ── */
+const ETIQUETA_DEFAULT = {
+  larguraMm: 50, alturaMm: 15,
+  qrX: 16, qrY: 32, qrSizeMm: 12,
+  textX: 96, textY: 32,
+  fontCode: 22, fontNome: 16,
+};
+
+function getEtiquetaConfig() {
+  try {
+    const saved = localStorage.getItem('etiquetaLayout');
+    if (saved) return Object.assign({}, ETIQUETA_DEFAULT, JSON.parse(saved));
+  } catch(e) {}
+  return Object.assign({}, ETIQUETA_DEFAULT);
+}
+
+function mmParaDots(mm) { return Math.round(mm * 8); }
+
 /* ── GERAÇÃO DE ZPL ── */
 function gerarZPL(tool) {
-  // Etiqueta 50mm x 15mm @ 203dpi (8 dots/mm) = 400 x 120 dots
-  // QR code ~12x12mm à esquerda, informações empilhadas à direita
-  const nome = (tool.name || '').substring(0, 24);
+  const cfg = getEtiquetaConfig();
+  const nome = (tool.name || '').substring(0, 22);
+  const w = mmParaDots(cfg.larguraMm);
+  const h = mmParaDots(cfg.alturaMm);
+  const qrMag = Math.max(1, Math.min(10, Math.round(cfg.qrSizeMm / 3)));
+  const fc = cfg.fontCode;
+  const fn = cfg.fontNome;
   return `^XA
 ^MMT
-^PW400
-^LL120
+^PW${w}
+^LL${h}
 ^LS0
 
-^FO8,4^BQN,2,4
+^FO${cfg.qrX},${cfg.qrY}^BQN,2,${qrMag}
 ^FDQA,${tool.code}^FS
 
-^CF0,30
-^FO130,8^FD${tool.code}^FS
+^CF0,${fc}
+^FO${cfg.textX},${cfg.textY}^FD${tool.code}^FS
 
-^CF0,20
-^FO130,42^FD${nome}^FS
-
-^CF0,16
-^FO130,70^FD${(tool.type || '').substring(0,28)}^FS
+^CF0,${fn}
+^FO${cfg.textX},${cfg.textY + Math.round(fc*1.3)}^FD${nome}^FS
 
 ^XZ`;
+}
+
+/* ── EDITOR VISUAL — estado e renderização ── */
+let etiquetaState = null;
+const ET_SCALE = 6;
+
+function loadEtiquetaEditorPage() {
+  etiquetaState = getEtiquetaConfig();
+  document.getElementById('et-largura').value = etiquetaState.larguraMm;
+  document.getElementById('et-altura').value = etiquetaState.alturaMm;
+  document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
+  document.getElementById('et-fontcode').value = etiquetaState.fontCode;
+  document.getElementById('et-fontnome').value = etiquetaState.fontNome;
+  layoutEtiquetaCanvas();
+}
+
+function et_mmToPx(mm) { return mm * ET_SCALE; }
+function et_pxToMm(px) { return px / ET_SCALE; }
+
+function layoutEtiquetaCanvas() {
+  const w = parseFloat(document.getElementById('et-largura').value) || 50;
+  const h = parseFloat(document.getElementById('et-altura').value) || 15;
+  const colunas = Math.max(1, parseInt(document.getElementById('et-colunas').value) || 1);
+  const container = document.getElementById('et-colunas-container');
+  container.innerHTML = '';
+
+  for (let i = 0; i < colunas; i++) {
+    const col = document.createElement('div');
+    col.style.position = 'relative';
+    col.style.width = et_mmToPx(w) + 'px';
+    col.style.height = et_mmToPx(h) + 'px';
+    col.style.background = i === 0 ? '#fff' : '#f0f2f5';
+    col.style.border = i === 0 ? '2px solid var(--accent-primary)' : '1px dashed var(--card-border)';
+    col.style.borderRadius = '4px';
+    col.style.flexShrink = '0';
+    if (i === 0) {
+      col.id = 'et-col-ativa';
+      const boxQR = document.createElement('div');
+      boxQR.id = 'et-box-qr';
+      boxQR.style.cssText = 'position:absolute;background:rgba(34,197,94,0.15);border:1px solid var(--accent-primary);border-radius:3px;cursor:move;display:flex;align-items:center;justify-content:center;font-size:9px;color:#15803d;font-family:var(--font-mono)';
+      boxQR.textContent = 'QR';
+      const boxText = document.createElement('div');
+      boxText.id = 'et-box-text';
+      boxText.style.cssText = 'position:absolute;background:rgba(167,139,250,0.15);border:1px solid var(--accent-purple);border-radius:3px;cursor:move;display:flex;align-items:center;justify-content:center;font-size:9px;color:#5b21b6;text-align:center;font-family:var(--font-mono)';
+      boxText.textContent = 'Texto';
+      col.appendChild(boxQR);
+      col.appendChild(boxText);
+    } else {
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-tertiary);font-family:var(--font-mono)';
+      lbl.textContent = 'coluna ' + (i+1) + ' (referência)';
+      col.appendChild(lbl);
+    }
+    container.appendChild(col);
+  }
+
+  if (colunas > 0) makeEtiquetaBoxesDraggable();
+  renderEtiquetaCanvas();
+}
+
+function renderEtiquetaCanvas() {
+  if (!etiquetaState) return;
+  const boxQR = document.getElementById('et-box-qr');
+  const boxText = document.getElementById('et-box-text');
+  if (!boxQR || !boxText) return;
+
+  const w = parseFloat(document.getElementById('et-largura').value) || 50;
+  const h = parseFloat(document.getElementById('et-altura').value) || 15;
+  const qrSizeMm = parseFloat(document.getElementById('et-qrsize').value);
+  const fontCode = parseInt(document.getElementById('et-fontcode').value);
+  const fontNome = parseInt(document.getElementById('et-fontnome').value);
+
+  document.getElementById('et-qrsize-out').textContent = qrSizeMm + 'mm';
+  document.getElementById('et-fontcode-out').textContent = fontCode;
+  document.getElementById('et-fontnome-out').textContent = fontNome;
+
+  boxQR.style.width = et_mmToPx(qrSizeMm) + 'px';
+  boxQR.style.height = et_mmToPx(qrSizeMm) + 'px';
+  boxQR.style.left = et_mmToPx(etiquetaState.qrX/8) + 'px';
+  boxQR.style.top = et_mmToPx(etiquetaState.qrY/8) + 'px';
+
+  const textWmm = Math.max(4, w - (etiquetaState.textX/8) - 2);
+  boxText.style.width = et_mmToPx(textWmm) + 'px';
+  boxText.style.height = et_mmToPx(Math.max(4, h - (etiquetaState.textY/8) - 1)) + 'px';
+  boxText.style.left = et_mmToPx(etiquetaState.textX/8) + 'px';
+  boxText.style.top = et_mmToPx(etiquetaState.textY/8) + 'px';
+
+  etiquetaState.larguraMm = w;
+  etiquetaState.alturaMm = h;
+  etiquetaState.qrSizeMm = qrSizeMm;
+  etiquetaState.fontCode = fontCode;
+  etiquetaState.fontNome = fontNome;
+
+  const coords = document.getElementById('et-coords-out');
+  if (coords) {
+    const qrMag = Math.max(1, Math.min(10, Math.round(qrSizeMm / 3)));
+    coords.innerHTML = `QR: FO ${etiquetaState.qrX},${etiquetaState.qrY} (mag ${qrMag})<br>Texto: FO ${etiquetaState.textX},${etiquetaState.textY}<br>Etiqueta: ${mmParaDots(w)}x${mmParaDots(h)} dots`;
+  }
+}
+
+function makeEtiquetaBoxesDraggable() {
+  const boxQR = document.getElementById('et-box-qr');
+  const boxText = document.getElementById('et-box-text');
+  [
+    {el: boxQR, xKey: 'qrX', yKey: 'qrY'},
+    {el: boxText, xKey: 'textX', yKey: 'textY'},
+  ].forEach(({el, xKey, yKey}) => {
+    if (!el) return;
+    let dragging = false, startX = 0, startY = 0, origXmm = 0, origYmm = 0;
+    el.addEventListener('mousedown', (e) => {
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      origXmm = etiquetaState[xKey] / 8;
+      origYmm = etiquetaState[yKey] / 8;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dxMm = et_pxToMm(e.clientX - startX);
+      const dyMm = et_pxToMm(e.clientY - startY);
+      const w = parseFloat(document.getElementById('et-largura').value) || 50;
+      const h = parseFloat(document.getElementById('et-altura').value) || 15;
+      const nxMm = Math.max(0, Math.min(w - 2, origXmm + dxMm));
+      const nyMm = Math.max(0, Math.min(h - 2, origYmm + dyMm));
+      etiquetaState[xKey] = mmParaDots(nxMm);
+      etiquetaState[yKey] = mmParaDots(nyMm);
+      renderEtiquetaCanvas();
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+  });
+}
+
+function salvarLayoutEtiqueta() {
+  if (!etiquetaState) return;
+  localStorage.setItem('etiquetaLayout', JSON.stringify(etiquetaState));
+  toast('✓ Layout de etiqueta salvo · 标签布局已保存', 'success');
+}
+
+function restaurarLayoutEtiquetaPadrao() {
+  etiquetaState = Object.assign({}, ETIQUETA_DEFAULT);
+  document.getElementById('et-largura').value = etiquetaState.larguraMm;
+  document.getElementById('et-altura').value = etiquetaState.alturaMm;
+  document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
+  document.getElementById('et-fontcode').value = etiquetaState.fontCode;
+  document.getElementById('et-fontnome').value = etiquetaState.fontNome;
+  layoutEtiquetaCanvas();
+  toast('↺ Layout restaurado para o padrão (não salvo ainda)', 'warn');
+}
+
+async function testarImpressaoEtiqueta() {
+  const toolFicticia = { code: 'TESTE-001', name: 'Etiqueta de Teste' };
+  await printToolQRCode(toolFicticia);
 }
 
 /* ── IMPRESSÃO via Zebra Browser Print (impressora local selecionada) ── */
