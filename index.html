@@ -2219,12 +2219,26 @@ function toggleGroupRow(baseCode) {
 
 /* ── GERAÇÃO DE ZPL ── */
 function gerarZPL(tool) {
+  // Etiqueta 50mm x 15mm @ 203dpi (8 dots/mm) = 400 x 120 dots
+  const nome = (tool.name || '').substring(0, 20);
   return `^XA
-^CF0,30
-^FO30,30^BQN,2,5
+^MMT
+^PW400
+^LL120
+^LS0
+
+^FO10,10^BQN,2,3
 ^FDQA,${tool.code}^FS
-^FO230,40^A0N,28,28^FD${tool.code}^FS
-^FO230,80^A0N,20,20^FD${tool.name.substring(0,28)}^FS
+
+^CF0,24
+^FO140,12^FD${tool.code}^FS
+
+^CF0,16
+^FO140,42^FD${nome}^FS
+
+^CF0,13
+^FO140,66^FD${(tool.type || '').substring(0,24)}^FS
+
 ^XZ`;
 }
 
