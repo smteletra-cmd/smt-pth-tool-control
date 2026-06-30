@@ -6,9 +6,11 @@
 <title>SMT/PTH TOOL CONTROL — Sistema Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Zebra Browser Print SDK — baixe BrowserPrint-3.0.216.min.js do site oficial da Zebra
+     e coloque na mesma pasta deste HTML -->
+<script src="BrowserPrint-3.0.216.min.js"></script>
 <style>
   :root {
-    /* ── SIDEBAR / TOPBAR mantém o tema escuro verde ─────────────────── */
     --bg-void: #0a0f0a;
     --bg-deep: #0d140d;
     --bg-panel: #111811;
@@ -26,7 +28,6 @@
     --grid-line: rgba(34,197,94,0.04);
     --shadow-glow: 0 0 20px rgba(34,197,94,0.15);
     --shadow-deep: 0 8px 32px rgba(0,0,0,0.6);
-    /* ── ÁREA PRINCIPAL — tema clean/branco ──────────────────────────── */
     --main-bg: #f5f6f8;
     --card-bg: #ffffff;
     --card-border: #e2e6ea;
@@ -39,849 +40,251 @@
     --table-head-bg: #f0f2f5;
     --table-row-hover: #f7f9fc;
     --divider: #e8ecf0;
-
-    /* ── TIPOGRAFIA ────────────────────────────────────────────────────── */
     --font-display: 'Orbitron', monospace;
     --font-ui: 'Rajdhani', sans-serif;
     --font-mono: 'Share Tech Mono', monospace;
     --font-cn: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
-
-  body {
-    background: var(--main-bg);
-    color: var(--text-main);
-    font-family: var(--font-ui);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  /* Estilos da Barra de Progresso de Lead Time */
-  .leadtime-container {
-    width: 100%;
-    max-width: 200px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 4px;
-    padding: 4px;
-    font-family: 'Share Tech Mono', monospace;
-  }
-  
-  .leadtime-bar-bg {
-    width: 100%;
-    background-color: #0f172a;
-    border-radius: 3px;
-    overflow: hidden;
-    height: 12px;
-    position: relative;
-  }
-  
-  .leadtime-bar-fill {
-    height: 100%;
-    width: 100%;
-    transition: width 0.4s ease, background-color 0.4s ease;
-  }
-  
-  .leadtime-text {
-    font-size: 11px;
-    margin-top: 4px;
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-  }
-  
+  body { background: var(--main-bg); color: var(--text-main); font-family: var(--font-ui); min-height: 100vh; overflow-x: hidden; }
+  .leadtime-container { width: 100%; max-width: 200px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 4px; font-family: 'Share Tech Mono', monospace; }
+  .leadtime-bar-bg { width: 100%; background-color: #0f172a; border-radius: 3px; overflow: hidden; height: 12px; position: relative; }
+  .leadtime-bar-fill { height: 100%; width: 100%; transition: width 0.4s ease, background-color 0.4s ease; }
+  .leadtime-text { font-size: 11px; margin-top: 4px; display: flex; justify-content: space-between; font-weight: bold; }
   .text-verde { color: #4ade80; }
   .text-amarelo { color: #f59e0b; }
   .text-vermelho { color: #f87171; animation: pulse 1.5s infinite; }
-  
-  @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.6; }
-    100% { opacity: 1; }
-  }
-  /* ── SCROLLBAR ─────────────────────────────────────────────────────── */
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--main-bg); }
   ::-webkit-scrollbar-thumb { background: #c8d4de; border-radius: 3px; }
-
-  /* ── MANDARIN SUBTITLE ─────────────────────────────────────────────── */
-  .cn {
-    display: block;
-    font-family: var(--font-cn);
-    font-size: 10px;
-    font-weight: 300;
-    color: var(--text-tertiary);
-    letter-spacing: 0.5px;
-    margin-top: 1px;
-    line-height: 1.3;
-  }
-  .cn-nav {
-    display: block;
-    font-family: var(--font-cn);
-    font-size: 9px;
-    font-weight: 300;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
-    margin-top: 1px;
-    line-height: 1.2;
-  }
-  .cn-title {
-    display: block;
-    font-family: var(--font-cn);
-    font-size: 12px;
-    font-weight: 300;
-    color: var(--text-secondary);
-    letter-spacing: 1px;
-    margin-top: 3px;
-  }
-
-  /* ═══════════ LOGIN ════════════════════════════════════════════════ */
-  #login-screen {
-    position: fixed; inset: 0; z-index: 1000;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #f0f4f8 0%, #e8eef4 100%);
-  }
-
-  .login-box {
-    width: 420px;
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 48px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .login-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #22c55e, #4ade80, #22c55e);
-  }
-
+  .cn { display: block; font-family: var(--font-cn); font-size: 10px; font-weight: 300; color: var(--text-tertiary); letter-spacing: 0.5px; margin-top: 1px; line-height: 1.3; }
+  .cn-nav { display: block; font-family: var(--font-cn); font-size: 9px; font-weight: 300; color: var(--text-dim); letter-spacing: 0.5px; margin-top: 1px; line-height: 1.2; }
+  .cn-title { display: block; font-family: var(--font-cn); font-size: 12px; font-weight: 300; color: var(--text-secondary); letter-spacing: 1px; margin-top: 3px; }
+  #login-screen { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f0f4f8 0%, #e8eef4 100%); }
+  .login-box { width: 420px; background: #fff; border: 1px solid var(--card-border); border-radius: 12px; padding: 48px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); position: relative; overflow: hidden; }
+  .login-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #22c55e, #4ade80, #22c55e); }
   .login-logo { text-align: center; margin-bottom: 36px; }
-
-  .login-logo .brand {
-    font-family: var(--font-display);
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: var(--accent-primary);
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  .login-logo .system-name {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 900;
-    color: var(--text-main);
-    letter-spacing: 2px;
-    line-height: 1.2;
-  }
-
+  .login-logo .brand { font-family: var(--font-display); font-size: 11px; letter-spacing: 4px; color: var(--accent-primary); display: block; margin-bottom: 8px; }
+  .login-logo .system-name { font-family: var(--font-display); font-size: 20px; font-weight: 900; color: var(--text-main); letter-spacing: 2px; line-height: 1.2; }
   .login-logo .system-name span { color: var(--accent-primary); }
-
-  .login-logo .cn-login {
-    display: block;
-    font-family: var(--font-cn);
-    font-size: 13px;
-    font-weight: 300;
-    color: var(--text-secondary);
-    margin-top: 8px;
-    letter-spacing: 2px;
-  }
-
-  .login-badge {
-    display: inline-block;
-    background: rgba(34,197,94,0.08);
-    border: 1px solid rgba(34,197,94,0.25);
-    border-radius: 4px;
-    padding: 3px 10px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--accent-primary);
-    margin-top: 10px;
-    font-family: var(--font-mono);
-  }
-
+  .login-logo .cn-login { display: block; font-family: var(--font-cn); font-size: 13px; font-weight: 300; color: var(--text-secondary); margin-top: 8px; letter-spacing: 2px; }
+  .login-badge { display: inline-block; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 4px; padding: 3px 10px; font-size: 10px; letter-spacing: 2px; color: var(--accent-primary); margin-top: 10px; font-family: var(--font-mono); }
   .field-group { margin-bottom: 18px; }
-  .field-group label {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-    font-family: var(--font-mono);
-  }
+  .field-group label { display: block; font-size: 11px; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 6px; font-family: var(--font-mono); }
   .field-group label .cn { color: var(--text-tertiary); font-size: 9px; display:inline; }
-
-  .field-group input, .field-group select {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 6px;
-    padding: 11px 14px;
-    color: var(--text-main);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    outline: none;
-    transition: all 0.2s;
-  }
-
-  .field-group input:focus, .field-group select:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
-    background: #fff;
-  }
-
-  .btn-login {
-    width: 100%;
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border: none;
-    border-radius: 6px;
-    padding: 13px;
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 8px;
-  }
-
+  .field-group input, .field-group select { width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; padding: 11px 14px; color: var(--text-main); font-family: var(--font-mono); font-size: 14px; outline: none; transition: all 0.2s; }
+  .field-group input:focus, .field-group select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(34,197,94,0.12); background: #fff; }
+  .btn-login { width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; border-radius: 6px; padding: 13px; color: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 3px; cursor: pointer; transition: all 0.3s; margin-top: 8px; }
   .btn-login:hover { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 4px 16px rgba(34,197,94,0.35); }
   .btn-login:active { transform: scale(0.98); }
   .btn-login.loading { opacity: 0.6; pointer-events: none; }
-
-  .login-status {
-    text-align: center;
-    font-family: var(--font-cn);
-    font-size: 11px;
-    color: var(--text-tertiary);
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--divider);
-  }
-
-  .status-dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    margin-right: 6px;
-    animation: pulse 2s ease infinite;
-  }
-
+  .login-status { text-align: center; font-family: var(--font-cn); font-size: 11px; color: var(--text-tertiary); margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--divider); }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-primary); margin-right: 6px; animation: pulse 2s ease infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes scanline { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-
-  /* ═══════════ APP LAYOUT ═══════════════════════════════════════════ */
   #app { display: none; flex-direction: column; min-height: 100vh; }
   #app.active { display: flex; }
-
-  /* ═══════════ TOPBAR — mantém verde escuro ═════════════════════════ */
-  .topbar {
-    height: 56px;
-    background: var(--bg-panel);
-    border-bottom: 2px solid rgba(34,197,94,0.3);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    position: sticky; top: 0; z-index: 100;
-    gap: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-  }
-
-  .topbar-logo {
-    font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 2px;
-    color: var(--text-bright);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
+  .topbar { height: 56px; background: var(--bg-panel); border-bottom: 2px solid rgba(34,197,94,0.3); display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 100; gap: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+  .topbar-logo { font-family: var(--font-display); font-size: 14px; font-weight: 900; letter-spacing: 2px; color: var(--text-bright); white-space: nowrap; flex-shrink: 0; }
   .topbar-logo span { color: var(--accent-primary); }
   .topbar-divider { width: 1px; height: 28px; background: var(--border-subtle-nav); flex-shrink: 0; }
-
-  .topbar-kpi {
-    display: flex; align-items: center; gap: 16px; flex: 1; overflow: hidden;
-  }
-
-  .kpi-chip {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border-subtle-nav);
-    border-radius: 4px;
-    padding: 5px 12px;
-    white-space: nowrap; flex-shrink: 0;
-  }
-
-  .kpi-chip .label {
-    font-size: 9px;
-    letter-spacing: 1px; color: var(--text-dim);
-    font-family: var(--font-mono);
-    line-height: 1.2;
-  }
+  .topbar-kpi { display: flex; align-items: center; gap: 16px; flex: 1; overflow: hidden; }
+  .kpi-chip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle-nav); border-radius: 4px; padding: 5px 12px; white-space: nowrap; flex-shrink: 0; }
+  .kpi-chip .label { font-size: 9px; letter-spacing: 1px; color: var(--text-dim); font-family: var(--font-mono); line-height: 1.2; }
   .kpi-chip .label .cn-nav { font-size: 8px; }
-
   .kpi-chip .value { font-size: 14px; font-weight: 700; font-family: var(--font-mono); }
   .kpi-chip.ok .value { color: var(--accent-primary); }
   .kpi-chip.warn .value { color: var(--accent-warn); }
   .kpi-chip.danger .value { color: var(--accent-danger); }
-
-  .topbar-right {
-    display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0;
-  }
-
+  .topbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
   .topbar-time { font-family: var(--font-mono); font-size: 12px; color: var(--text-mid); }
-
-  .user-badge {
-    display: flex;
-    align-items: center; gap: 8px;
-    background: rgba(34,197,94,0.08);
-    border: 1px solid rgba(34,197,94,0.2);
-    border-radius: 4px; padding: 5px 10px;
-  }
-
-  .user-badge .avatar {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-primary), #16a34a);
-    display: flex;
-    align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #000;
-  }
-
+  .user-badge { display: flex; align-items: center; gap: 8px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); border-radius: 4px; padding: 5px 10px; }
+  .user-badge .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), #16a34a); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #000; }
   .user-badge .name { font-size: 12px; font-weight: 600; color: var(--text-bright); }
   .user-badge .role { font-size: 9px; color: var(--accent-primary); font-family: var(--font-mono); }
-
-  .btn-logout {
-    background: transparent;
-    border: 1px solid rgba(239,68,68,0.35);
-    border-radius: 4px; padding: 5px 10px;
-    color: var(--accent-danger);
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
-    cursor: pointer; transition: all 0.2s;
-  }
+  .btn-logout { background: transparent; border: 1px solid rgba(239,68,68,0.35); border-radius: 4px; padding: 5px 10px; color: var(--accent-danger); font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
   .btn-logout:hover { background: rgba(239,68,68,0.08); }
-
-  /* ═══════════ SIDEBAR — mantém verde escuro ════════════════════════ */
   .layout { display: flex; flex: 1; overflow: hidden; }
-
-  .sidebar {
-    width: 230px;
-    background: var(--bg-panel);
-    border-right: 1px solid rgba(34,197,94,0.12);
-    padding: 16px 0;
-    overflow-y: auto;
-    flex-shrink: 0;
-    display: flex; flex-direction: column;
-  }
-
-  .sidebar-role-badge {
-    margin: 12px 14px 8px;
-    background: rgba(34,197,94,0.07);
-    border: 1px solid rgba(34,197,94,0.18);
-    border-radius: 4px; padding: 8px 12px;
-    font-family: var(--font-mono); font-size: 11px;
-  }
+  .sidebar { width: 230px; background: var(--bg-panel); border-right: 1px solid rgba(34,197,94,0.12); padding: 16px 0; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar-role-badge { margin: 12px 14px 8px; background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.18); border-radius: 4px; padding: 8px 12px; font-family: var(--font-mono); font-size: 11px; }
   .sidebar-role-badge .sb-name { color: var(--text-bright); font-weight: 600; font-size: 13px; display:block; }
   .sidebar-role-badge .sb-role { color: var(--accent-primary); letter-spacing: 1px; font-size: 10px; }
-
   .nav-section { margin-bottom: 20px; }
-
-  .nav-section-label {
-    font-size: 9px; letter-spacing: 3px; color: var(--text-dim);
-    padding: 0 18px; margin-bottom: 4px; font-family: var(--font-mono);
-  }
+  .nav-section-label { font-size: 9px; letter-spacing: 3px; color: var(--text-dim); padding: 0 18px; margin-bottom: 4px; font-family: var(--font-mono); }
   .nav-section-label .cn-nav { font-size: 8px; letter-spacing: 0; }
-
-  .nav-item {
-    display: flex; align-items: center; gap: 9px;
-    padding: 9px 18px; cursor: pointer;
-    transition: all 0.15s;
-    position: relative; font-size: 13px; font-weight: 500;
-    color: var(--text-mid); letter-spacing: 0.3px;
-    line-height: 1.2;
-  }
-
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 18px; cursor: pointer; transition: all 0.15s; position: relative; font-size: 13px; font-weight: 500; color: var(--text-mid); letter-spacing: 0.3px; line-height: 1.2; }
   .nav-item:hover { background: rgba(34,197,94,0.05); color: var(--text-bright); }
-
-  .nav-item.active {
-    background: rgba(34,197,94,0.08);
-    color: var(--accent-primary);
-    border-right: 2px solid var(--accent-secondary);
-  }
-
+  .nav-item.active { background: rgba(34,197,94,0.08); color: var(--accent-primary); border-right: 2px solid var(--accent-secondary); }
   .nav-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
   .nav-item .nav-label { flex: 1; }
   .nav-item .nav-label .cn-nav { margin-top: 1px; }
-
-  .nav-badge {
-    margin-left: auto; background: var(--accent-danger); color: #fff;
-    font-size: 9px; font-weight: 700; padding: 1px 5px;
-    border-radius: 8px; font-family: var(--font-mono);
-  }
+  .nav-badge { margin-left: auto; background: var(--accent-danger); color: #fff; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 8px; font-family: var(--font-mono); }
   .nav-badge.warn { background: var(--accent-warn); color: #000; }
-
-  /* ═══════════ MAIN CONTENT — branco/clean ══════════════════════════ */
-  .main {
-    flex: 1; overflow-y: auto;
-    padding: 24px;
-    display: flex; flex-direction: column; gap: 18px;
-    background: var(--main-bg);
-  }
-
-  /* ═══════════ PAGE HEADER ══════════════════════════════════════════ */
-  .page-header {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 16px;
-  }
-
-  .page-title {
-    font-family: var(--font-display);
-    font-size: 18px; font-weight: 700; letter-spacing: 2px; color: var(--text-main);
-  }
-
+  .main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; background: var(--main-bg); }
+  .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .page-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 2px; color: var(--text-main); }
   .page-title span { color: var(--accent-primary); }
-
-  .page-sub {
-    font-size: 11px; color: var(--text-secondary);
-    font-family: var(--font-mono);
-    margin-top: 2px;
-  }
-
-  /* ═══════════ BOTÕES ════════════════════════════════════════════════ */
-  .btn-primary {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border: none; border-radius: 6px; padding: 9px 18px;
-    color: #fff; font-family: var(--font-display);
-    font-size: 11px; font-weight: 700; letter-spacing: 2px;
-    cursor: pointer;
-    transition: all 0.2s; white-space: nowrap;
-  }
+  .page-sub { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px; }
+  .btn-primary { background: linear-gradient(135deg, #22c55e, #16a34a); border: none; border-radius: 6px; padding: 9px 18px; color: #fff; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .btn-primary:hover { box-shadow: 0 3px 12px rgba(34,197,94,0.4); transform: translateY(-1px); }
-
-  .btn-secondary {
-    background: #fff; border: 1px solid var(--card-border);
-    border-radius: 6px; padding: 9px 18px;
-    color: var(--text-secondary);
-    font-family: var(--font-ui);
-    font-size: 13px; cursor: pointer; transition: all 0.2s;
-  }
+  .btn-secondary { background: #fff; border: 1px solid var(--card-border); border-radius: 6px; padding: 9px 18px; color: var(--text-secondary); font-family: var(--font-ui); font-size: 13px; cursor: pointer; transition: all 0.2s; }
   .btn-secondary:hover { border-color: #aab5c1; color: var(--text-main); }
-
-  .btn-success {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border: none; border-radius: 6px; padding: 9px 18px;
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
-  }
+  .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); border: none; border-radius: 6px; padding: 9px 18px; color: #fff; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
   .btn-success:hover { box-shadow: 0 3px 12px rgba(34,197,94,0.4); }
-
-  .btn-danger {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    border: none; border-radius: 6px; padding: 9px 18px;
-    color: #fff; font-family: var(--font-display);
-    font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  /* ═══════════ CARDS ═════════════════════════════════════════════════ */
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 10px;
-    box-shadow: var(--card-shadow);
-    position: relative; overflow: hidden;
-  }
-
-  .card::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(34,197,94,0.25), transparent);
-  }
-
-  .card-header {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--divider);
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    background: #fcfdfe;
-  }
-
-  .card-title {
-    font-family: var(--font-display);
-    font-size: 11px; letter-spacing: 2px; color: var(--text-main); font-weight: 700;
-  }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 6px; padding: 9px 18px; color: #fff; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; box-shadow: var(--card-shadow); position: relative; overflow: hidden; }
+  .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(34,197,94,0.25), transparent); }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fcfdfe; }
+  .card-title { font-family: var(--font-display); font-size: 11px; letter-spacing: 2px; color: var(--text-main); font-weight: 700; }
   .card-title .cn { color: var(--text-tertiary); font-size: 10px; margin-top: 1px; }
-
   .card-body { padding: 20px; }
-
-  /* ═══════════ KPI GRID ══════════════════════════════════════════════ */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-    gap: 12px;
-  }
-
-  .kpi-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 10px;
-    padding: 18px 16px;
-    box-shadow: var(--card-shadow);
-    position: relative; overflow: hidden; transition: all 0.2s;
-    border-left: 3px solid var(--accent-color, var(--accent-primary));
-  }
-
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 18px 16px; box-shadow: var(--card-shadow); position: relative; overflow: hidden; transition: all 0.2s; border-left: 3px solid var(--accent-color, var(--accent-primary)); }
   .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
-
   .kpi-card.green { --accent-color: #22c55e; }
   .kpi-card.warn  { --accent-color: var(--accent-warn); }
   .kpi-card.danger{ --accent-color: var(--accent-danger); }
   .kpi-card.purple{ --accent-color: var(--accent-purple); }
-
-  .kpi-card .k-label {
-    font-size: 10px; letter-spacing: 1.5px;
-    color: var(--text-secondary); font-family: var(--font-mono); margin-bottom: 8px;
-    display: flex;
-    flex-direction: column; gap: 1px;
-  }
-
-  .kpi-card .k-value {
-    font-family: var(--font-display);
-    font-size: 32px; font-weight: 900; line-height: 1;
-    color: var(--accent-color, var(--accent-primary));
-  }
-
-  .kpi-card .k-sub {
-    font-size: 11px; color: var(--text-tertiary); margin-top: 5px; font-family: var(--font-cn);
-  }
-
-  .kpi-card .k-icon {
-    position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: 0.08;
-  }
-
-  /* ═══════════ BADGES ════════════════════════════════════════════════ */
-  .badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 4px;
-    font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    font-family: var(--font-mono); white-space: nowrap;
-    flex-direction: column; text-align: center;
-  }
+  .kpi-card .k-label { font-size: 10px; letter-spacing: 1.5px; color: var(--text-secondary); font-family: var(--font-mono); margin-bottom: 8px; display: flex; flex-direction: column; gap: 1px; }
+  .kpi-card .k-value { font-family: var(--font-display); font-size: 32px; font-weight: 900; line-height: 1; color: var(--accent-color, var(--accent-primary)); }
+  .kpi-card .k-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; font-family: var(--font-cn); }
+  .kpi-card .k-icon { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: 0.08; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 1px; font-family: var(--font-mono); white-space: nowrap; flex-direction: column; text-align: center; }
   .badge::before { content: '●'; font-size: 7px; }
   .badge .cn { font-size: 8px; letter-spacing: 0; }
-
   .badge.disponivel { background: #dcfce7; color: #15803d; }
   .badge.em-uso     { background: #d1fae5; color: #065f46; }
   .badge.inspecao   { background: #fef9c3; color: #92400e; }
   .badge.manutencao { background: #ede9fe; color: #5b21b6; }
   .badge.bloqueado  { background: #fee2e2; color: #991b1b; }
   .badge.descartado { background: #f1f5f9; color: #64748b; }
-
-  /* ═══════════ TABELA ════════════════════════════════════════════════ */
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-
-  .data-table th {
-    padding: 10px 14px; text-align: left;
-    font-size: 9px; letter-spacing: 1.5px; color: var(--text-secondary);
-    font-family: var(--font-mono); border-bottom: 1px solid var(--divider);
-    background: var(--table-head-bg); font-weight: 400; white-space: nowrap;
-  }
+  .data-table th { padding: 10px 14px; text-align: left; font-size: 9px; letter-spacing: 1.5px; color: var(--text-secondary); font-family: var(--font-mono); border-bottom: 1px solid var(--divider); background: var(--table-head-bg); font-weight: 400; white-space: nowrap; }
   .data-table th .cn { font-size: 8px; letter-spacing: 0; color: var(--text-tertiary); }
-
-  .data-table td {
-    padding: 11px 14px; border-bottom: 1px solid var(--divider);
-    color: var(--text-secondary); transition: all 0.12s; vertical-align: middle;
-  }
-
+  .data-table td { padding: 11px 14px; border-bottom: 1px solid var(--divider); color: var(--text-secondary); transition: all 0.12s; vertical-align: middle; }
   .data-table tr:last-child td { border-bottom: none; }
   .data-table tr:hover td { background: var(--table-row-hover); color: var(--text-main); }
   .data-table td.highlight { color: var(--text-main); font-weight: 600; }
   .data-table .mono { font-family: var(--font-mono); font-size: 12px; }
-
-  /* ═══════════ PROGRESS BAR ══════════════════════════════════════════ */
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
   .progress-bar { flex: 1; height: 5px; background: #e8ecf0; border-radius: 3px; overflow: hidden; }
   .progress-fill { height: 100%; border-radius: 3px; background: var(--accent-primary); transition: width 0.4s; }
   .progress-fill.warn   { background: var(--accent-warn); }
   .progress-fill.danger { background: var(--accent-danger); }
   .progress-pct { font-size: 11px; font-family: var(--font-mono); color: var(--text-tertiary); width: 32px; text-align: right; flex-shrink: 0; }
-
-  /* ═══════════ ALERT STRIP ═══════════════════════════════════════════ */
-  .alert-strip {
-    background: #fff5f5; border: 1px solid #fecaca;
-    border-radius: 8px; padding: 12px 16px;
-    display: flex; align-items: center; gap: 12px; font-size: 13px;
-    margin-bottom: 8px;
-  }
+  .alert-strip { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; margin-bottom: 8px; }
   .alert-strip .icon { font-size: 18px; flex-shrink: 0; }
   .alert-strip .msg  { color: var(--text-main); }
   .alert-strip .msg strong { color: var(--accent-danger); }
   .alert-strip .time { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
   .alert-strip .msg .cn { color: #b91c1c; }
-
   .alert-strip.warn { background: #fffbeb; border-color: #fde68a; }
   .alert-strip.warn .msg strong { color: #92400e; }
   .alert-strip.warn .msg .cn { color: #92400e; }
-
-  /* ═══════════ TABS ══════════════════════════════════════════════════ */
   .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--divider); margin-bottom: 20px; }
-
-  .tab {
-    padding: 9px 18px; cursor: pointer; font-size: 11px; letter-spacing: 1px;
-    color: var(--text-secondary); font-family: var(--font-mono);
-    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s;
-    line-height: 1.3; display: flex; flex-direction: column; align-items: center; gap: 1px;
-  }
+  .tab { padding: 9px 18px; cursor: pointer; font-size: 11px; letter-spacing: 1px; color: var(--text-secondary); font-family: var(--font-mono); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; line-height: 1.3; display: flex; flex-direction: column; align-items: center; gap: 1px; }
   .tab .cn { font-size: 8px; }
   .tab:hover { color: var(--text-main); }
   .tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
-
-  /* ═══════════ MODAL ════════════════════════════════════════════════ */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    z-index: 500;
-    background: rgba(0,0,0,0.45);
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeIn 0.2s ease;
-    backdrop-filter: blur(3px);
-  }
+  .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; backdrop-filter: blur(3px); }
   .modal-overlay.hidden { display: none; }
-
-  .modal {
-    background: #fff; border: 1px solid var(--card-border);
-    border-radius: 12px; width: min(600px, 95vw); max-height: 90vh;
-    overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.18);
-    animation: slideUp 0.3s ease;
-  }
-
-  .modal-header {
-    padding: 18px 24px; border-bottom: 1px solid var(--divider);
-    display: flex; align-items: center; justify-content: space-between;
-    background: #f8faf9;
-  }
-
-  .modal-title {
-    font-family: var(--font-display); font-size: 13px;
-    letter-spacing: 2px; color: var(--text-main); font-weight: 700;
-    display: flex; flex-direction: column; gap: 2px;
-  }
+  .modal { background: #fff; border: 1px solid var(--card-border); border-radius: 12px; width: min(600px, 95vw); max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.18); animation: slideUp 0.3s ease; }
+  .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; background: #f8faf9; }
+  .modal-title { font-family: var(--font-display); font-size: 13px; letter-spacing: 2px; color: var(--text-main); font-weight: 700; display: flex; flex-direction: column; gap: 2px; }
   .modal-title .cn { letter-spacing: 1px; font-size: 10px; }
-
-  .modal-close {
-    background: transparent; border: none; color: var(--text-tertiary);
-    font-size: 20px; cursor: pointer; line-height: 1;
-    padding: 4px; transition: color 0.2s;
-  }
+  .modal-close { background: transparent; border: none; color: var(--text-tertiary); font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; transition: color 0.2s; }
   .modal-close:hover { color: var(--text-main); }
-
   .modal-body    { padding: 24px; }
   .modal-footer  { padding: 14px 24px; border-top: 1px solid var(--divider); display: flex; gap: 10px; justify-content: flex-end; }
-
-  /* ═══════════ SCANNER BOX ══════════════════════════════════════════ */
-  .scanner-box {
-    background: var(--input-bg); border: 2px dashed var(--input-border);
-    border-radius: 8px; padding: 28px; text-align: center;
-    transition: all 0.3s; cursor: pointer;
-  }
-  .scanner-box:hover, .scanner-box.active {
-    border-color: var(--accent-primary); background: #f0fdf4;
-  }
+  .scanner-box { background: var(--input-bg); border: 2px dashed var(--input-border); border-radius: 8px; padding: 28px; text-align: center; transition: all 0.3s; cursor: pointer; }
+  .scanner-box:hover, .scanner-box.active { border-color: var(--accent-primary); background: #f0fdf4; }
   .scanner-box .scan-icon  { font-size: 40px; margin-bottom: 12px; display: block; }
   .scanner-box .scan-label { font-family: var(--font-display); font-size: 12px; letter-spacing: 3px; color: var(--accent-primary); margin-bottom: 4px; }
   .scanner-box .scan-sub   { font-family: var(--font-cn); font-size: 11px; color: var(--text-tertiary); }
-
-  .scanner-input {
-    width: 100%;
-    background: #fff; border: 1px solid var(--input-border);
-    border-radius: 6px; padding: 13px 16px;
-    color: var(--accent-primary); font-family: var(--font-mono);
-    font-size: 18px; letter-spacing: 3px; text-align: center;
-    outline: none; margin-top: 14px; transition: all 0.2s;
-  }
+  .scanner-input { width: 100%; background: #fff; border: 1px solid var(--input-border); border-radius: 6px; padding: 13px 16px; color: var(--accent-primary); font-family: var(--font-mono); font-size: 18px; letter-spacing: 3px; text-align: center; outline: none; margin-top: 14px; transition: all 0.2s; }
   .scanner-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(34,197,94,0.12); }
-
-  /* ═══════════ FORM FIELDS ═══════════════════════════════════════════ */
   .form-grid { display: grid; gap: 14px; }
   .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
   .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-
-  .form-field label {
-    display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--text-secondary);
-    margin-bottom: 5px; font-family: var(--font-mono);
-    line-height: 1.5;
-  }
+  .form-field label { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--text-secondary); margin-bottom: 5px; font-family: var(--font-mono); line-height: 1.5; }
   .form-field label .cn { font-size: 9px; color: var(--text-tertiary); letter-spacing: 0; }
-
-  .form-field input,
-  .form-field select,
-  .form-field textarea {
-    width: 100%; background: var(--input-bg);
-    border: 1px solid var(--input-border); border-radius: 6px;
-    padding: 9px 12px; color: var(--text-main); font-family: var(--font-ui);
-    font-size: 14px; outline: none; transition: all 0.2s;
-  }
-  .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
-    border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(34,197,94,0.10);
-    background: #fff;
-  }
+  .form-field input, .form-field select, .form-field textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; padding: 9px 12px; color: var(--text-main); font-family: var(--font-ui); font-size: 14px; outline: none; transition: all 0.2s; }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(34,197,94,0.10); background: #fff; }
   .form-field textarea { min-height: 75px; resize: vertical; }
-
   .form-divider { border: none; border-top: 1px solid var(--divider); margin: 4px 0; }
-
-  .form-section-title {
-    font-size: 10px; letter-spacing: 2.5px; color: var(--accent-primary);
-    font-family: var(--font-mono); padding-bottom: 8px;
-    border-bottom: 1px solid var(--divider); margin-bottom: 4px;
-    display: flex; flex-direction: column; gap: 1px;
-  }
+  .form-section-title { font-size: 10px; letter-spacing: 2.5px; color: var(--accent-primary); font-family: var(--font-mono); padding-bottom: 8px; border-bottom: 1px solid var(--divider); margin-bottom: 4px; display: flex; flex-direction: column; gap: 1px; }
   .form-section-title .cn { font-size: 10px; color: #7ec8a0; letter-spacing: 1px; }
-
-  /* ═══════════ CHECKLIST ═════════════════════════════════════════════ */
-  .checklist-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 0; border-bottom: 1px solid var(--divider);
-  }
+  .checklist-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--divider); }
   .checklist-item:last-child { border-bottom: none; }
   .checklist-item .item-name { flex: 1; font-size: 14px; color: var(--text-main); }
   .checklist-item .item-mat  { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-cn); }
-
   .radio-group { display: flex; gap: 6px; }
-
-  .radio-btn {
-    padding: 5px 12px; border-radius: 5px;
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 1px; cursor: pointer; border: 1px solid var(--input-border);
-    background: #fff; color: var(--text-secondary); font-family: var(--font-mono);
-    transition: all 0.15s;
-  }
+  .radio-btn { padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 700; letter-spacing: 1px; cursor: pointer; border: 1px solid var(--input-border); background: #fff; color: var(--text-secondary); font-family: var(--font-mono); transition: all 0.15s; }
   .radio-btn.ok  { border-color: #a7f3d0; color: #065f46; }
   .radio-btn.ok.selected, .radio-btn.ok:hover { background: #d1fae5; }
   .radio-btn.nok { border-color: #fca5a5; color: #991b1b; }
   .radio-btn.nok.selected, .radio-btn.nok:hover { background: #fee2e2; }
   .radio-btn.na  { }
   .radio-btn.na.selected, .radio-btn.na:hover { background: var(--table-head-bg); }
-
-  /* ═══════════ LINE CARDS ════════════════════════════════════════════ */
   .line-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-
-  .line-card {
-    background: var(--card-bg); border: 1px solid var(--card-border);
-    border-radius: 10px; box-shadow: var(--card-shadow); overflow: hidden;
-    transition: all 0.2s;
-  }
+  .line-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; box-shadow: var(--card-shadow); overflow: hidden; transition: all 0.2s; }
   .line-card:hover { border-color: #a7f3d0; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.09); }
-
-  .line-header {
-    padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--divider);
-    background: #f8faf9;
-  }
-
+  .line-header { padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--divider); background: #f8faf9; }
   .line-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--text-main); }
   .line-name .cn { color: var(--text-tertiary); font-size: 10px; }
-
   .line-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--font-mono); }
-
   .line-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary); animation: pulse 2s ease infinite; }
   .line-dot.warn { background: var(--accent-warn); }
   .line-dot.off  { background: #c8d4de; animation: none; }
-
   .line-body { padding: 13px 16px; }
   .line-info-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
   .line-info-row .lk { color: var(--text-tertiary); font-family: var(--font-cn); font-size: 11px; }
   .line-info-row .lv { color: var(--text-main); font-weight: 600; }
-
   .line-tools { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--divider); }
   .line-tools-label { font-size: 9px; letter-spacing: 1px; color: var(--text-tertiary); font-family: var(--font-cn); margin-bottom: 7px; }
-
   .tool-chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
   .tool-chip { background: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #065f46; font-family: var(--font-mono); }
-
-  /* ═══════════ IMPORT TRACKER ════════════════════════════════════════ */
   .import-track { display: flex; align-items: center; position: relative; }
   .import-step  { flex: 1; text-align: center; position: relative; }
   .import-step::before { content: ''; position: absolute; top: 12px; left: 50%; right: -50%; height: 2px; background: var(--divider); z-index: 0; }
   .import-step:last-child::before { display: none; }
   .import-step.done::before   { background: var(--accent-primary); }
   .import-step.active::before { background: linear-gradient(90deg, var(--accent-warn), var(--divider)); }
-
-  .import-dot {
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--table-head-bg); border: 2px solid var(--divider);
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 5px; position: relative; z-index: 1; font-size: 10px; transition: all 0.3s;
-  }
+  .import-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--table-head-bg); border: 2px solid var(--divider); display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; position: relative; z-index: 1; font-size: 10px; transition: all 0.3s; }
   .import-step.done   .import-dot { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
   .import-step.active .import-dot { background: var(--accent-warn); border-color: var(--accent-warn); color: #fff; animation: pulse 1.5s ease infinite; }
-
   .import-label { font-size: 9px; letter-spacing: 1px; color: var(--text-tertiary); font-family: var(--font-cn); }
   .import-step.done   .import-label { color: var(--accent-primary); }
   .import-step.active .import-label { color: var(--accent-warn); }
-
-  /* ═══════════ TOAST ═════════════════════════════════════════════════ */
   #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-
-  .toast {
-    background: #fff; border: 1px solid var(--card-border); border-radius: 8px;
-    padding: 13px 18px; min-width: 280px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.12);
-    display: flex; align-items: center; gap: 10px;
-    animation: slideInRight 0.3s ease;
-    font-size: 13px; color: var(--text-main);
-  }
-
+  .toast { background: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 13px 18px; min-width: 280px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 10px; animation: slideInRight 0.3s ease; font-size: 13px; color: var(--text-main); }
   @keyframes slideInRight { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
-
   .toast.success { border-left: 3px solid var(--accent-primary); }
   .toast.error   { border-left: 3px solid var(--accent-danger); }
   .toast.warn    { border-left: 3px solid var(--accent-warn); }
   .toast.info    { border-left: 3px solid #3b82f6; }
-
-  /* ═══════════ LOADING ════════════════════════════════════════════════ */
   .loading-spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--divider); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
-
-  /* ═══════════ PAGE VIEWS ════════════════════════════════════════════ */
   .page-view { display: none; animation: fadeIn 0.2s ease; }
   .page-view.active { display: block; }
-
-  /* ═══════════ TOOL INFO CARD (BIPAR) ════════════════════════════════ */
   .tool-info-card { background: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 8px; padding: 18px; margin-top: 14px; display: none; }
   .tool-info-card.visible { display: block; animation: slideUp 0.3s ease; }
-
   .tool-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-
   .tool-info-row { display: flex; flex-direction: column; gap: 1px; }
   .tool-info-row .tik { font-size: 9px; letter-spacing: 1px; color: var(--text-tertiary); font-family: var(--font-mono); }
   .tool-info-row .tik .cn { font-size: 8px; }
   .tool-info-row .tiv { font-size: 14px; color: var(--text-main); font-weight: 600; }
-
-  /* ═══════════ ACCESS CONTROL ════════════════════════════════════════ */
   .nav-role-not-operador { display: none; }
   .nav-role-cadastro     { display: none; }
   .nav-role-suprimentos  { display: none; }
   .nav-role-admin-eng    { display: none; }
   .nav-role-admin        { display: none; }
-
-  .access-denied {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 300px; gap: 14px; color: var(--accent-danger);
-    font-family: var(--font-cn); font-size: 13px; text-align: center;
-  }
+  .access-denied { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 14px; color: var(--accent-danger); font-family: var(--font-cn); font-size: 13px; text-align: center; }
   .access-denied .icon { font-size: 40px; opacity: 0.4; }
-
-  /* ═══════════ MISC UTILS ════════════════════════════════════════════ */
   .flex           { display: flex; }
   .flex-col       { display: flex; flex-direction: column; }
   .flex-wrap      { flex-wrap: wrap; }
@@ -911,12 +314,15 @@
   .text-danger { color: var(--accent-danger); }
   .full-width  { width: 100%; }
   .hidden      { display: none !important; }
-
   .empty-state { text-align: center; padding: 36px; color: var(--text-tertiary); font-family: var(--font-cn); font-size: 13px; }
   .empty-state .icon { font-size: 32px; display: block; margin-bottom: 10px; opacity: 0.25; }
-
   .inline-loader { display: flex; align-items: center; gap: 10px; color: var(--text-tertiary); font-family: var(--font-cn); font-size: 12px; padding: 18px; }
-
+  /* ── PRINTER SELECT DROPDOWN ── */
+  .printer-select-wrap { position: relative; }
+  #printer-dropdown { display:none; position:absolute; top:38px; right:0; background:#fff; border:1px solid var(--card-border); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.15); min-width:240px; z-index:600; overflow:hidden; }
+  #printer-dropdown .pd-head { padding: 10px 14px; border-bottom: 1px solid var(--divider); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; color: var(--text-tertiary); }
+  #printer-list { max-height: 240px; overflow-y: auto; }
+  #printer-dropdown .pd-foot { padding: 8px 14px; border-top: 1px solid var(--divider); }
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -999,6 +405,21 @@
       </div>
     </div>
     <div class="topbar-right">
+      <!-- ═══ SELETOR DE IMPRESSORA ZEBRA ═══ -->
+      <div class="printer-select-wrap">
+        <button class="btn-secondary" id="btn-printer-select" onclick="togglePrinterDropdown()" style="padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:6px">
+          🖨️ <span id="printer-select-label">Selecionar impressora</span>
+        </button>
+        <div id="printer-dropdown">
+          <div class="pd-head">IMPRESSORAS ZEBRA · 斑马打印机</div>
+          <div id="printer-list">
+            <div style="padding:14px;text-align:center;color:var(--text-tertiary);font-size:12px">Buscando...</div>
+          </div>
+          <div class="pd-foot">
+            <button class="btn-secondary" style="width:100%;padding:6px;font-size:11px" onclick="buscarImpressorasZebra()">⟳ Atualizar lista</button>
+          </div>
+        </div>
+      </div>
       <div class="topbar-time" id="clock">--:--:--</div>
       <div class="user-badge">
         <div class="avatar" id="user-avatar">?</div>
@@ -1889,6 +1310,17 @@
                 <input type="number" id="cfg-min-stock" value="5" min="1">
               </div>
             </div>
+            <hr class="form-divider mt-16">
+            <div class="form-section-title mt-12">🖨️ IMPRESSORA DE ETIQUETAS (ZEBRA) <span class="cn">标签打印机</span></div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="font-size:13px;color:var(--text-secondary)">
+                Impressora atual: <strong id="cfg-printer-label" style="color:var(--text-main)">Nenhuma selecionada</strong>
+              </div>
+              <button class="btn-secondary" onclick="togglePrinterDropdown()" style="padding:6px 14px;font-size:12px">🖨️ Selecionar / Trocar</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-tertiary);font-family:var(--font-cn);margin-top:6px">
+              需要先安装 Zebra Browser Print · Requer o app Zebra Browser Print instalado no computador.
+            </div>
           </div>
         </div>
       </div>
@@ -2214,6 +1646,86 @@ const CONFIG = {
 };
 let currentUser = null, currentPage = 'dashboard', operationType = 'retirada';
 let toolsData = [], historyData = [], importsData = [], currentScannedTool = null, refreshTimer = null;
+
+/* ═══════════════════════════════════════════════════════════
+   INTEGRAÇÃO ZEBRA BROWSER PRINT — seleção de impressora local
+   ═══════════════════════════════════════════════════════════ */
+let zebraImpressoraSelecionada = null;
+
+function togglePrinterDropdown() {
+  const dd = document.getElementById('printer-dropdown');
+  const willOpen = dd.style.display === 'none' || dd.style.display === '';
+  dd.style.display = willOpen ? 'block' : 'none';
+  if (willOpen) buscarImpressorasZebra();
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.printer-select-wrap');
+  const dd = document.getElementById('printer-dropdown');
+  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
+});
+
+function buscarImpressorasZebra() {
+  const lista = document.getElementById('printer-list');
+  if (typeof BrowserPrint === 'undefined') {
+    lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--accent-danger)">
+      ⚠️ Zebra Browser Print não detectado.<br>
+      <a href="https://www.zebra.com/us/en/support-downloads/software/printer-software/browser-print.html" target="_blank" style="color:var(--accent-primary)">Baixar e instalar →</a>
+    </div>`;
+    return;
+  }
+  BrowserPrint.getLocalDevices(function (deviceList) {
+    if (!deviceList || !deviceList.length) {
+      lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--text-tertiary)">
+        Nenhuma impressora encontrada.<br>Verifique se está ligada e conectada (USB ou rede).
+      </div>`;
+      return;
+    }
+    lista.innerHTML = deviceList.map(d => {
+      const isSelected = zebraImpressoraSelecionada && zebraImpressoraSelecionada.uid === d.uid;
+      return `<div onclick='selecionarImpressoraZebra(${JSON.stringify(d).replace(/'/g, "&apos;")})'
+        style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:space-between;
+        ${isSelected ? 'background:#f0fdf4;color:var(--accent-primary);font-weight:600' : 'color:var(--text-main)'}"
+        onmouseover="this.style.background='#f7f9fc'" onmouseout="this.style.background='${isSelected ? '#f0fdf4' : 'transparent'}'">
+        <span>${d.name || d.uid}</span>
+        ${isSelected ? '<span>✓</span>' : ''}
+      </div>`;
+    }).join('');
+  }, function (err) {
+    lista.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--accent-danger)">Erro ao buscar impressoras: ${err}</div>`;
+  }, 'printer');
+}
+
+function selecionarImpressoraZebra(device) {
+  zebraImpressoraSelecionada = device;
+  localStorage.setItem('zebraPrinterUid', device.uid);
+  localStorage.setItem('zebraPrinterName', device.name || device.uid);
+  const lbl = device.name || device.uid;
+  document.getElementById('printer-select-label').textContent = lbl;
+  const cfgLbl = document.getElementById('cfg-printer-label');
+  if (cfgLbl) cfgLbl.textContent = lbl;
+  document.getElementById('printer-dropdown').style.display = 'none';
+  toast(`✓ Impressora selecionada: ${lbl}`, 'success');
+}
+
+function restaurarImpressoraZebra() {
+  const uid = localStorage.getItem('zebraPrinterUid');
+  const name = localStorage.getItem('zebraPrinterName');
+  if (uid && name) {
+    const lblEl = document.getElementById('printer-select-label');
+    if (lblEl) lblEl.textContent = name;
+    const cfgLbl = document.getElementById('cfg-printer-label');
+    if (cfgLbl) cfgLbl.textContent = name;
+    if (typeof BrowserPrint !== 'undefined') {
+      try {
+        zebraImpressoraSelecionada = new BrowserPrint.Device({
+          uid: uid, name: name, connection: 'usb', deviceType: 'printer'
+        });
+      } catch(e) { console.warn('[Zebra] erro ao restaurar device:', e); }
+    }
+  }
+}
+
 const CHECKLIST_TEMPLATES = {
   'Wave Tray': { name:'Wave Tray', items:[
     {id:'trava',name:'Trava · 锁扣',material:'Fenda/Philips/Allen · 一字/十字/内六角',required:true},
@@ -2270,8 +1782,7 @@ const MOCK_HISTORY = [
   {dt:'2025-05-25 11:55',tool:'WT-003',action:'RETIRADA',user:'João P.',line:'PTH-01',op:'OP-88198',qty:1200,cycles:150,checklistResult:'',obs:''},
 ];
 
-
-  const ROLE_PERMISSIONS = {
+const ROLE_PERMISSIONS = {
   operador:    {label:'OPERADOR · 操作员',pages:['dashboard','bipar','checklist'],canCadastrar:false,navClasses:[]},
   lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
   manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
@@ -2371,6 +1882,7 @@ async function doLogin() {
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('active');
     startClock(); loadDashboard(); startAutoRefresh(); loadConfig();
+    restaurarImpressoraZebra();
     navigate(perms.pages[0]||'dashboard');
   } catch(err){console.error(err);}
   btnEl.classList.remove('loading');
@@ -2402,59 +1914,42 @@ function startClock(){
   function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR');}
   tick(); setInterval(tick,1000);
 }
-  // ============================================================================
-  // FUNÇÃO UTILITÁRIA DE LEAD TIME (ADICIONE ESTE BLOCO AQUI)
-  // ============================================================================
   function gerarBarraLeadTime(dataCotacaoEnviada, statusAtual, dataStatusAtual, leadTimePadrao = 120) {
     if (!dataCotacaoEnviada) {
       return `<div style="color:var(--text-dim); font-size:11px;">⏳ Aguardando Cotação</div>`;
     }
-  
     const agora = new Date();
     const dataInicio = new Date(dataCotacaoEnviada);
     const dataEtapa = dataStatusAtual ? new Date(dataStatusAtual) : new Date();
-  
-    // 1. Cálculo do Lead Time Geral
     const diffTempoGeral = agora.getTime() - dataInicio.getTime();
     const diasDecorridos = Math.floor(diffTempoGeral / (1000 * 60 * 60 * 24));
     const diasRestantes = leadTimePadrao - diasDecorridos;
-  
-    // 2. Cálculo do tempo na Etapa Atual (Dias e Horas)
     const diffTempoEtapa = agora.getTime() - dataEtapa.getTime();
     const diasNaEtapa = Math.floor(diffTempoEtapa / (1000 * 60 * 60 * 24));
     const horasNaEtapa = Math.floor((diffTempoEtapa / (1000 * 60 * 60)) % 24);
-    
     let textoEtapa = `${diasNaEtapa}d ${horasNaEtapa}h nesta etapa`;
-  
-    // Definição de cor e porcentagem da barra geral
     let pctBarra = 100;
-    let corBarra = '#22c55e'; // Verde
+    let corBarra = '#22c55e';
     let classeTexto = 'text-verde';
     let textoStatus = `${diasRestantes} dias restantes`;
-  
     if (diasRestantes <= 0) {
-      // ATRASADO
       pctBarra = 100;
-      corBarra = '#ef4444'; // Vermelho
+      corBarra = '#ef4444';
       classeTexto = 'text-vermelho';
       textoStatus = `EM ATRASO POR ${Math.abs(diasRestantes)} DIAS`;
     } else {
-      // REGREDINDO
       pctBarra = (diasRestantes / leadTimePadrao) * 100;
-      
       if (pctBarra > 50) {
-        corBarra = '#22c55e'; // Verde
+        corBarra = '#22c55e';
         classeTexto = 'text-verde';
       } else if (pctBarra > 15) {
-        corBarra = '#f59e0b'; // Amarelo
+        corBarra = '#f59e0b';
         classeTexto = 'text-amarelo';
       } else {
-        corBarra = '#ef4444'; // Vermelho próximo do fim
+        corBarra = '#ef4444';
         classeTexto = 'text-vermelho';
       }
     }
-  
-    // Retorna o HTML estruturado da barra para injetar na tabela
     return `
       <div class="leadtime-container">
         <div class="leadtime-bar-bg">
@@ -2622,45 +2117,33 @@ function renderToolsTable(tools) {
     'Checklist Pendente': 'inspecao'
   };
 
-  // 1. Separar os registros principais (-TYPE) e as ferramentas individuais
   const typeMasters = tools.filter(t => t.code.endsWith('-TYPE'));
   const individualTools = tools.filter(t => !t.code.endsWith('-TYPE'));
 
   let htmlOutput = '';
 
- // 2. Renderizar os Grupos Baseados nos registros -TYPE
   typeMasters.forEach(master => {
     const baseCode = master.code.replace('-TYPE', '');
     const children = individualTools.filter(t => t.code.startsWith(baseCode + '-'));
-    
-    // Filtra os filhos ignorando quem já foi descartado para calcular o estoque real
     const activeChildren = children.filter(t => t.status !== 'Descartada');
-    
     const min = parseInt(master.minStock) || 0;
-    const qtyTotal = activeChildren.length; // Quantidade real apenas dos stencils ativos!
+    const qtyTotal = activeChildren.length;
     const baixo = min > 0 && qtyTotal < min;
-    
-    // === NOVO TRECHO ADICIONADO AQUI ===
-    // Verificar se o mestre ou os filhos já possuem solicitação de compra em andamento
     const temPedido = hasOpenPurchase(master.code);
 
     let estoqueCells = '';
     if (!min) {
       estoqueCells = `<td class="mono">${qtyTotal}</td><td class="mono text-dim">—</td>`;
     } else if (baixo && temPedido) {
-      // SE ESTÁ BAIXO MAS JÁ TEM PEDIDO: Mostra o aviso e ESCONDE o botão de comprar para evitar duplicidade!
       estoqueCells = `<td class="mono"><span style="color:#92400e;font-weight:700">${qtyTotal}</span></td>
                       <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:2px 8px;font-size:10px;color:#92400e;font-weight:bold;font-family:var(--font-mono);white-space:nowrap">📋 EM COMPRA</span></div></td>`;
     } else if (baixo) {
-      // SE ESTÁ BAIXO E NÃO TEM PEDIDO: Libera o botão de compra normalmente
       estoqueCells = `<td class="mono"><span style="color:var(--accent-danger);font-weight:700">${qtyTotal}</span></td>
                       <td class="mono"><div style="display:flex;align-items:center;gap:6px"><span class="mono">${min}</span><button onclick="openPurchaseModal('${master.code}');navigate('compras')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:2px 6px;font-size:9px;color:#991b1b;font-family:var(--font-mono);cursor:pointer;white-space:nowrap">🛒 COMPRAR</button></div></td>`;
     } else {
       estoqueCells = `<td class="mono" style="color:#16a34a">${qtyTotal}</td><td class="mono">${min}</td>`;
     }
-    // === FIM DO NOVO TRECHO ===
 
-    // Linha de Cabeçalho do Grupo (Gera exatamente as 11 colunas esperadas pelo grid)
     htmlOutput += `
       <tr class="group-header" data-basecode="${baseCode}" onclick="toggleGroupRow('${baseCode}')" style="background: #f0fdf4; cursor: pointer; font-weight: bold;">
         <td class="mono highlight" style="color: var(--accent-primary)">
@@ -2679,12 +2162,10 @@ function renderToolsTable(tools) {
         </td>
       </tr>
     `;
-    // 3. Renderizar as linhas dos Filhos (Escondidas por padrão)
     children.forEach(t => {
       const pct = t.maxCycles > 0 ? Math.round(t.cycles / t.maxCycles * 100) : 0;
       const wearCls = pct >= CONFIG.wearCrit ? 'danger' : pct >= CONFIG.wearAlert ? 'warn' : '';
       const tString = JSON.stringify({code: t.code, name: t.name}).replace(/"/g, '&quot;');
-      
       const isDescartada = t.status === 'Descartada';
       const rowStyle = isDescartada ? 'display: none; background: #f3f4f6; color: var(--text-tertiary); opacity: 0.6;' : 'display: none; background: #fafafa;';
       const codeStyle = isDescartada ? 'text-decoration: line-through; padding-left: 30px;' : 'padding-left: 30px;';
@@ -2714,7 +2195,6 @@ function renderToolsTable(tools) {
     });
   });
 
-  // 4. Renderizar ferramentas normais (Sem grupo -TYPE)
   const groupedCodes = typeMasters.map(m => m.code.replace('-TYPE', ''));
   const standaloneTools = individualTools.filter(t => !groupedCodes.some(bc => t.code.startsWith(bc + '-')));
 
@@ -2727,7 +2207,7 @@ function renderToolsTable(tools) {
     const qty = parseInt(t.qty) || 0;
     const baixo = min > 0 && qty < min;
     const temPedido = hasOpenPurchase(t.code);
-    
+
     let estoqueCell = '';
     if (!min) {
       estoqueCell = `<td class="mono">${qty}</td><td class="mono text-dim">—</td>`;
@@ -2769,21 +2249,15 @@ function renderToolsTable(tools) {
 function toggleGroupRow(baseCode) {
   const childrenRows = document.querySelectorAll(`.group-child-${baseCode}`);
   const iconEl = document.getElementById(`icon-${baseCode}`);
-  
   if (childrenRows.length > 0) {
     const areVisible = childrenRows[0].style.display !== 'none';
-    
-    childrenRows.forEach(row => {
-      row.style.display = areVisible ? 'none' : '';
-    });
-    
-    if (iconEl) {
-      iconEl.textContent = areVisible ? '➕' : '➖';
-    }
+    childrenRows.forEach(row => { row.style.display = areVisible ? 'none' : ''; });
+    if (iconEl) { iconEl.textContent = areVisible ? '➕' : '➖'; }
   }
 }
+
+/* ── GERAÇÃO DE ZPL ── */
 function gerarZPL(tool) {
-  // Ajuste a largura/altura conforme sua etiqueta (em dots, geralmente 203dpi)
   return `^XA
 ^CF0,30
 ^FO30,30^BQN,2,5
@@ -2793,16 +2267,26 @@ function gerarZPL(tool) {
 ^XZ`;
 }
 
+/* ── IMPRESSÃO via Zebra Browser Print (impressora local selecionada) ── */
 function printToolQRCode(tool) {
   const zpl = gerarZPL(tool);
-  const blob = new Blob([zpl], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `etiqueta_${tool.code}.zpl`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast(`✓ ZPL gerado para ${tool.code} · 标签已生成`, 'success');
+
+  if (typeof BrowserPrint === 'undefined') {
+    toast('⚠️ Zebra Browser Print não instalado — veja o ícone 🖨️ no topo', 'warn');
+    return;
+  }
+
+  if (!zebraImpressoraSelecionada) {
+    toast('⚠️ Nenhuma impressora selecionada — clique no ícone 🖨️ no topo', 'warn');
+    togglePrinterDropdown();
+    return;
+  }
+
+  zebraImpressoraSelecionada.send(zpl, function () {
+    toast(`✓ Etiqueta ${tool.code} enviada à impressora · 已发送打印`, 'success');
+  }, function (err) {
+    toast(`✗ Erro ao imprimir: ${err}`, 'error');
+  });
 }
 
 function filterTools(){
@@ -3056,8 +2540,6 @@ function renderLineCard(lineName, tools, lineType) {
   const hasWarn = pendente.length > 0;
   const dotCls = emUso.length > 0 ? (hasWarn ? 'warn' : '') : 'off';
   const statusTxt = emUso.length > 0 ? `${emUso.length} ${isFW ? 'slots em uso' : '使用中'}` : (isFW ? 'offline' : '空闲');
-
-  // CORREÇÃO AQUI: Mudado de t.product para t.op que é a propriedade real do seu código
  const opsAtivas = [...new Set(emUso.map(t => t.op || t.OP || ''))]
                         .filter(op => op && op.trim() !== '' && op !== '—')
                         .join(', ');
@@ -3156,6 +2638,8 @@ function loadConfigPage(){
   document.getElementById('cfg-refresh').value=CONFIG.refreshInterval/1000;
   document.getElementById('cfg-wear-alert').value=CONFIG.wearAlert;
   document.getElementById('cfg-wear-crit').value=CONFIG.wearCrit;
+  const cfgLbl = document.getElementById('cfg-printer-label');
+  if (cfgLbl) cfgLbl.textContent = localStorage.getItem('zebraPrinterName') || 'Nenhuma selecionada';
 }
 
 function saveConfig(){
@@ -3179,10 +2663,6 @@ function loadConfig(){const url=document.getElementById('cfg-script-url');if(url
 
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 
-// ══════════════════════════════════════════════════════════
-//  MÓDULO DE COMPRAS — Pedido com proteção de duplicidade
-// ══════════════════════════════════════════════════════════
-
 const FLOW_STAGES = [
   { key: 'solicitado',       label: 'SOLICITAR',          cn: '已申请',   icon: '📋' },
   { key: 'cotacao_enviada',  label: 'REQUISIÇÃO COTAÇÃO', cn: '询价已发', icon: '📤' },
@@ -3197,9 +2677,7 @@ const FLOW_STAGES = [
   { key: 'recebido',         label: 'RECEBIDO',          cn: '已收货',   icon: '📦' },
   { key: 'cadastro_sistema', label: 'CAD. SISTEMA',      cn: '系统登记', icon: '🏭' },
 ];
- 
 
-// ── CARREGAMENTO INICIAL ──────────────────────────────────────────────────────
 async function loadPurchasesFromAPI() {
   const api = await apiCall('getPurchases');
   if (api && api.data) {
@@ -3223,53 +2701,34 @@ async function loadPurchasesFromAPI() {
       historico:   (() => { try { return JSON.parse(p.historico_estagios || '[]'); } catch(e){ return []; } })(),
     }));
   } else {
-    // modo demo sem backend
     purchasesData = [];
   }
   return purchasesData;
 }
- 
+
 function hasOpenPurchase(toolCode) {
-  // Se não houver dados carregados ou código válido, retorna falso
   if (!toolCode || !window.purchasesData || !window.purchasesData.length) {
-    // Fallback caso sua variável global se chame apenas 'purchasesData'
     if (typeof purchasesData !== 'undefined' && purchasesData.length) {
       window.purchasesData = purchasesData;
     } else {
       return false;
     }
   }
-  
-  // Extrai a raiz do código (ex: transforma STC-001-TYPE ou STC-001-1 em apenas STC-001)
   const baseCode = toolCode.replace('-TYPE', '').split('-').slice(0, 2).join('-');
-
-  // Busca se há algum pedido para essa raiz que NÃO esteja concluído ou cancelado
   return window.purchasesData.some(p => {
-    // Identifica qual propriedade mapeia o código na sua aba Compras (p.tool_code ou p.toolCode)
     const pCode = p.tool_code || p.toolCode;
     if (!pCode) return false;
-    
     const pBase = pCode.replace('-TYPE', '').split('-').slice(0, 2).join('-');
-    
-    // Identifica qual propriedade mapeia o status (p.status_fluxo ou p.status)
     const pStatus = p.status_fluxo || p.status || '';
-    
-    // Estágios que significam que o processo de compra JÁ FOI CONCLUÍDO/FECHADO
     const closedStages = ['Entregue', 'Cancelado', 'recebido', 'cancelado', 'cadastro_sistema'];
-    
-    // Se o código base bater e o status NÃO estiver na lista de fechados, significa que está em aberto!
     return pBase === baseCode && !closedStages.includes(pStatus);
   });
 }
- 
-// ── PÁGINA DE COMPRAS ─────────────────────────────────────────────────────────
+
 async function loadComprasPage() {
   await loadPurchasesFromAPI();
- 
   const filterStatus = (document.getElementById('pc-filter-status') || {}).value || '';
   const closedStages = ['recebido', 'cancelado', 'cadastro_sistema'];
- 
-  // KPIs
   const abaixo      = getBelowMinStock();
   const abertos     = purchasesData.filter(p => !closedStages.includes(p.status));
   const entregues   = purchasesData.filter(p => p.status === 'recebido');
@@ -3278,8 +2737,7 @@ async function loadComprasPage() {
   setText('pc-kpi-abertos',  abertos.length);
   setText('pc-kpi-entregues',entregues.length);
   setText('pc-kpi-valor',    'R$ ' + valorAberto.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
- 
-  // Alertas de estoque baixo
+
   const alertEl = document.getElementById('compras-alertas-estoque');
   if (alertEl) {
     let html = '';
@@ -3323,21 +2781,20 @@ async function loadComprasPage() {
     });
     alertEl.innerHTML = html;
   }
- 
-  // Tabela de pedidos
+
   const body = document.getElementById('purchase-body');
   if (!body) return;
- 
+
   let rows = purchasesData;
   if (filterStatus === 'pedido') rows = rows.filter(p => !closedStages.includes(p.status));
   else if (filterStatus === 'entregue') rows = rows.filter(p => p.status === 'recebido');
   else if (filterStatus === 'cancelado') rows = rows.filter(p => p.status === 'cancelado');
- 
+
   if (!rows.length) {
     body.innerHTML = '<tr><td colspan="12" class="empty-state"><span class="icon">🛒</span>暂无采购订单</td></tr>';
     return;
   }
- 
+
   const closedSet = new Set(closedStages);
   body.innerHTML = rows.map(p => {
     const stageInfo  = FLOW_STAGES.find(s => s.key === p.status) || { label: p.status, icon: '?' };
@@ -3347,7 +2804,7 @@ async function loadComprasPage() {
       : p.status === 'recebido' || p.status === 'cadastro_sistema'
         ? '<span class="badge disponivel">🟢 ' + stageInfo.label + '</span>'
         : `<span class="badge inspecao">${stageInfo.icon} ${stageInfo.label}</span>`;
- 
+
     const acoes = isClosed ? '—' : `
       <button class="btn-success" style="padding:3px 8px;font-size:10px;white-space:nowrap"
               onclick="openAdvanceModal('${p.id}')">
@@ -3357,7 +2814,7 @@ async function loadComprasPage() {
               onclick="cancelarPedido('${p.id}')">
         ✕
       </button>`;
- 
+
     return `<tr>
       <td class="mono">${p.id}</td>
       <td class="mono" style="font-size:11px">${p.dataPedido}</td>
@@ -3374,8 +2831,7 @@ async function loadComprasPage() {
     </tr>`;
   }).join('');
 }
- 
-// ── ABRE MODAL DE NOVO PEDIDO ─────────────────────────────────────────────────
+
 function openPurchaseModal(preToolCode) {
   const sel = document.getElementById('pc-tool');
   sel.innerHTML = '<option value="">选择工具 · Selecione a ferramenta...</option>' +
@@ -3385,7 +2841,7 @@ function openPurchaseModal(preToolCode) {
       const baixo = min > 0 && qty < min ? ' ⚠ ABAIXO DO MÍNIMO' : '';
       return `<option value="${t.code}" ${t.code === preToolCode ? 'selected' : ''}>${t.code} — ${t.name}${baixo}</option>`;
     }).join('');
- 
+
   const hoje = new Date().toISOString().split('T')[0];
   document.getElementById('pc-data').value  = hoje;
   document.getElementById('pc-eta').value   = '';
@@ -3395,20 +2851,20 @@ function openPurchaseModal(preToolCode) {
   document.getElementById('pc-obs').value   = '';
   document.getElementById('compra-dup-warn').style.display     = 'none';
   document.getElementById('modal-compra-error').style.display  = 'none';
- 
+
   if (preToolCode) { onCompraToolChange(); }
   else { document.getElementById('pc-tool-info').style.display = 'none'; }
- 
+
   document.getElementById('modal-compra').classList.remove('hidden');
 }
- 
+
 function onCompraToolChange() {
   const code    = document.getElementById('pc-tool').value;
   const tool    = toolsData.find(t => t.code === code);
   const infoBox = document.getElementById('pc-tool-info');
   const dupWarn = document.getElementById('compra-dup-warn');
   if (!tool) { infoBox.style.display = 'none'; dupWarn.style.display = 'none'; return; }
- 
+
   infoBox.style.display = 'block';
   const min = parseInt(tool.minStock) || 0;
   const qty = parseInt(tool.qty) || 0;
@@ -3418,7 +2874,7 @@ function onCompraToolChange() {
   document.getElementById('pc-info-min').textContent   = min || '—';
   document.getElementById('pc-info-lead').textContent  = tool.leadTime ? tool.leadTime + ' dias' : '—';
   document.getElementById('pc-info-price').textContent = tool.price ? 'R$ ' + tool.price.toFixed(2) : '—';
- 
+
   if (tool.supplier) document.getElementById('pc-supplier').value = tool.supplier;
   if (tool.price)    document.getElementById('pc-price').value    = tool.price.toFixed(2);
   if (tool.leadTime) {
@@ -3427,7 +2883,7 @@ function onCompraToolChange() {
     document.getElementById('pc-eta').value = eta.toISOString().split('T')[0];
   }
   calcTotal();
- 
+
   const existente = purchasesData.find(p =>
     p.toolCode === code && !['recebido','cancelado','cadastro_sistema'].includes(p.status)
   );
@@ -3441,14 +2897,13 @@ function onCompraToolChange() {
     dupWarn.style.display = 'none';
   }
 }
- 
+
 function calcTotal() {
   const qty   = parseFloat(document.getElementById('pc-qty').value) || 0;
   const price = parseFloat(document.getElementById('pc-price').value) || 0;
   document.getElementById('pc-total').value = (qty * price).toFixed(2);
 }
- 
-// ── SALVAR PEDIDO (GRAVA NO BACKEND) ─────────────────────────────────────────
+
 async function savePurchase() {
   const code     = document.getElementById('pc-tool').value;
   const supplier = document.getElementById('pc-supplier').value.trim();
@@ -3459,12 +2914,12 @@ async function savePurchase() {
   const eta      = document.getElementById('pc-eta').value;
   const obs      = document.getElementById('pc-obs').value;
   const errEl    = document.getElementById('modal-compra-error');
- 
+
   if (!code)     { errEl.textContent = '✗ Selecione uma ferramenta · 请选择工具'; errEl.style.display = 'block'; return; }
   if (!supplier) { errEl.textContent = '✗ Informe o fornecedor · 请填写供应商'; errEl.style.display = 'block'; return; }
   if (qty <= 0)  { errEl.textContent = '✗ Quantidade inválida · 数量无效'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
- 
+
   const tool = toolsData.find(t => t.code === code);
   const payload = {
     toolCode:    code,
@@ -3476,11 +2931,10 @@ async function savePurchase() {
     solicitante: currentUser.name,
     dataPedido:  data,
   };
- 
+
   const result = await apiPost('savePurchase', payload);
- 
+
   if (result && result.status === 'ok') {
-    // Atualiza localmente para refletir imediatamente sem esperar reload
     const newId = result.id || ('PC-' + Date.now());
     purchasesData.unshift({
       ...payload,
@@ -3491,7 +2945,7 @@ async function savePurchase() {
     });
     const idx = toolsData.findIndex(t => t.code === code);
     if (idx >= 0) toolsData[idx].purchaseStatus = 'pedido';
- 
+
     closeModal('modal-compra');
     toast(`✓ Pedido ${newId} registrado! Estágio: SOLICITADO · 订单已提交`, 'success');
     loadComprasPage();
@@ -3500,7 +2954,6 @@ async function savePurchase() {
     errEl.textContent = '✗ ' + result.error;
     errEl.style.display = 'block';
   } else {
-    // Modo offline/demo — salva só localmente
     const newId = 'PC-' + String(purchasesData.length + 1).padStart(3, '0');
     purchasesData.unshift({ ...payload, id: newId, dataPedido: data, status: 'solicitado', historico: [] });
     const idx = toolsData.findIndex(t => t.code === code);
@@ -3510,17 +2963,17 @@ async function savePurchase() {
     loadComprasPage();
   }
 }
- 
+
 let _currentAdvancePurchaseId = null;
- 
+
 function openAdvanceModal(purchaseId) {
   const purchase = purchasesData.find(p => p.id === purchaseId);
   if (!purchase) return;
- 
+
   _currentAdvancePurchaseId = purchaseId;
   const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
   const nextStage        = FLOW_STAGES[currentStageIdx + 1];
- 
+
   let modal = document.getElementById('modal-advance-stage');
   if (!modal) {
     modal = document.createElement('div');
@@ -3548,7 +3001,7 @@ function openAdvanceModal(purchaseId) {
       </div>`;
     document.body.appendChild(modal);
   }
- 
+
   const parseDataHistorico = (input) => {
     if (!input) return null;
     if (input instanceof Date) return input;
@@ -3598,7 +3051,7 @@ function openAdvanceModal(purchaseId) {
       cls = 'done';
       let dataFim = new Date();
       const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
-      
+
       if (proximaEtapaComData) {
         dataFim = historicoMapa[proximaEtapaComData.key];
       } else if (i === currentStageIdx) {
@@ -3612,11 +3065,9 @@ function openAdvanceModal(purchaseId) {
           const totalMinutos  = Math.floor(totalSegundos / 60);
           const totalHoras    = Math.floor(totalMinutos / 60);
           const dias          = Math.floor(totalHoras / 24);
-          
           const horas    = totalHoras % 24;
           const minutes  = totalMinutos % 60;
           const segundos = totalSegundos % 60;
-
           if (dias > 0) {
             tempoEtapaLabel = `⏱️ ${dias}d ${horas}h`;
           } else if (totalHoras > 0) {
@@ -3632,22 +3083,18 @@ function openAdvanceModal(purchaseId) {
       } else {
         tempoEtapaLabel = `⏱️ Pronto`;
       }
-    } 
+    }
     else if (i === currentStageIdx + 1 && !isClosed) {
       cls = 'pending-action';
       styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
-      
       const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date();
       const diffMsAguardando = new Date().getTime() - dataUltimoAvanco.getTime();
-      
       if (diffMsAguardando > 0) {
         const totalMinutosAguardando = Math.floor(diffMsAguardando / (1000 * 60));
         const totalHorasAguardando   = Math.floor(totalMinutosAguardando / 60);
         const dAguarda                = Math.floor(totalHorasAguardando / 24);
-        
         const hAguarda = totalHorasAguardando % 24;
         const mAguarda = totalMinutosAguardando % 60;
-
         if (dAguarda > 0) {
           tempoEtapaLabel = `⏳ ${dAguarda}d ${hAguarda}h`;
         } else if (totalHorasAguardando > 0) {
@@ -3669,24 +3116,24 @@ function openAdvanceModal(purchaseId) {
 
   document.getElementById('adv-timeline').innerHTML =
     `<div class="import-track" style="overflow-x:auto;padding-bottom:4px">${timelineHtml}</div>`;
-  
+
   document.getElementById('adv-title').innerHTML =
     nextStage
       ? `▶ AVANÇAR PARA: <span style="color:var(--accent-primary)">${nextStage.icon} ${nextStage.label}</span>`
       : '⚠ Último estágio atingido';
-      
+
   const extraHtml = _getExtraFields(nextStage ? nextStage.key : '', purchase);
   document.getElementById('adv-extra-fields').innerHTML = extraHtml;
-  
+
   const btn = document.getElementById('adv-confirm-btn');
   btn.disabled = !nextStage;
   btn.style.opacity = nextStage ? '1' : '0.4';
- 
+
   document.getElementById('adv-obs').value = '';
   document.getElementById('adv-error').style.display = 'none';
   modal.classList.remove('hidden');
 }
- 
+
 function _getExtraFields(stageKey, purchase) {
   if (stageKey === 'ncm_validado') {
     return `<div class="form-field"><label>NCM * <span class="cn">税号</span></label>
@@ -3703,26 +3150,25 @@ function _getExtraFields(stageKey, purchase) {
   }
   return '';
 }
- 
+
 async function confirmAdvanceStage() {
   const purchase = purchasesData.find(p => p.id === _currentAdvancePurchaseId);
   if (!purchase) return;
- 
+
   const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === purchase.status);
   const nextStage       = FLOW_STAGES[currentStageIdx + 1];
   if (!nextStage) return;
- 
+
   const obs    = document.getElementById('adv-obs').value;
   const errEl  = document.getElementById('adv-error');
- 
+
   const payload = {
     id:          purchase.id,
     novoEstagio: nextStage.key,
     usuario:     currentUser.name,
     obs,
   };
- 
-  // Campos extras por estágio
+
   if (nextStage.key === 'ncm_validado') {
     const ncm = (document.getElementById('adv-ncm') || {}).value || '';
     if (!ncm) { errEl.textContent = '✗ Informe o NCM · 请填写NCM税号'; errEl.style.display = 'block'; return; }
@@ -3732,25 +3178,23 @@ async function confirmAdvanceStage() {
     payload.invoice  = (document.getElementById('adv-invoice') || {}).value || '';
     payload.valorUsd = parseFloat((document.getElementById('adv-valorusd') || {}).value) || 0;
   }
- 
+
   errEl.style.display = 'none';
- 
+
   const result = await apiPost('advancePurchaseStage', payload);
- 
+
   if (result && result.status === 'ok') {
-    // Atualiza localmente
     purchase.status = nextStage.key;
     purchase.historico = purchase.historico || [];
     purchase.historico.push({ estagio: nextStage.key, data: new Date().toISOString(), usuario: currentUser.name, obs });
     if (payload.ncm)      purchase.ncm      = payload.ncm;
     if (payload.invoice)  purchase.invoice  = payload.invoice;
     if (payload.valorUsd) purchase.valorUsd = payload.valorUsd;
- 
+
     closeModal('modal-advance-stage');
     toast(`✓ Pedido ${purchase.id} avançou para: ${nextStage.icon} ${nextStage.label}`, 'success');
     loadComprasPage();
- 
-    // Se recebido, atualiza estoque local
+
     if (nextStage.key === 'recebido') {
       const idx = toolsData.findIndex(t => t.code === purchase.toolCode);
       if (idx >= 0) {
@@ -3763,24 +3207,22 @@ async function confirmAdvanceStage() {
     errEl.textContent  = '✗ ' + result.error;
     errEl.style.display = 'block';
   } else {
-    // Modo demo — atualiza só localmente
     purchase.status = nextStage.key;
     closeModal('modal-advance-stage');
     toast(`✓ [DEMO] Estágio avançado: ${nextStage.label}`, 'warn');
     loadComprasPage();
   }
 }
- 
-// ── CANCELAR PEDIDO ───────────────────────────────────────────────────────────
+
 async function cancelarPedido(purchaseId) {
   if (!confirm('Cancelar este pedido? · 确认取消此订单？')) return;
   const idx = purchasesData.findIndex(p => p.id === purchaseId);
   if (idx < 0) return;
- 
+
   const result = await apiPost('updatePurchaseStatus', {
     id: purchaseId, status: 'cancelado', aprovador: currentUser.name
   });
- 
+
   purchasesData[idx].status = 'cancelado';
   const toolCode    = purchasesData[idx].toolCode;
   const aindaAberto = purchasesData.some(p =>
@@ -3793,27 +3235,22 @@ async function cancelarPedido(purchaseId) {
   toast('✗ Pedido cancelado · 订单已取消', 'warn');
   loadComprasPage();
 }
- 
-// ── PÁGINA DE IMPORTAÇÃO — COM TEMPO POR ETAPA NA TIMELINE ───────────────────
-// ── PÁGINA DE IMPORTAÇÃO — LOGICA DE ESTÁGIOS CORRIGIDA ───────────────────
+
 async function loadImports() {
   await loadPurchasesFromAPI();
   const list = document.getElementById('imports-list');
   if (!list) return;
- 
-  // Mostra pedidos em andamento (não cancelados, ordenados por data)
+
   const ativos = purchasesData.filter(p => p.status !== 'cancelado');
   if (!ativos.length) {
     list.innerHTML = '<div class="empty-state"><span class="icon">🚢</span>无进口/采购记录 · Nenhum pedido ativo</div>';
     return;
   }
- 
+
   list.innerHTML = ativos.map(p => {
-    // Index do estágio atual baseado no status vindo do banco de dados (ex: 'solicitado' = index 0)
     const currentStageIdx = FLOW_STAGES.findIndex(s => s.key === p.status);
     const isClosed = p.status === 'recebido' || p.status === 'cadastro_sistema';
- 
-    // Mapeia as datas do histórico por estágio
+
     const historicoMapa = {};
     if (p.historico && Array.isArray(p.historico)) {
       p.historico.forEach(h => {
@@ -3823,29 +3260,24 @@ async function loadImports() {
       });
     }
 
-    // Se o pedido acabou de nascer e não tem data explícita no histórico para 'solicitado', usa a data do pedido
     if (!historicoMapa['solicitado'] && p.dataPedido) {
       historicoMapa['solicitado'] = new Date(p.dataPedido);
     }
 
-    // Montagem do fluxo de etapas (Timeline) com base na nova regra operacional
     const timelineHtml = FLOW_STAGES.map((s, i) => {
       let cls = '';
       let styleExtra = '';
-      let tempoEtapaLabel = '—'; 
+      let tempoEtapaLabel = '—';
 
-      // REGRA A: ETAPAS JÁ CONCLUÍDAS (Tudo o que está para trás ou no mesmo nível do status atual)
       if (i <= currentStageIdx) {
         cls = 'done';
-        
-        // Define o fim do intervalo para calcular quanto tempo essa etapa levou
         let dataFim = new Date();
         const proximaEtapaComData = FLOW_STAGES.slice(i + 1).find(prox => historicoMapa[prox.key]);
-        
+
         if (proximaEtapaComData) {
           dataFim = historicoMapa[proximaEtapaComData.key];
         } else if (i === currentStageIdx) {
-          dataFim = new Date(); // Conta até agora se for o topo do histórico realizado
+          dataFim = new Date();
         }
 
         const dataEntradaEstaEtapa = historicoMapa[s.key];
@@ -3862,17 +3294,12 @@ async function loadImports() {
         } else {
           tempoEtapaLabel = `⏱️ Pronto`;
         }
-      } 
-      // REGRA B: A ETAPA QUE ESTÁ AGUARDANDO AÇÃO (A próxima imediata após o status atual do banco)
+      }
       else if (i === currentStageIdx + 1 && !isClosed) {
         cls = 'pending-action';
-        // Aplica a animação nativa pulse para piscar a bolinha amarela
         styleExtra = 'animation: pulse 1.5s infinite; border-color: var(--accent-warn); background-color: rgba(245, 158, 11, 0.15); color: var(--accent-warn);';
-        
-        // O tempo parado aguardando essa etapa conta a partir da data em que a última etapa foi fechada
         const dataUltimoAvanco = historicoMapa[FLOW_STAGES[currentStageIdx].key] || new Date();
         const diffMsAguardando = new Date() - dataUltimoAvanco;
-        
         if (diffMsAguardando > 0) {
           const horasAguardando = diffMsAguardando / (1000 * 60 * 60);
           const dAguarda = Math.floor(horasAguardando / 24);
@@ -3881,7 +3308,6 @@ async function loadImports() {
         }
       }
 
-      // Renderização estruturada de cada etapa da timeline
       return `<div class="import-step ${cls}" style="display: flex; flex-direction: column; align-items: center; position: relative;">
         <div class="step-duration" style="font-size: 11px; font-weight: 600; color: ${cls === 'pending-action' ? 'var(--accent-warn)' : (cls === 'done' ? 'var(--accent-secondary)' : 'var(--text-tertiary)')}; margin-bottom: 4px; font-family: var(--font-mono);">
           ${tempoEtapaLabel}
@@ -3890,27 +3316,25 @@ async function loadImports() {
         <div class="import-label" style="${cls === 'pending-action' ? 'color: var(--accent-warn); font-weight: bold;' : ''}">${s.label}</div>
       </div>`;
     }).join('');
- 
+
     const modalIcon = p.modal === 'navio' ? '🚢 海运 · Navio' : p.modal === 'aviao' ? '✈️ 空运 · Avião' : '🏭 Nacional';
- 
-    // ── BARRA DE LEAD TIME DINÂMICA ──
+
     const historicoCotacao = p.historico ? p.historico.find(h => h.estagio === 'cotacao_enviada') : null;
     const dataCotacao = historicoCotacao ? historicoCotacao.data : null;
-    
+
     const historicoStatusAtual = p.historico && p.historico.length > 0 ? p.historico[p.historico.length - 1] : null;
     const dataStatusAtual = historicoStatusAtual ? historicoStatusAtual.data : null;
-    
+
     const toolObj = toolsData.find(t => t.code === p.toolCode);
     const leadTimeDefinido = toolObj && toolObj.leadTime ? parseInt(toolObj.leadTime) : 120;
-    
+
     const barraLeadTimeHtml = gerarBarraLeadTime(dataCotacao, p.status, dataStatusAtual, leadTimeDefinido);
-    // ─────────────────────────────────
 
     let etaExibicao = '—';
     if (p.eta) {
       etaExibicao = typeof p.eta === 'object' ? String(p.eta.value || '—') : String(p.eta).split(' ')[0];
     }
- 
+
     return `<div class="card mb-16">
       <div class="card-header">
         <span class="card-title">${p.id} — ${p.toolName}</span>
@@ -3936,14 +3360,14 @@ async function loadImports() {
           <div class="tool-info-row"><span class="tik">运输 MODAL</span><span class="tiv">${modalIcon}</span></div>
           <div class="tool-info-row"><span class="tik">预计到达 ETA</span><span class="tiv">${etaExibicao}</span></div>
           ${p.ncm ? `<div class="tool-info-row"><span class="tik">NCM</span><span class="tiv mono">${p.ncm}</span></div>` : ''}
-          
+
           <div style="flex-grow: 1; min-width: 220px; display: flex; justify-content: flex-end;">
             ${barraLeadTimeHtml}
           </div>
         </div>
-        
+
         <div class="import-track" style="overflow-x:auto; padding-top: 15px;">${timelineHtml}</div>
-        
+
         ${p.historico && p.historico.length > 1 ? `
         <details style="margin-top:12px">
           <summary style="font-size:11px;font-family:var(--font-cn);color:var(--text-tertiary);cursor:pointer">
@@ -3964,8 +3388,7 @@ async function loadImports() {
     </div>`;
   }).join('');
 }
- 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+
 function _getStageLabel(stageKey) {
   const s = FLOW_STAGES.find(x => x.key === stageKey);
   return s ? (s.icon + ' ' + s.label) : stageKey;
@@ -3978,10 +3401,6 @@ function toast(msg,type='info'){
   setTimeout(()=>el.remove(),4500);
 }
 
-// ══════════════════════════════════════════════════════════
-//  AUTO-REFRESH SILENCIOSO — 10s, zero flash na tela
-//  Só re-renderiza se os dados realmente mudaram (hash diff)
-// ══════════════════════════════════════════════════════════
 let _lastToolsHash='', _lastHistHash='', _bgRefreshing=false;
 function _hashData(obj){try{return JSON.stringify(obj);}catch(e){return '';}}
 
@@ -4151,11 +3570,6 @@ function toggleQtdParcial(chk){
   else{campo.style.display='none';if(hint)hint.style.display='none';campo.value='';const qtyPrincipal=document.getElementById('oper-qty');if(qtyPrincipal)qtyPrincipal.value=0;}
 }
 
-// ══════════════════════════════════════════════════════════
-//  RESTAURAR SESSÃO AO RECARREGAR (F5 / Ctrl+R)
-//  Lê sessionStorage e faz login automático sem precisar
-//  da senha — sessão dura enquanto a aba estiver aberta.
-// ══════════════════════════════════════════════════════════
 (function restoreSession(){
   try{
     const saved=sessionStorage.getItem('smt_session');
@@ -4169,6 +3583,7 @@ function toggleQtdParcial(chk){
     document.getElementById('app').classList.add('active');
     startClock();
     loadConfig();
+    restaurarImpressoraZebra();
     setTimeout(()=>{
       navigate(perms.pages[0]||'dashboard');
       startAutoRefresh();
