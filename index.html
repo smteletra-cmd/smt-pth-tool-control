@@ -2782,35 +2782,27 @@ function toggleGroupRow(baseCode) {
     }
   }
 }
+function gerarZPL(tool) {
+  // Ajuste a largura/altura conforme sua etiqueta (em dots, geralmente 203dpi)
+  return `^XA
+^CF0,30
+^FO30,30^BQN,2,5
+^FDQA,${tool.code}^FS
+^FO230,40^A0N,28,28^FD${tool.code}^FS
+^FO230,80^A0N,20,20^FD${tool.name.substring(0,28)}^FS
+^XZ`;
+}
+
 function printToolQRCode(tool) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(tool.code)}`;
-  const win = window.open('', '_blank', 'width=400,height=400');
-  win.document.write(`
-    <html>
-    <head>
-      <title>Imprimir QR Code — ${tool.code}</title>
-      <style>
-        body { font-family: 'Courier New', monospace; text-align: center; padding: 20px; color: #000; }
-        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        img { width: 150px; height: 150px; margin-bottom: 15px; }
-        .label { font-size: 14px; font-weight: bold; max-width: 280px; word-wrap: break-word; line-height: 1.4; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <img src="${qrUrl}" alt="QR Code">
-        <div class="label">${tool.code} — ${tool.name}</div>
-      </div>
-      <script>
-        window.onload = function() {
-          window.print();
-          setTimeout(function() { window.close(); }, 500);
-        };
-      <\/script>
-    </body>
-    </html>
-  `);
-  win.document.close();
+  const zpl = gerarZPL(tool);
+  const blob = new Blob([zpl], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `etiqueta_${tool.code}.zpl`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`✓ ZPL gerado para ${tool.code} · 标签已生成`, 'success');
 }
 
 function filterTools(){
