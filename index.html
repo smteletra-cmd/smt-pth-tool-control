@@ -1318,6 +1318,14 @@
                     <label>COLUNAS LADO A LADO <span class="cn">并排列数</span></label>
                     <input type="number" id="et-colunas" value="2" min="1" max="6" oninput="layoutEtiquetaCanvas()">
                   </div>
+                  <div class="form-field">
+                    <label>MARGEM ESQUERDA (mm) <span class="cn">左边距</span></label>
+                    <input type="number" id="et-margem-esq" value="0" min="0" max="20" step="0.5" oninput="layoutEtiquetaCanvas()">
+                  </div>
+                  <div class="form-field">
+                    <label>MARGEM SUPERIOR (mm) <span class="cn">上边距</span></label>
+                    <input type="number" id="et-margem-sup" value="0" min="0" max="20" step="0.5" oninput="layoutEtiquetaCanvas()">
+                  </div>
                 </div>
 
                 <div id="et-canvas-wrap" style="position:relative;background:#fafafa;border:1px solid var(--card-border);border-radius:6px;overflow:auto;padding:16px">
@@ -1356,6 +1364,7 @@
               <div class="card-header"><span class="card-title">COORDENADAS (dots) <span class="cn">坐标</span></span></div>
               <div class="card-body">
                 <div id="et-coords-out" class="text-mono text-sm"></div>
+                <div id="et-fit-warning" class="text-xs mt-8"></div>
                 <hr class="form-divider mt-12 mb-12">
                 <button class="btn-secondary full-width" onclick="testarImpressaoEtiqueta()">🖨️ IMPRIMIR TESTE</button>
               </div>
@@ -2304,9 +2313,10 @@ function toggleGroupRow(baseCode) {
 /* ── CONFIGURAÇÃO E EDITOR VISUAL DE ETIQUETA ── */
 const ETIQUETA_DEFAULT = {
   larguraMm: 50, alturaMm: 15,
-  qrX: 16, qrY: 32, qrSizeMm: 12,
-  textX: 96, textY: 32,
-  fontCode: 22, fontNome: 16,
+  margemEsqMm: 0, margemSupMm: 0,
+  qrX: 4, qrY: 4, qrSizeMm: 10,
+  textX: 100, textY: 6,
+  fontCode: 20, fontNome: 14,
 };
 
 function getEtiquetaConfig() {
@@ -2325,6 +2335,8 @@ function gerarZPL(tool) {
   const nome = (tool.name || '').substring(0, 22);
   const w = mmParaDots(cfg.larguraMm);
   const h = mmParaDots(cfg.alturaMm);
+  const lhX = mmParaDots(cfg.margemEsqMm || 0);
+  const lhY = mmParaDots(cfg.margemSupMm || 0);
   const qrMag = Math.max(1, Math.min(10, Math.round(cfg.qrSizeMm / 3)));
   const fc = cfg.fontCode;
   const fn = cfg.fontNome;
@@ -2332,6 +2344,7 @@ function gerarZPL(tool) {
 ^MMT
 ^PW${w}
 ^LL${h}
+^LH${lhX},${lhY}
 ^LS0
 
 ^FO${cfg.qrX},${cfg.qrY}^BQN,2,${qrMag}
@@ -2354,6 +2367,8 @@ function loadEtiquetaEditorPage() {
   etiquetaState = getEtiquetaConfig();
   document.getElementById('et-largura').value = etiquetaState.larguraMm;
   document.getElementById('et-altura').value = etiquetaState.alturaMm;
+  document.getElementById('et-margem-esq').value = etiquetaState.margemEsqMm || 0;
+  document.getElementById('et-margem-sup').value = etiquetaState.margemSupMm || 0;
   document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
   document.getElementById('et-fontcode').value = etiquetaState.fontCode;
   document.getElementById('et-fontnome').value = etiquetaState.fontNome;
@@ -2412,6 +2427,8 @@ function renderEtiquetaCanvas() {
 
   const w = parseFloat(document.getElementById('et-largura').value) || 50;
   const h = parseFloat(document.getElementById('et-altura').value) || 15;
+  const margemEsq = parseFloat(document.getElementById('et-margem-esq').value) || 0;
+  const margemSup = parseFloat(document.getElementById('et-margem-sup').value) || 0;
   const qrSizeMm = parseFloat(document.getElementById('et-qrsize').value);
   const fontCode = parseInt(document.getElementById('et-fontcode').value);
   const fontNome = parseInt(document.getElementById('et-fontnome').value);
@@ -2422,25 +2439,45 @@ function renderEtiquetaCanvas() {
 
   boxQR.style.width = et_mmToPx(qrSizeMm) + 'px';
   boxQR.style.height = et_mmToPx(qrSizeMm) + 'px';
-  boxQR.style.left = et_mmToPx(etiquetaState.qrX/8) + 'px';
-  boxQR.style.top = et_mmToPx(etiquetaState.qrY/8) + 'px';
+  boxQR.style.left = et_mmToPx(etiquetaState.qrX/8 + margemEsq) + 'px';
+  boxQR.style.top = et_mmToPx(etiquetaState.qrY/8 + margemSup) + 'px';
 
-  const textWmm = Math.max(4, w - (etiquetaState.textX/8) - 2);
+  const textWmm = Math.max(4, w - (etiquetaState.textX/8) - margemEsq - 2);
   boxText.style.width = et_mmToPx(textWmm) + 'px';
-  boxText.style.height = et_mmToPx(Math.max(4, h - (etiquetaState.textY/8) - 1)) + 'px';
-  boxText.style.left = et_mmToPx(etiquetaState.textX/8) + 'px';
-  boxText.style.top = et_mmToPx(etiquetaState.textY/8) + 'px';
+  boxText.style.height = et_mmToPx(Math.max(4, h - (etiquetaState.textY/8) - margemSup - 1)) + 'px';
+  boxText.style.left = et_mmToPx(etiquetaState.textX/8 + margemEsq) + 'px';
+  boxText.style.top = et_mmToPx(etiquetaState.textY/8 + margemSup) + 'px';
 
   etiquetaState.larguraMm = w;
   etiquetaState.alturaMm = h;
+  etiquetaState.margemEsqMm = margemEsq;
+  etiquetaState.margemSupMm = margemSup;
   etiquetaState.qrSizeMm = qrSizeMm;
   etiquetaState.fontCode = fontCode;
   etiquetaState.fontNome = fontNome;
 
   const coords = document.getElementById('et-coords-out');
+  const qrMag = Math.max(1, Math.min(10, Math.round(qrSizeMm / 3)));
   if (coords) {
-    const qrMag = Math.max(1, Math.min(10, Math.round(qrSizeMm / 3)));
-    coords.innerHTML = `QR: FO ${etiquetaState.qrX},${etiquetaState.qrY} (mag ${qrMag})<br>Texto: FO ${etiquetaState.textX},${etiquetaState.textY}<br>Etiqueta: ${mmParaDots(w)}x${mmParaDots(h)} dots`;
+    coords.innerHTML = `QR: FO ${etiquetaState.qrX},${etiquetaState.qrY} (mag ${qrMag})<br>Texto: FO ${etiquetaState.textX},${etiquetaState.textY}<br>Etiqueta: ${mmParaDots(w)}x${mmParaDots(h)} dots<br>Margem: ${mmParaDots(margemEsq)},${mmParaDots(margemSup)} dots`;
+  }
+
+  // Estima se o QR cabe mesmo para códigos mais longos (pior caso: versão 3, 29 módulos)
+  const warnEl = document.getElementById('et-fit-warning');
+  if (warnEl) {
+    const PIOR_CASO_MODULOS = 29;
+    const qrDotsEstimado = PIOR_CASO_MODULOS * qrMag;
+    const alturaDisponivel = mmParaDots(h) - etiquetaState.qrY - mmParaDots(margemSup);
+    const larguraDisponivel = mmParaDots(w) - etiquetaState.qrX - mmParaDots(margemEsq);
+    const cabeAltura = qrDotsEstimado <= alturaDisponivel;
+    const cabeLargura = qrDotsEstimado <= larguraDisponivel;
+    if (!cabeAltura || !cabeLargura) {
+      warnEl.innerHTML = `⚠️ Para códigos mais longos o QR pode ser cortado (precisa de até ~${qrDotsEstimado} dots, disponível ${Math.min(alturaDisponivel,larguraDisponivel)} dots). Reduza o tamanho do QR ou mova mais perto da borda.`;
+      warnEl.style.color = 'var(--accent-danger)';
+    } else {
+      warnEl.innerHTML = '✓ QR deve caber mesmo para códigos mais longos';
+      warnEl.style.color = '#16a34a';
+    }
   }
 }
 
@@ -2486,6 +2523,8 @@ function restaurarLayoutEtiquetaPadrao() {
   etiquetaState = Object.assign({}, ETIQUETA_DEFAULT);
   document.getElementById('et-largura').value = etiquetaState.larguraMm;
   document.getElementById('et-altura').value = etiquetaState.alturaMm;
+  document.getElementById('et-margem-esq').value = etiquetaState.margemEsqMm;
+  document.getElementById('et-margem-sup').value = etiquetaState.margemSupMm;
   document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
   document.getElementById('et-fontcode').value = etiquetaState.fontCode;
   document.getElementById('et-fontnome').value = etiquetaState.fontNome;
