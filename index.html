@@ -1343,6 +1343,11 @@
               <div class="card-header"><span class="card-title">AJUSTES <span class="cn">调整</span></span></div>
               <div class="card-body">
                 <div class="form-field mb-16">
+                  <label>LARGURA DO TEXTO (mm) <span class="cn">文本宽度</span></label>
+                  <input type="range" id="et-textwidth" min="10" max="60" value="28" oninput="renderEtiquetaCanvas()">
+                  <div class="text-xs text-mono" id="et-textwidth-out">28mm</div>
+                </div>
+                <div class="form-field mb-16">
                   <label>TAMANHO DO QR CODE (mm) <span class="cn">二维码尺寸</span></label>
                   <input type="range" id="et-qrsize" min="5" max="40" value="12" oninput="renderEtiquetaCanvas()">
                   <div class="text-xs text-mono" id="et-qrsize-out">12mm</div>
@@ -1367,6 +1372,7 @@
                 <div id="et-fit-warning" class="text-xs mt-8"></div>
                 <hr class="form-divider mt-12 mb-12">
                 <button class="btn-secondary full-width" onclick="testarImpressaoEtiqueta()">🖨️ IMPRIMIR TESTE</button>
+                <button class="btn-secondary full-width mt-8" onclick="visualizarZPLExterno()">🔍 VER RENDER (Labelary)</button>
               </div>
             </div>
           </div>
@@ -2315,7 +2321,7 @@ const ETIQUETA_DEFAULT = {
   larguraMm: 50, alturaMm: 15,
   margemEsqMm: 0, margemSupMm: 0,
   qrX: 4, qrY: 4, qrSizeMm: 10,
-  textX: 100, textY: 6,
+  textX: 100, textY: 6, textWidthMm: 28,
   fontCode: 20, fontNome: 14,
 };
 
@@ -2370,6 +2376,7 @@ function loadEtiquetaEditorPage() {
   document.getElementById('et-margem-esq').value = etiquetaState.margemEsqMm || 0;
   document.getElementById('et-margem-sup').value = etiquetaState.margemSupMm || 0;
   document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
+  document.getElementById('et-textwidth').value = etiquetaState.textWidthMm || 28;
   document.getElementById('et-fontcode').value = etiquetaState.fontCode;
   document.getElementById('et-fontnome').value = etiquetaState.fontNome;
   layoutEtiquetaCanvas();
@@ -2436,13 +2443,16 @@ function renderEtiquetaCanvas() {
   document.getElementById('et-qrsize-out').textContent = qrSizeMm + 'mm';
   document.getElementById('et-fontcode-out').textContent = fontCode;
   document.getElementById('et-fontnome-out').textContent = fontNome;
+  const textWidthSlider = document.getElementById('et-textwidth');
+  const textWmmFromSlider = parseFloat(textWidthSlider.value);
+  document.getElementById('et-textwidth-out').textContent = textWmmFromSlider + 'mm';
 
   boxQR.style.width = et_mmToPx(qrSizeMm) + 'px';
   boxQR.style.height = et_mmToPx(qrSizeMm) + 'px';
   boxQR.style.left = et_mmToPx(etiquetaState.qrX/8 + margemEsq) + 'px';
   boxQR.style.top = et_mmToPx(etiquetaState.qrY/8 + margemSup) + 'px';
 
-  const textWmm = Math.max(4, w - (etiquetaState.textX/8) - margemEsq - 2);
+  const textWmm = textWmmFromSlider;
   boxText.style.width = et_mmToPx(textWmm) + 'px';
   boxText.style.height = et_mmToPx(Math.max(4, h - (etiquetaState.textY/8) - margemSup - 1)) + 'px';
   boxText.style.left = et_mmToPx(etiquetaState.textX/8 + margemEsq) + 'px';
@@ -2453,6 +2463,7 @@ function renderEtiquetaCanvas() {
   etiquetaState.margemEsqMm = margemEsq;
   etiquetaState.margemSupMm = margemSup;
   etiquetaState.qrSizeMm = qrSizeMm;
+  etiquetaState.textWidthMm = textWmm;
   etiquetaState.fontCode = fontCode;
   etiquetaState.fontNome = fontNome;
 
@@ -2526,6 +2537,7 @@ function restaurarLayoutEtiquetaPadrao() {
   document.getElementById('et-margem-esq').value = etiquetaState.margemEsqMm;
   document.getElementById('et-margem-sup').value = etiquetaState.margemSupMm;
   document.getElementById('et-qrsize').value = etiquetaState.qrSizeMm;
+  document.getElementById('et-textwidth').value = etiquetaState.textWidthMm;
   document.getElementById('et-fontcode').value = etiquetaState.fontCode;
   document.getElementById('et-fontnome').value = etiquetaState.fontNome;
   layoutEtiquetaCanvas();
@@ -2535,6 +2547,19 @@ function restaurarLayoutEtiquetaPadrao() {
 async function testarImpressaoEtiqueta() {
   const toolFicticia = { code: 'TESTE-001', name: 'Etiqueta de Teste' };
   await printToolQRCode(toolFicticia);
+}
+
+function visualizarZPLExterno() {
+  const toolFicticia = { code: 'TESTE-001', name: 'Etiqueta de Teste' };
+  const zpl = gerarZPL(toolFicticia);
+  const w8 = Math.round((etiquetaState.larguraMm || 50));
+  const h8 = Math.round((etiquetaState.alturaMm || 15));
+  // Labelary renderiza o ZPL exatamente como o firmware da Zebra interpretaria,
+  // sem depender do driver do Windows — útil para confirmar se o problema é
+  // no código ZPL ou na comunicação local com a impressora
+  const url = `https://api.labelary.com/v1/printers/8dpmm/labels/${(w8/25.4).toFixed(2)}x${(h8/25.4).toFixed(2)}/0/${encodeURIComponent(zpl)}`;
+  window.open(url, '_blank');
+  toast('Abrindo render externo (Labelary) em nova aba — se o QR aparecer lá, o ZPL está correto e o problema é no driver/impressora local', 'info');
 }
 
 /* ── IMPRESSÃO via Zebra Browser Print (impressora local selecionada) ── */
