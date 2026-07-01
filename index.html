@@ -2338,7 +2338,7 @@ function mmParaDots(mm) { return Math.round(mm * 8); }
 /* ── GERAÇÃO DE ZPL ── */
 function gerarZPL(tool) {
   const cfg = getEtiquetaConfig();
-  const nome = (tool.name || '').substring(0, 22);
+  const nome = (tool.name || '');
   const w = mmParaDots(cfg.larguraMm);
   const h = mmParaDots(cfg.alturaMm);
   const lhX = mmParaDots(cfg.margemEsqMm || 0);
@@ -2346,6 +2346,19 @@ function gerarZPL(tool) {
   const qrMag = Math.max(1, Math.min(10, Math.round(cfg.qrSizeMm / 3)));
   const fc = cfg.fontCode;
   const fn = cfg.fontNome;
+
+  // Largura do bloco de texto do nome (dots) — mesma largura reservada no editor
+  const textBlockWidth = mmParaDots(cfg.textWidthMm || 28);
+
+  // Posição Y do nome, logo abaixo do código
+  const nomeY = cfg.textY + Math.round(fc * 1.3);
+
+  // Calcula quantas linhas cabem no espaço restante da etiqueta
+  const alturaDisponivel = h - nomeY - lhY;
+  const lineHeight = Math.round(fn * 1.25);
+  let maxLines = Math.max(1, Math.floor(alturaDisponivel / lineHeight));
+  if (maxLines > 4) maxLines = 4; // limite de segurança, evita estourar
+
   return `^XA
 ^MMT
 ^PW${w}
@@ -2360,7 +2373,7 @@ function gerarZPL(tool) {
 ^FO${cfg.textX},${cfg.textY}^FD${tool.code}^FS
 
 ^CF0,${fn}
-^FO${cfg.textX},${cfg.textY + Math.round(fc*1.3)}^FD${nome}^FS
+^FO${cfg.textX},${nomeY}^FB${textBlockWidth},${maxLines},0,L,0^FD${nome}^FS
 
 ^XZ`;
 }
