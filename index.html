@@ -372,6 +372,15 @@
   .prod-bar-pct { text-align:center; font-size:11px; font-family:var(--font-mono); color:var(--text-tertiary); margin-top:3px; }
   .prod-limit-alert { margin-top:8px; background:#fee2e2; border:1px solid #fca5a5; border-radius:6px; padding:6px 10px; font-size:11px; color:#991b1b; font-weight:700; text-align:center; animation: pulse 1s infinite; }
   .prod-stopped-alert { margin-top:8px; background:#ffedd5; border:1px solid #fdba74; border-radius:6px; padding:6px 10px; font-size:11px; color:#c2410c; font-weight:700; text-align:center; }
+  /* ── Card pedindo abertura de OP (produção detectada sem Produção Ativa) ── */
+  @keyframes pulseRedBorder {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); border-color: #ef4444; }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); border-color: #fca5a5; }
+  }
+  .line-card.needs-op { animation: pulseRedBorder 1.2s infinite; border-width: 2px; }
+  .needs-op-banner { background:#fee2e2; border-top:1px solid #fca5a5; padding:10px 16px; font-size:12px; color:#991b1b; font-weight:700; text-align:center; cursor:pointer; }
+  .needs-op-banner:hover { background:#fecaca; }
+  .needs-op-count { font-family: var(--font-mono); }
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -2130,6 +2139,7 @@ function navigate(page){
 async function loadDashboard(){
   const tools=await getTools();
   await getProducoesAtivas(); // ── MES LIGHT ──
+  await getPulsosSemOP();     // ── MES LIGHT ──
   const total=tools.length,disp=tools.filter(t=>t.status==='Disponível').length,
         uso=tools.filter(t=>t.status==='Em Uso').length,man=tools.filter(t=>t.status==='Manutenção').length,
         chkPnd=tools.filter(t=>t.status==='Checklist Pendente').length,
@@ -2924,6 +2934,7 @@ function exportHistory(){
    Módulo isolado, não interfere no restante do sistema.
    ══════════════════════════════════════════════════════════════ */
 let producoesAtivas = []; // cache local, atualizado pelo polling
+let pulsosSemOP = [];     // cache local — máquinas produzindo sem OP aberta
 
 async function getProducoesAtivas() {
   const api = await apiCall('getProducoesAtivas');
@@ -2931,8 +2942,23 @@ async function getProducoesAtivas() {
   return producoesAtivas;
 }
 
+async function getPulsosSemOP() {
+  const api = await apiCall('getPulsosSemOP');
+  pulsosSemOP = (api && api.data) ? api.data : [];
+  return pulsosSemOP;
+}
+
+const LIMITE_SETUP_SEM_OP_JS = 20;
+
 function _findProducaoPorLinha(linha) {
   return producoesAtivas.find(p => String(p.linha).trim() === String(linha).trim());
+}
+
+function _findPulsoSemOPPorLinha(linha) {
+  return pulsosSemOP.find(p =>
+    String(p.linha).trim() === String(linha).trim() &&
+    (parseInt(p.contador) || 0) >= LIMITE_SETUP_SEM_OP_JS
+  );
 }
 
 function openNovaProducaoModal() {
@@ -2942,6 +2968,20 @@ function openNovaProducaoModal() {
   document.getElementById('np-margem-preview').textContent = 'Margem de retrabalho (10%): —';
   document.getElementById('np-error').style.display = 'none';
   document.getElementById('modal-nova-producao').classList.remove('hidden');
+}
+
+// Abre o modal de Nova Produção já com a máquina daquela linha pré-selecionada
+// (usado pelo card "SEM OP" — o operador só confirma stencil/produto/OP).
+function openNovaProducaoModalPara(linha) {
+  openNovaProducaoModal();
+  const sel = document.getElementById('np-maquina');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].getAttribute('data-linha') === linha) {
+      sel.selectedIndex = i;
+      onMaquinaChange();
+      break;
+    }
+  }
 }
 
 function onMaquinaChange() {
@@ -3067,11 +3107,40 @@ function renderProductionCard(linha, lineType, p) {
     </div>`;
 }
 
+// ── Card pulsando: máquina produzindo sem OP aberta, pedindo ação do operador ──
+function renderNeedsOpCard(lineName, lineType, pulso) {
+  const total = parseInt(pulso.contador) || 0;
+  const ultimo = pulso.ultimo_pulso ? String(pulso.ultimo_pulso).split(' ')[1] || String(pulso.ultimo_pulso) : '—';
+  return `
+    <div class="line-card needs-op">
+      <div class="line-header">
+        <div class="line-name">${lineName}<span class="cn">${lineType}生产线</span></div>
+        <span class="prod-badge blocked">🔴 SEM OP</span>
+      </div>
+      <div class="prod-card-body">
+        <div class="text-center mt-8" style="font-size:13px;color:#991b1b;font-weight:700">
+          ⚠ MÁQUINA PRODUZINDO SEM ORDEM DE PRODUÇÃO
+        </div>
+        <div class="prod-count" style="color:#991b1b">${total}<span style="font-size:13px;color:var(--text-tertiary);font-weight:400"> placas</span></div>
+        <div class="text-xs text-dim text-center">Último pulso: ${ultimo}</div>
+      </div>
+      <div class="needs-op-banner" onclick="openNovaProducaoModalPara('${lineName}')">
+        👉 CLIQUE AQUI PARA ABRIR A OP AGORA · 点击开单
+      </div>
+    </div>`;
+}
+
 function renderLineCard(lineName, tools, lineType) {
   // ── MES LIGHT: se existe Produção Ativa nesta linha, usa o card enriquecido ──
   const producaoAtiva = _findProducaoPorLinha(lineName);
   if (producaoAtiva) {
     return renderProductionCard(lineName, lineType, producaoAtiva);
+  }
+
+  // ── MES LIGHT: máquina pulsando sem OP aberta (acima do limite de setup) ──
+  const pulsoOrfao = _findPulsoSemOPPorLinha(lineName);
+  if (pulsoOrfao) {
+    return renderNeedsOpCard(lineName, lineType, pulsoOrfao);
   }
 
   const emUso = tools.filter(t => t.status === 'Em Uso');
@@ -3125,6 +3194,7 @@ function renderLineCard(lineName, tools, lineType) {
 }
 async function loadLines(type){
   await getProducoesAtivas(); // ── MES LIGHT ──
+  await getPulsosSemOP();     // ── MES LIGHT ──
   const lines = type==='smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : type==='pth' ? ['PTH-01','PTH-02','PTH-03','PTH-04'] : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
   if(!grid) return;
@@ -3989,6 +4059,10 @@ async function _silentRefresh(){
       if(hHash!==_lastHistHash){_lastHistHash=hHash;await renderRecentHistory();}
     }
     await getProducoesAtivas(); // ── MES LIGHT ──
+    await getPulsosSemOP();     // ── MES LIGHT ──
+    if (currentPage === 'dashboard') { _srfDashLines(); }
+    if (currentPage === 'smtlines')  { loadLines('smt'); }
+    if (currentPage === 'pthlines')  { loadLines('pth'); }
     await atualizarBadgeAprovacoes();
   }catch(e){console.warn('[AutoRefresh]',e);}
   _bgRefreshing=false;
