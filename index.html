@@ -1798,9 +1798,10 @@
           <label>MÁQUINA * <span class="cn">机器</span></label>
           <select id="np-maquina" onchange="onMaquinaChange()">
             <option value="">Selecione...</option>
-            <option value="Printer_01" data-linha="SMT-01">Printer_01 (SMT-01)</option>
-            <option value="Printer_02" data-linha="SMT-02">Printer_02 (SMT-02)</option>
-            <option value="Printer_04" data-linha="SMT-04">Printer_04 (SMT-04)</option>
+            <option value="SMT-01" data-linha="SMT-01">SMT-01</option>
+            <option value="SMT-02" data-linha="SMT-02">SMT-02</option>
+            <option value="SMT-03" data-linha="SMT-03">SMT-03</option>
+            <option value="SMT-04" data-linha="SMT-04">SMT-04</option>
           </select>
         </div>
         <div class="form-field">
@@ -1830,6 +1831,42 @@
     <div class="modal-footer">
       <button class="btn-success" onclick="confirmarNovaProducao()">✓ INICIAR PRODUÇÃO · 开始生产</button>
       <button class="btn-secondary" onclick="closeModal('modal-nova-producao')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MES LIGHT — Modal OP Smart (trocar OP sem bipar novo stencil)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-op-smart">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🔄 OP SMART <span class="cn">快速切换工单</span></span>
+      <button class="modal-close" onclick="closeModal('modal-op-smart')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="text-xs text-dim mb-16">
+        Mantém a mesma ferramenta/stencil em uso na linha — só reinicia a contagem zerada para a nova OP. Não é preciso bipar de novo.
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>LINHA <span class="cn">生产线</span></label>
+          <input type="text" id="ops-linha" readonly style="background:var(--table-head-bg)">
+        </div>
+        <div class="form-field">
+          <label>NOVA OP * <span class="cn">新工单号</span></label>
+          <input type="text" id="ops-op" placeholder="451238" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label>QUANTIDADE PROGRAMADA * <span class="cn">计划数量</span></label>
+          <input type="number" id="ops-qtd" min="1" placeholder="1000">
+        </div>
+      </div>
+      <div id="ops-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-family:var(--font-cn);font-size:12px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="confirmarOpSmart()">✓ CONFIRMAR NOVA OP · 确认切换</button>
+      <button class="btn-secondary" onclick="closeModal('modal-op-smart')">CANCELAR</button>
     </div>
   </div>
 </div>
@@ -2778,6 +2815,30 @@ async function confirmOperation(){
   }
   const record={action:operationType.toUpperCase(),toolCode:currentScannedTool.code,line,op,qty,newCycles,user,shift,obs,timestamp:new Date().toISOString()};
   await apiPost('logMovement',record);
+
+  // ── MES LIGHT: unifica Bipar + Produção Ativa ────────────────────────────
+  // Se a linha escolhida tem o padrão SMT-XX/PTH-XX (ou seja, tem uma máquina
+  // MES associada) e o operador preencheu produto + OP + quantidade, abre
+  // automaticamente a Produção Ativa correspondente — sem precisar de um
+  // segundo passo manual em "Nova Produção". O próprio bipar do stencil já
+  // "liga" o MES.
+  if(operationType==='retirada' && /^(SMT|PTH)-\d+$/i.test(line||'')){
+    const produto=document.getElementById('oper-product')?document.getElementById('oper-product').value.trim():'';
+    if(produto && op && qty>0){
+      const resultMES=await apiPost('iniciarProducao',{
+        linha:line, maquina:line, produto, stencil:currentScannedTool.code,
+        op, qtdProgramada:qty, operador:user
+      });
+      if(resultMES&&resultMES.status==='ok'){
+        toast(`✓ Produção MES iniciada automaticamente na ${line} · MES生产已联动开始`,'success');
+        await getProducoesAtivas();
+        if(currentPage==='dashboard') loadDashboard();
+        if(currentPage==='smtlines') loadLines('smt');
+        if(currentPage==='pthlines') loadLines('pth');
+      }
+    }
+  }
+
   const idx=toolsData.findIndex(t=>t.code===currentScannedTool.code);
   if(idx>=0){toolsData[idx].status=operationType==='retirada'?'Em Uso':'Disponível';toolsData[idx].location=operationType==='retirada'?line:'Almoxarifado';toolsData[idx].cycles=newCycles;toolsData[idx].checklistPendente=false;}
   MOCK_HISTORY.unshift({dt:new Date().toLocaleString('pt-BR').replace(',',''),tool:currentScannedTool.code,action:operationType.toUpperCase(),user,line,op,qty,cycles:newCycles-currentScannedTool.cycles,obs,checklistResult:''});
@@ -2991,6 +3052,48 @@ function onMaquinaChange() {
   document.getElementById('np-linha').value = opt ? (opt.getAttribute('data-linha') || '') : '';
 }
 
+// ── OP SMART — trocar OP sem bipar novo stencil ─────────────────────────────
+let _opSmartLinhaAtual = null;
+
+function openOpSmartModal(linha) {
+  _opSmartLinhaAtual = linha;
+  document.getElementById('ops-linha').value = linha;
+  document.getElementById('ops-op').value = '';
+  document.getElementById('ops-qtd').value = '';
+  document.getElementById('ops-error').style.display = 'none';
+  document.getElementById('modal-op-smart').classList.remove('hidden');
+}
+
+async function confirmarOpSmart() {
+  const linha = _opSmartLinhaAtual;
+  const op    = document.getElementById('ops-op').value.trim();
+  const qtd   = parseInt(document.getElementById('ops-qtd').value) || 0;
+  const errEl = document.getElementById('ops-error');
+
+  if (!linha || !op || qtd <= 0) {
+    errEl.textContent = '✗ Preencha a nova OP e a quantidade · 请填写新工单号和数量';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const result = await apiPost('trocarOP', {
+    linha, maquina: linha, op, qtdProgramada: qtd, operador: currentUser.name
+  });
+
+  if (result && result.status === 'ok') {
+    closeModal('modal-op-smart');
+    toast(`✓ OP trocada na ${linha} — nova OP ${op} · 工单已切换`, 'success');
+    await getProducoesAtivas();
+    if (currentPage === 'dashboard') loadDashboard();
+    if (currentPage === 'smtlines') loadLines('smt');
+    if (currentPage === 'pthlines') loadLines('pth');
+  } else {
+    errEl.textContent = '✗ ' + (result?.error || 'Erro ao trocar a OP');
+    errEl.style.display = 'block';
+  }
+}
+
 function _npUpdateMargem() {
   const qtd = parseInt(document.getElementById('np-qtd').value) || 0;
   const max = Math.round(qtd * 1.1);
@@ -3104,6 +3207,9 @@ function renderProductionCard(linha, lineType, p) {
         </div>
         ${v.statusKey === 'blocked' ? `<div class="prod-limit-alert">⚠ LIMITE DA OP ATINGIDO — bipe novo stencil e informe nova OP</div>` : ''}
         ${v.maquinaParada ? `<div class="prod-stopped-alert">⏸ MÁQUINA PARADA — sem pulso há mais de 30s</div>` : ''}
+      </div>
+      <div class="needs-op-banner" style="background:#f0fdf4;border-top-color:#a7f3d0;color:#15803d" onclick="openOpSmartModal('${linha}')">
+        🔄 OP SMART · 快速切换工单
       </div>
     </div>`;
 }
