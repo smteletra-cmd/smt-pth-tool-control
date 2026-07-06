@@ -348,6 +348,30 @@
   #printer-dropdown .pd-head { padding: 10px 14px; border-bottom: 1px solid var(--divider); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; color: var(--text-tertiary); }
   #printer-list { max-height: 240px; overflow-y: auto; }
   #printer-dropdown .pd-foot { padding: 8px 14px; border-top: 1px solid var(--divider); }
+  /* ══════════════════════════════════════════════════════════════
+     MES LIGHT — cards de produção enriquecidos (Dashboard MES)
+     Módulo novo — não altera nenhuma classe já existente acima.
+     ══════════════════════════════════════════════════════════════ */
+  .prod-card-body { padding: 0 16px 13px; }
+  .prod-status-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12px; }
+  .prod-badge { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; }
+  .prod-badge.producing { background:#dcfce7; color:#15803d; }
+  .prod-badge.finished   { background:#fef9c3; color:#92400e; }
+  .prod-badge.rework     { background:#ffedd5; color:#c2410c; }
+  .prod-badge.blocked    { background:#fee2e2; color:#991b1b; animation: pulse 1s infinite; }
+  .prod-badge.idle       { background:#f1f5f9; color:#64748b; }
+  .prod-badge.stopped    { background:#ffedd5; color:#c2410c; }
+  .prod-grid-info { display:grid; grid-template-columns:1fr 1fr; gap:2px 10px; font-size:12px; margin:8px 0; }
+  .prod-grid-info .pgi-k { color:var(--text-tertiary); }
+  .prod-grid-info .pgi-v { color:var(--text-main); font-weight:600; text-align:right; font-family:var(--font-mono); }
+  .prod-count { font-family:var(--font-display); font-size:20px; font-weight:900; color:var(--text-main); text-align:center; margin:6px 0 4px; }
+  .prod-bar-wrap { background:#e8ecf0; border-radius:6px; height:14px; overflow:hidden; position:relative; }
+  .prod-bar-fill { height:100%; border-radius:6px; transition: width 0.5s ease, background 0.3s ease; background: linear-gradient(90deg,#22c55e,#4ade80); }
+  .prod-bar-fill.warn { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .prod-bar-fill.danger { background: linear-gradient(90deg,#ef4444,#f87171); animation: pulse 0.8s infinite; }
+  .prod-bar-pct { text-align:center; font-size:11px; font-family:var(--font-mono); color:var(--text-tertiary); margin-top:3px; }
+  .prod-limit-alert { margin-top:8px; background:#fee2e2; border:1px solid #fca5a5; border-radius:6px; padding:6px 10px; font-size:11px; color:#991b1b; font-weight:700; text-align:center; animation: pulse 1s infinite; }
+  .prod-stopped-alert { margin-top:8px; background:#ffedd5; border:1px solid #fdba74; border-radius:6px; padding:6px 10px; font-size:11px; color:#c2410c; font-weight:700; text-align:center; }
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -557,6 +581,7 @@
           </div>
           <div class="flex gap-8">
             <button class="btn-secondary" onclick="loadDashboard()">⟳ ATUALIZAR <span style="font-family:var(--font-cn);font-size:10px">刷新</span></button>
+            <button class="btn-primary" onclick="openNovaProducaoModal()">🖨️ NOVA PRODUÇÃO <span style="font-family:var(--font-cn);font-size:10px">新生产</span></button>
             <button class="btn-primary" onclick="navigate('bipar')">📷 BIPAR FERRAMENTA <span style="font-family:var(--font-cn);font-size:10px">扫描工具</span></button>
           </div>
         </div>
@@ -1749,6 +1774,56 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     MES LIGHT — Modal de Nova Produção (Printer de Solda em Pasta)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-nova-producao">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">🖨️ NOVA PRODUÇÃO <span class="cn">新生产任务</span></span>
+      <button class="modal-close" onclick="closeModal('modal-nova-producao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-field">
+          <label>MÁQUINA * <span class="cn">机器</span></label>
+          <select id="np-maquina" onchange="onMaquinaChange()">
+            <option value="">Selecione...</option>
+            <option value="Printer_01" data-linha="SMT-01">Printer_01 (SMT-01)</option>
+            <option value="Printer_02" data-linha="SMT-02">Printer_02 (SMT-02)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>LINHA <span class="cn">生产线</span></label>
+          <input type="text" id="np-linha" readonly style="background:var(--table-head-bg)">
+        </div>
+        <div class="form-field" style="grid-column:1/-1">
+          <label>STENCIL (bipar) * <span class="cn">钢网编码</span></label>
+          <input type="text" id="np-stencil" placeholder="STN-015" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label>PRODUTO * <span class="cn">产品</span></label>
+          <input type="text" id="np-produto" placeholder="PCB-ABC">
+        </div>
+        <div class="form-field">
+          <label>OP * <span class="cn">工单</span></label>
+          <input type="text" id="np-op" placeholder="451237">
+        </div>
+        <div class="form-field" style="grid-column:1/-1">
+          <label>QUANTIDADE PROGRAMADA * <span class="cn">计划数量</span></label>
+          <input type="number" id="np-qtd" min="1" placeholder="1000" oninput="_npUpdateMargem()">
+          <div class="text-xs text-dim mt-8" id="np-margem-preview">Margem de retrabalho (10%): —</div>
+        </div>
+      </div>
+      <div id="np-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-family:var(--font-cn);font-size:12px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="confirmarNovaProducao()">✓ INICIAR PRODUÇÃO · 开始生产</button>
+      <button class="btn-secondary" onclick="closeModal('modal-nova-producao')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -2054,6 +2129,7 @@ function navigate(page){
 
 async function loadDashboard(){
   const tools=await getTools();
+  await getProducoesAtivas(); // ── MES LIGHT ──
   const total=tools.length,disp=tools.filter(t=>t.status==='Disponível').length,
         uso=tools.filter(t=>t.status==='Em Uso').length,man=tools.filter(t=>t.status==='Manutenção').length,
         chkPnd=tools.filter(t=>t.status==='Checklist Pendente').length,
@@ -2843,7 +2919,161 @@ function exportHistory(){
   toast('📥 导出成功 · Exportado!','success');
 }
 
+/* ══════════════════════════════════════════════════════════════
+   MES LIGHT — PRODUÇÃO EM TEMPO REAL
+   Módulo isolado, não interfere no restante do sistema.
+   ══════════════════════════════════════════════════════════════ */
+let producoesAtivas = []; // cache local, atualizado pelo polling
+
+async function getProducoesAtivas() {
+  const api = await apiCall('getProducoesAtivas');
+  producoesAtivas = (api && api.data) ? api.data : [];
+  return producoesAtivas;
+}
+
+function _findProducaoPorLinha(linha) {
+  return producoesAtivas.find(p => String(p.linha).trim() === String(linha).trim());
+}
+
+function openNovaProducaoModal() {
+  ['np-stencil','np-produto','np-op','np-qtd'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('np-maquina').value = '';
+  document.getElementById('np-linha').value = '';
+  document.getElementById('np-margem-preview').textContent = 'Margem de retrabalho (10%): —';
+  document.getElementById('np-error').style.display = 'none';
+  document.getElementById('modal-nova-producao').classList.remove('hidden');
+}
+
+function onMaquinaChange() {
+  const sel = document.getElementById('np-maquina');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('np-linha').value = opt ? (opt.getAttribute('data-linha') || '') : '';
+}
+
+function _npUpdateMargem() {
+  const qtd = parseInt(document.getElementById('np-qtd').value) || 0;
+  const max = Math.round(qtd * 1.1);
+  document.getElementById('np-margem-preview').textContent =
+    qtd > 0 ? `Margem de retrabalho (10%): até ${max} placas (${max - qtd} extras)` : 'Margem de retrabalho (10%): —';
+}
+
+async function confirmarNovaProducao() {
+  const maquina = document.getElementById('np-maquina').value;
+  const linha   = document.getElementById('np-linha').value;
+  const stencil = document.getElementById('np-stencil').value.trim();
+  const produto = document.getElementById('np-produto').value.trim();
+  const op      = document.getElementById('np-op').value.trim();
+  const qtd     = parseInt(document.getElementById('np-qtd').value) || 0;
+  const errEl   = document.getElementById('np-error');
+
+  if (!maquina || !stencil || !produto || !op || qtd <= 0) {
+    errEl.textContent = '✗ Preencha todos os campos obrigatórios · 请填写所有必填字段';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const result = await apiPost('iniciarProducao', {
+    linha, maquina, produto, stencil, op, qtdProgramada: qtd, operador: currentUser.name
+  });
+
+  if (result && result.status === 'ok') {
+    closeModal('modal-nova-producao');
+    toast(`✓ Produção iniciada na ${linha} — OP ${op} · 生产已开始`, 'success');
+    await getProducoesAtivas();
+    if (currentPage === 'dashboard') loadDashboard();
+    if (currentPage === 'smtlines') loadLines('smt');
+  } else {
+    errEl.textContent = '✗ ' + (result?.error || 'Erro ao iniciar produção');
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Cálculo de status/cor/tempo restante a partir dos dados da Produção Ativa ──
+
+function _calcProducaoView(p) {
+  const produzida  = parseInt(p.qtd_produzida) || 0;
+  const programada = parseInt(p.qtd_programada) || 1;
+  const maxima     = parseInt(p.qtd_maxima) || programada;
+  const pct = Math.round((produzida / programada) * 100);
+
+  let statusKey = 'producing', statusLabel = '🟢 Produzindo', barClass = '';
+  if (p.status === 'Bloqueada') {
+    statusKey = 'blocked'; statusLabel = '🔴 Bloqueada'; barClass = 'danger';
+  } else if (p.status === 'Retrabalho') {
+    statusKey = 'rework'; statusLabel = '🟠 Retrabalho'; barClass = 'warn';
+  } else if (pct >= 100) {
+    statusKey = 'finished'; statusLabel = '🟡 OP Finalizada'; barClass = 'warn';
+  }
+
+  // Máquina parada: sem pulso há mais de 30s com produção ativa
+  let maquinaParada = false;
+  if (p.ultimo_pulso && p.status === 'Ativa') {
+    const diffMs = new Date() - new Date(String(p.ultimo_pulso).replace(' ', 'T'));
+    if (diffMs > 30000) maquinaParada = true;
+  }
+
+  // Tempo restante — placas/min baseado em hora_inicio até agora
+  let tempoRestante = '--:--';
+  if (p.hora_inicio && produzida > 0 && produzida < maxima) {
+    const inicio = new Date(String(p.hora_inicio).replace(' ', 'T'));
+    const minutosDecorridos = Math.max(1, (new Date() - inicio) / 60000);
+    const placasPorMin = produzida / minutosDecorridos;
+    if (placasPorMin > 0) {
+      const restantes = Math.max(0, programada - produzida);
+      const minRestantes = Math.round(restantes / placasPorMin);
+      const h = String(Math.floor(minRestantes / 60)).padStart(2, '0');
+      const m = String(minRestantes % 60).padStart(2, '0');
+      tempoRestante = `${h}:${m}`;
+    }
+  }
+
+  return { produzida, programada, maxima, pct, statusKey, statusLabel, barClass, maquinaParada, tempoRestante };
+}
+
+// ── Card de produção enriquecido (MES Light) — usado quando há Produção Ativa ──
+
+function renderProductionCard(linha, lineType, p) {
+  const v = _calcProducaoView(p);
+  const restantes = Math.max(0, v.programada - v.produzida);
+  const retrabalhoDisp = Math.max(0, v.maxima - v.programada) - Math.max(0, v.produzida - v.programada);
+  const ultimoPulsoFmt = p.ultimo_pulso ? String(p.ultimo_pulso).split(' ')[1] || String(p.ultimo_pulso) : '—';
+
+  return `
+    <div class="line-card">
+      <div class="line-header">
+        <div class="line-name">${linha}<span class="cn">${lineType}生产线</span></div>
+        <span class="prod-badge ${v.statusKey}">${v.statusLabel}</span>
+      </div>
+      <div class="prod-card-body">
+        <div class="prod-grid-info">
+          <span class="pgi-k">Produto</span><span class="pgi-v">${p.produto || '—'}</span>
+          <span class="pgi-k">Stencil</span><span class="pgi-v">${p.stencil || '—'}</span>
+          <span class="pgi-k">OP</span><span class="pgi-v">${p.op || '—'}</span>
+        </div>
+        <div class="text-xs text-dim text-center">Produção</div>
+        <div class="prod-count">${v.produzida} / ${v.programada}</div>
+        <div class="prod-bar-wrap"><div class="prod-bar-fill ${v.barClass}" style="width:${Math.min(100, v.pct)}%"></div></div>
+        <div class="prod-bar-pct">${v.pct}%</div>
+        <div class="prod-grid-info mt-8">
+          <span class="pgi-k">Restantes</span><span class="pgi-v">${restantes}</span>
+          <span class="pgi-k">Retrabalho disp.</span><span class="pgi-v">${Math.max(0, retrabalhoDisp)}</span>
+          <span class="pgi-k">Tempo estimado</span><span class="pgi-v">${v.tempoRestante}</span>
+          <span class="pgi-k">Último pulso</span><span class="pgi-v">${ultimoPulsoFmt}</span>
+        </div>
+        ${v.statusKey === 'blocked' ? `<div class="prod-limit-alert">⚠ LIMITE DA OP ATINGIDO — bipe novo stencil e informe nova OP</div>` : ''}
+        ${v.maquinaParada ? `<div class="prod-stopped-alert">⏸ MÁQUINA PARADA — sem pulso há mais de 30s</div>` : ''}
+      </div>
+    </div>`;
+}
+
 function renderLineCard(lineName, tools, lineType) {
+  // ── MES LIGHT: se existe Produção Ativa nesta linha, usa o card enriquecido ──
+  const producaoAtiva = _findProducaoPorLinha(lineName);
+  if (producaoAtiva) {
+    return renderProductionCard(lineName, lineType, producaoAtiva);
+  }
+
   const emUso = tools.filter(t => t.status === 'Em Uso');
   const pendente = tools.filter(t => t.status === 'Checklist Pendente');
   const isFW = lineType === 'FIRMWARE';
@@ -2893,7 +3123,8 @@ function renderLineCard(lineName, tools, lineType) {
       </div>
     </div>`;
 }
-function loadLines(type){
+async function loadLines(type){
+  await getProducoesAtivas(); // ── MES LIGHT ──
   const lines = type==='smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : type==='pth' ? ['PTH-01','PTH-02','PTH-03','PTH-04'] : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
   if(!grid) return;
@@ -3757,6 +3988,7 @@ async function _silentRefresh(){
       const hHash=_hashData(apiH);
       if(hHash!==_lastHistHash){_lastHistHash=hHash;await renderRecentHistory();}
     }
+    await getProducoesAtivas(); // ── MES LIGHT ──
     await atualizarBadgeAprovacoes();
   }catch(e){console.warn('[AutoRefresh]',e);}
   _bgRefreshing=false;
