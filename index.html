@@ -2864,6 +2864,9 @@ async function confirmOperation(){
       });
       if(resultMES&&resultMES.status==='ok'){
         toast(`✓ Produção MES iniciada automaticamente na ${line} · MES生产已联动开始`,'success');
+        if (resultMES.pecasImportadas > 0) {
+          toast(`📦 ${resultMES.pecasImportadas} peças detectadas antes da OP foram importadas · 已导入之前检测到的数量`, 'info');
+        }
         await getProducoesAtivas();
         if(currentPage==='dashboard') loadDashboard();
         if(currentPage==='smtlines') loadLines('smt');
@@ -3179,6 +3182,9 @@ async function confirmarNovaProducao() {
   if (result && result.status === 'ok') {
     closeModal('modal-nova-producao');
     toast(`✓ Produção iniciada na ${linha} — OP ${op} · 生产已开始`, 'success');
+    if (result.pecasImportadas > 0) {
+      toast(`📦 ${result.pecasImportadas} peças detectadas antes da OP foram importadas para a contagem · 已导入之前检测到的数量`, 'info');
+    }
 
     // ── MES LIGHT: sincroniza o status da ferramenta também ────────────────
     // "Nova Produção" abre a produção no MES, mas por si só não move a
