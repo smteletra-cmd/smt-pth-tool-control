@@ -2905,10 +2905,32 @@ async function approveDevolucao(){
   const line=document.getElementById('oper-line').value,op=document.getElementById('oper-op').value;
   const user=document.getElementById('oper-user').value||currentUser.name,shift=document.getElementById('oper-shift').value;
   const checklistResult=hasNok?'reprovado':'aprovado';
+  // ── MES LIGHT: guarda a linha ANTES de qualquer reset, é onde a ferramenta
+  // estava em uso — o campo oper-line fica vazio na Devolução.
+  const linhaDaFerramenta = currentScannedTool ? currentScannedTool.location : '';
   await apiPost('logMovement',{action:'DEVOLUÇÃO',toolCode:currentScannedTool.code,line,op,user,shift,obs,checklistResult,checklistItems:items,timestamp:new Date().toISOString()});
   const idx=toolsData.findIndex(t=>t.code===currentScannedTool.code);
   if(idx>=0){toolsData[idx].status=hasNok?'Bloqueada':'Disponível';toolsData[idx].location=hasNok?'Manutenção':'Almoxarifado';toolsData[idx].checklistPendente=false;}
   MOCK_HISTORY.unshift({dt:new Date().toLocaleString('pt-BR').replace(',',''),tool:currentScannedTool.code,action:'DEVOLUÇÃO',user,line,op,qty:0,cycles:0,checklistResult,obs});
+
+  // ── MES LIGHT: unifica Devolução + fim da Produção Ativa ─────────────────
+  // Se a ferramenta estava numa linha SMT-XX/PTH-XX, finaliza automaticamente
+  // a Produção Ativa daquela máquina — o card volta a ser o padrão de
+  // ferramentas, sem precisar de nenhum passo manual extra.
+  if(linhaDaFerramenta && /^(SMT|PTH)-\d+$/i.test(linhaDaFerramenta)){
+    const resultMES = await apiPost('finalizarProducao', {
+      linha: linhaDaFerramenta, maquina: linhaDaFerramenta, operador: user,
+      obs: 'Encerrada automaticamente pela devolução da ferramenta'
+    });
+    if(resultMES && resultMES.status==='ok'){
+      await getProducoesAtivas();
+      await getPulsosSemOP();
+      if(currentPage==='dashboard') loadDashboard();
+      if(currentPage==='smtlines') loadLines('smt');
+      if(currentPage==='pthlines') loadLines('pth');
+    }
+  }
+
   if(hasNok) toast('⚠️ 检查不合格 · REPROVADO — 工具已封锁送维护 · Ferramenta BLOQUEADA!','error');
   else toast('✓ 检查合格 · APROVADO — 工具已归还仓库 · Ferramenta liberada!','success');
   clearScan();loadBiparPage();
