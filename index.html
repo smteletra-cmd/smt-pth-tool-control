@@ -1435,7 +1435,8 @@
               </div>
               <div class="form-field">
                 <label>INTERVALO DE ATUALIZAÇÃO (seg) <span class="cn">刷新间隔(秒)</span></label>
-                <input type="number" id="cfg-refresh" placeholder="30" value="30" min="10">
+                <input type="number" id="cfg-refresh" placeholder="3" value="3" min="2">
+                <div class="text-xs text-dim mt-8">Valores muito baixos (abaixo de 2s) podem sobrecarregar o Google Apps Script se vários operadores estiverem com o painel aberto ao mesmo tempo.</div>
               </div>
             </div>
             <div class="flex gap-8 mt-12">
@@ -1876,7 +1877,7 @@
 <script>
 const CONFIG = {
   scriptUrl: localStorage.getItem('scriptUrl') || 'https://script.google.com/macros/s/AKfycbyXYpAblApfHyP6uTP6Ei0gx_IjEdK5q99G1VfHEpP_clQ9ftxzRew0rLaGkPwo8dg/exec',
-  refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '30') * 1000,
+  refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '3') * 1000,
   wearAlert: parseInt(localStorage.getItem('wearAlert') || '80'),
   wearCrit:  parseInt(localStorage.getItem('wearCrit')  || '95'),
 };
@@ -3369,6 +3370,7 @@ function saveConfig(){
   CONFIG.wearCrit=parseInt(document.getElementById('cfg-wear-crit').value);
   localStorage.setItem('scriptUrl',CONFIG.scriptUrl);localStorage.setItem('refreshInterval',CONFIG.refreshInterval/1000);
   localStorage.setItem('wearAlert',CONFIG.wearAlert);localStorage.setItem('wearCrit',CONFIG.wearCrit);
+  startAutoRefresh(); // reinicia o polling já com o novo intervalo
   toast('✓ 设置已保存 · Configurações salvas!','success');
 }
 
@@ -4220,7 +4222,7 @@ function _srfChecklistPending(){
 function startAutoRefresh(){
   clearInterval(refreshTimer);
   _lastToolsHash=_hashData(toolsData);
-  refreshTimer=setInterval(_silentRefresh,10000);
+  refreshTimer=setInterval(_silentRefresh, CONFIG.refreshInterval || 3000);
 }
 
 const ROLE_LABELS={operador:'操作员',lider:'组长',manutencao:'维护',almoxarifado:'仓库',compras:'采购',engenharia:'工程',admin:'管理员'};
