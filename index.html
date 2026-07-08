@@ -381,6 +381,104 @@
   .needs-op-banner { background:#fee2e2; border-top:1px solid #fca5a5; padding:10px 16px; font-size:12px; color:#991b1b; font-weight:700; text-align:center; cursor:pointer; }
   .needs-op-banner:hover { background:#fecaca; }
   .needs-op-count { font-family: var(--font-mono); }
+
+  /* ══════════════════════════════════════════════════════════════
+     GRAVADORA DE FIRMWARE — SETUP DE CLAMPS/POSIÇÕES
+     100% reaproveitando as variáveis de cor/fonte já existentes no
+     sistema. Nenhuma cor nova foi criada — só combinações do que
+     já está definido em :root.
+     ══════════════════════════════════════════════════════════════ */
+  #page-gravadora-setup { background: var(--bg-void); border-radius: 10px; padding: 18px; margin: -6px; }
+  .gs-topbar { display:flex; align-items:center; gap:20px; flex-wrap:wrap; background:var(--bg-panel); border:1px solid rgba(34,197,94,0.15); border-radius:10px; padding:14px 20px; margin-bottom:16px; }
+  .gs-topbar-title { display:flex; align-items:center; gap:12px; }
+  .gs-topbar-icon { font-size:26px; color:var(--accent-primary); }
+  .gs-topbar-h1 { font-family:var(--font-display); font-size:16px; font-weight:900; letter-spacing:2px; color:var(--text-bright); }
+  .gs-topbar-sub { font-family:var(--font-mono); font-size:10px; letter-spacing:1px; color:var(--text-mid); margin-top:2px; }
+  .gs-mode-select { margin-left:auto; }
+  .gs-mode-label { font-family:var(--font-mono); font-size:9px; letter-spacing:1.5px; color:var(--text-dim); margin-bottom:4px; }
+  .gs-machine-dropdown { background:var(--bg-card-nav); border:1px solid rgba(34,197,94,0.25); border-radius:6px; padding:8px 12px; color:var(--text-bright); font-family:var(--font-mono); font-size:12px; outline:none; min-width:220px; }
+  .gs-topbar-actions { display:flex; gap:10px; }
+
+  .gs-layout { display:flex; gap:16px; align-items:flex-start; }
+  .gs-clamps-grid { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:16px; min-width:0; }
+  .gs-side-panel { width:340px; flex-shrink:0; }
+
+  .gs-clamp-card { background:var(--bg-panel); border:1px solid rgba(34,197,94,0.15); border-radius:10px; padding:14px 16px; }
+  .gs-clamp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .gs-clamp-title { font-family:var(--font-display); font-size:14px; font-weight:900; letter-spacing:2px; color:var(--text-bright); }
+  .gs-clamp-status { font-family:var(--font-mono); font-size:9px; letter-spacing:1.5px; padding:3px 10px; border-radius:10px; background:rgba(34,197,94,0.15); color:var(--accent-primary); border:1px solid rgba(34,197,94,0.35); }
+  .gs-slots-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .gs-slot { position:relative; background:var(--bg-card-nav); border:2px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 6px; text-align:center; cursor:pointer; transition:all 0.15s; }
+  .gs-slot:hover { border-color: rgba(34,197,94,0.4); transform: translateY(-1px); }
+  .gs-slot-dot { width:7px; height:7px; border-radius:50%; margin:0 auto 6px; }
+  .gs-slot-num { font-family:var(--font-display); font-size:20px; font-weight:900; color:var(--text-bright); line-height:1; }
+  .gs-slot-label { font-family:var(--font-mono); font-size:8px; letter-spacing:1px; margin-top:4px; }
+  .gs-slot-lock { position:absolute; top:4px; right:6px; font-size:10px; }
+
+  .gs-slot.gs-livre .gs-slot-dot { background:#5a6a7e; }
+  .gs-slot.gs-livre .gs-slot-label { color:var(--text-dim); }
+
+  .gs-slot.gs-ocupado { border-color:rgba(34,197,94,0.5); background:rgba(34,197,94,0.06); }
+  .gs-slot.gs-ocupado .gs-slot-dot { background:var(--accent-primary); box-shadow:0 0 6px rgba(34,197,94,0.7); }
+  .gs-slot.gs-ocupado .gs-slot-label { color:var(--accent-primary); }
+
+  .gs-slot.gs-bloqueado { border-color:rgba(239,68,68,0.5); background:rgba(239,68,68,0.08); cursor:not-allowed; }
+  .gs-slot.gs-bloqueado .gs-slot-dot { background:var(--accent-danger); }
+  .gs-slot.gs-bloqueado .gs-slot-label { color:var(--accent-danger); }
+
+  .gs-slot.gs-selecionado { border-color:#3b82f6; background:rgba(59,130,246,0.15); box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+  .gs-slot.gs-selecionado .gs-slot-dot { background:#3b82f6; }
+  .gs-slot.gs-selecionado .gs-slot-label { color:#93c5fd; }
+
+  .gs-panel-card { background:var(--bg-panel); border:1px solid rgba(34,197,94,0.15); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .gs-panel-title { font-family:var(--font-display); font-size:11px; font-weight:700; letter-spacing:1.5px; color:var(--text-bright); margin-bottom:12px; }
+  .gs-panel-selected-badge { font-family:var(--font-mono); font-size:11px; letter-spacing:1px; color:var(--text-mid); background:var(--bg-card-nav); border-radius:6px; padding:10px 12px; text-align:center; }
+  .gs-panel-selected-badge.gs-has-selection { color:#fff; background:linear-gradient(135deg, rgba(59,130,246,0.35), rgba(59,130,246,0.15)); border:1px solid rgba(59,130,246,0.5); font-weight:700; }
+  .gs-panel-section { margin-top:16px; }
+  .gs-section-head { display:flex; align-items:center; justify-content:space-between; font-family:var(--font-mono); font-size:9px; letter-spacing:1.5px; color:var(--text-dim); border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px; margin-bottom:8px; }
+  .gs-valid-tag { color:var(--accent-primary); font-weight:700; }
+  .gs-detail-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:12px; }
+  .gs-dk { font-family:var(--font-mono); font-size:9px; letter-spacing:1px; color:var(--text-dim); }
+  .gs-dv { color:var(--text-bright); font-weight:600; font-family:var(--font-mono); font-size:12px; text-align:right; }
+  .gs-counter-box { background:var(--bg-card-nav); border-radius:8px; padding:14px; text-align:center; }
+  .gs-counter-label { font-family:var(--font-mono); font-size:9px; letter-spacing:1px; color:var(--text-dim); margin-bottom:6px; }
+  .gs-counter-value { font-family:var(--font-display); font-size:28px; font-weight:900; color:var(--accent-primary); }
+  .gs-counter-unit { font-family:var(--font-cn); font-size:12px; color:var(--text-mid); margin-left:6px; }
+  .gs-counter-last { font-family:var(--font-mono); font-size:9px; color:var(--text-dim); margin-top:6px; }
+  .gs-action-btn { width:100%; border:none; border-radius:6px; padding:11px; font-family:var(--font-display); font-size:11px; font-weight:700; letter-spacing:1.5px; cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
+  .gs-action-primary { background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; }
+  .gs-action-primary:hover { box-shadow:0 3px 12px rgba(59,130,246,0.4); }
+  .gs-action-primary.gs-listening { background:linear-gradient(135deg,#f59e0b,#d97706); animation:pulse 1s infinite; }
+  .gs-action-danger { background:var(--bg-card-nav); color:var(--accent-danger); border:1px solid rgba(239,68,68,0.3) !important; }
+  .gs-action-danger:hover { background:rgba(239,68,68,0.1); }
+
+  .gs-footer-row { display:flex; gap:16px; margin-top:16px; }
+  .gs-legend-card { flex:1; }
+  .gs-info-card { flex:1; }
+  .gs-legend-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .gs-legend-item { display:flex; align-items:center; gap:8px; }
+  .gs-legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+  .gs-dot-ocupado { background:var(--accent-primary); }
+  .gs-dot-livre { background:#5a6a7e; }
+  .gs-dot-bloqueado { background:var(--accent-danger); }
+  .gs-dot-selecionado { background:#3b82f6; }
+  .gs-legend-name { font-family:var(--font-mono); font-size:10px; letter-spacing:1px; color:var(--text-bright); font-weight:700; }
+  .gs-legend-desc { font-family:var(--font-cn); font-size:10px; color:var(--text-dim); }
+  .gs-info-grid { display:flex; align-items:center; gap:24px; }
+  .gs-info-item { flex-shrink:0; }
+  .gs-info-label { font-family:var(--font-mono); font-size:9px; letter-spacing:1px; color:var(--text-dim); margin-bottom:4px; }
+  .gs-info-value { font-family:var(--font-display); font-size:20px; font-weight:900; color:var(--text-bright); }
+  .gs-info-ring { position:relative; margin-left:auto; width:64px; height:64px; flex-shrink:0; }
+  .gs-ring-text { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gs-ring-text span:first-child { font-family:var(--font-display); font-size:13px; font-weight:900; color:var(--text-bright); }
+  .gs-ring-sub { font-family:var(--font-mono); font-size:6px; letter-spacing:1px; color:var(--text-dim); }
+
+  @media (max-width: 900px) {
+    .gs-layout { flex-direction:column; }
+    .gs-side-panel { width:100%; }
+    .gs-clamps-grid { grid-template-columns:1fr; }
+    .gs-footer-row { flex-direction:column; }
+  }
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -1176,8 +1274,103 @@
             <div class="cn-title">固件烧录机 · 离线设备 · 不属于SMT/PTH生产线</div>
             <div class="page-sub text-mono">3 máquinas de gravação de firmware · equipamentos offline</div>
           </div>
+          <button class="btn-primary" onclick="navigate('gravadora-setup')">⚙ SETUP DA GRAVADORA <span style="font-family:var(--font-cn);font-size:10px">烧录机设置</span></button>
         </div>
         <div class="line-grid" id="grav-lines-grid"></div>
+      </div>
+
+      <div id="page-gravadora-setup" class="page-view">
+        <div class="gs-topbar">
+          <div class="gs-topbar-title">
+            <span class="gs-topbar-icon">⚙</span>
+            <div>
+              <div class="gs-topbar-h1">SETUP DA GRAVADORA</div>
+              <div class="gs-topbar-sub">CONFIGURAÇÃO DOS CLAMPS E POSIÇÕES <span class="cn-nav">烧录机设置 · 卡爪与工位配置</span></div>
+            </div>
+          </div>
+          <div class="gs-mode-select">
+            <div class="gs-mode-label">MÁQUINA <span class="cn-nav">机器</span></div>
+            <select id="gs-machine-select" class="gs-machine-dropdown" onchange="gsLoadMachine()">
+              <option value="Gravadora Firmware 1">Gravadora Firmware 1</option>
+              <option value="Gravadora Firmware 2">Gravadora Firmware 2</option>
+              <option value="Gravadora Firmware 3">Gravadora Firmware 3</option>
+            </select>
+          </div>
+          <div class="gs-topbar-actions">
+            <button class="btn-secondary" onclick="gsLimparSelecao()">⟲ LIMPAR SELEÇÃO</button>
+            <button class="btn-primary" onclick="gsSalvarConfiguracao()">💾 SALVAR CONFIGURAÇÃO</button>
+          </div>
+        </div>
+
+        <div class="gs-layout">
+          <div class="gs-clamps-grid" id="gs-clamps-grid"></div>
+
+          <div class="gs-side-panel">
+            <div class="gs-panel-card">
+              <div class="gs-panel-title">DETALHES DA POSIÇÃO SELECIONADA <span class="cn-nav">工位详情</span></div>
+              <div class="gs-panel-selected-badge" id="gs-selected-badge">NENHUMA POSIÇÃO SELECIONADA</div>
+
+              <div class="gs-panel-section" id="gs-details-block" style="display:none">
+                <div class="gs-section-head">
+                  <span>DADOS DO QR CODE <span class="cn-nav">二维码数据</span></span>
+                  <span class="gs-valid-tag" id="gs-valid-tag">— </span>
+                </div>
+                <div class="gs-detail-row"><span class="gs-dk">ID / QR CODE</span><span class="gs-dv" id="gs-d-qr">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">PRODUTO</span><span class="gs-dv" id="gs-d-product">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">FIRMWARE</span><span class="gs-dv" id="gs-d-firmware">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">VERSÃO</span><span class="gs-dv" id="gs-d-version">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">LOTE</span><span class="gs-dv" id="gs-d-lote">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">DATA CADASTRO</span><span class="gs-dv" id="gs-d-created">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">OPERADOR</span><span class="gs-dv" id="gs-d-operator">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">OBSERVAÇÃO</span><span class="gs-dv" id="gs-d-obs">—</span></div>
+              </div>
+
+              <div class="gs-panel-section">
+                <div class="gs-section-head"><span>CONTADOR DA POSIÇÃO <span class="cn-nav">工位计数器</span></span></div>
+                <div class="gs-counter-box">
+                  <div class="gs-counter-label">QUANTIDADE GRAVADA <span class="cn-nav">已烧录数量</span></div>
+                  <div class="gs-counter-value"><span id="gs-d-total">0</span><span class="gs-counter-unit">chips</span></div>
+                  <div class="gs-counter-last">Última gravação: <span id="gs-d-last">—</span></div>
+                </div>
+              </div>
+
+              <div class="gs-panel-section">
+                <div class="gs-section-head"><span>AÇÕES <span class="cn-nav">操作</span></span></div>
+                <button class="gs-action-btn gs-action-primary" onclick="gsIniciarLeitura()">⌗ BIPAR QR CODE DESTA POSIÇÃO</button>
+                <button class="gs-action-btn gs-action-danger" onclick="gsLimparPosicaoAtual()">🗑 LIMPAR DADOS DESTA POSIÇÃO</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gs-footer-row">
+          <div class="gs-panel-card gs-legend-card">
+            <div class="gs-panel-title">LEGENDA DE STATUS <span class="cn-nav">状态图例</span></div>
+            <div class="gs-legend-grid">
+              <div class="gs-legend-item"><span class="gs-legend-dot gs-dot-ocupado"></span><div><div class="gs-legend-name">OCUPADO</div><div class="gs-legend-desc">Posição com QR Code</div></div></div>
+              <div class="gs-legend-item"><span class="gs-legend-dot gs-dot-livre"></span><div><div class="gs-legend-name">LIVRE</div><div class="gs-legend-desc">Posição disponível</div></div></div>
+              <div class="gs-legend-item"><span class="gs-legend-dot gs-dot-bloqueado"></span><div><div class="gs-legend-name">BLOQUEADO</div><div class="gs-legend-desc">Posição inativa/Bloqueada</div></div></div>
+              <div class="gs-legend-item"><span class="gs-legend-dot gs-dot-selecionado"></span><div><div class="gs-legend-name">SELECIONADO</div><div class="gs-legend-desc">Posição selecionada</div></div></div>
+            </div>
+          </div>
+          <div class="gs-panel-card gs-info-card">
+            <div class="gs-panel-title">INFORMAÇÕES GERAIS <span class="cn-nav">总体信息</span></div>
+            <div class="gs-info-grid">
+              <div class="gs-info-item"><div class="gs-info-label">CLAMPS ATIVOS<span class="cn-nav">活跃卡爪</span></div><div class="gs-info-value" id="gs-info-clamps">4 / 4</div></div>
+              <div class="gs-info-item"><div class="gs-info-label">POSIÇÕES TOTAIS<span class="cn-nav">工位总数</span></div><div class="gs-info-value" id="gs-info-total">32</div></div>
+              <div class="gs-info-item"><div class="gs-info-label">POSIÇÕES OCUPADAS<span class="cn-nav">已占用</span></div><div class="gs-info-value" id="gs-info-ocupadas">0</div></div>
+              <div class="gs-info-ring">
+                <svg width="64" height="64" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+                  <circle id="gs-ring-fill" cx="32" cy="32" r="26" fill="none" stroke="#22c55e" stroke-width="7" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="163.4" transform="rotate(-90 32 32)"/>
+                </svg>
+                <div class="gs-ring-text"><span id="gs-ring-pct">0%</span><span class="gs-ring-sub">OCUPAÇÃO</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <input type="text" id="gs-qr-hidden-input" autocomplete="off" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
       </div>
 
       <div id="page-importacao" class="page-view">
@@ -1998,12 +2191,12 @@ const MOCK_HISTORY = [
 
 const ROLE_PERMISSIONS = {
   operador:    {label:'OPERADOR · 操作员',pages:['dashboard','bipar','checklist'],canCadastrar:false,navClasses:[]},
-  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
-  manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
-  almoxarifado:{label:'ALMOXARIFADO · 仓库',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','historico','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']},
+  lider:       {label:'LÍDER · 组长',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','gravadora-setup','checklist','ferramentas','cadastro','historico','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-admin-eng']},
+  manutencao:  {label:'MANUTENÇÃO · 维护',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','gravadora-setup','checklist','ferramentas','historico','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-admin-eng']},
+  almoxarifado:{label:'ALMOXARIFADO · 仓库',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','gravadora-setup','checklist','ferramentas','historico','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-not-operador','nav-role-suprimentos','nav-role-admin-eng']},
   compras:     {label:'COMPRAS · 采购',pages:['dashboard','bipar','checklist','importacao','compras','relatorios'],canCadastrar:false,navClasses:['nav-role-suprimentos','nav-role-admin-eng']},
-  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
-  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
+  engenharia:  {label:'ENGENHARIA · 工程',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','gravadora-setup','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng']},
+  admin:       {label:'ADMINISTRADOR · 管理员',pages:['dashboard','alertas','bipar','smtlines','pthlines','gravlines','gravadora-setup','checklist','ferramentas','cadastro','historico','importacao','compras','checklists-cad','aprovacoes','relatorios','usuarios','config','etiqueta-editor'],canCadastrar:true,navClasses:['nav-role-not-operador','nav-role-cadastro','nav-role-suprimentos','nav-role-admin-eng','nav-role-admin']},
 };
 async function apiCall(action,params={}) {
   if(!CONFIG.scriptUrl) return null;
@@ -2200,6 +2393,7 @@ function navigate(page){
     case 'checklists-cad':loadChecklistTemplates();break;
     case 'compras':       loadComprasPage();break;
     case 'gravlines':     loadLines('grav');break;
+    case 'gravadora-setup': loadGravadoraSetupPage();break;
     case 'config':        loadConfigPage();break;
     case 'usuarios':      loadUsersPage();break;
     case 'aprovacoes':    loadAprovacoes();break;
@@ -4401,6 +4595,259 @@ function toggleQtdParcial(chk){
   }
 })();
 function sincronizarQtd(input){const qtyPrincipal=document.getElementById('oper-qty');if(qtyPrincipal)qtyPrincipal.value=input.value;}
+
+/* ══════════════════════════════════════════════════════════════
+   GRAVADORA DE FIRMWARE — SETUP DE CLAMPS/POSIÇÕES
+   Módulo isolado, não interfere no restante do sistema.
+   ══════════════════════════════════════════════════════════════ */
+let gsPosicoes = [];           // cache local de todas as posições (todas as máquinas)
+let gsMaquinaAtual = 'Gravadora Firmware 1';
+let gsSelecionado = null;      // {clamp, slot}
+let gsModoPorClamp = {1:'8', 2:'8', 3:'8', 4:'8'};
+let gsAguardandoLeitura = false;
+
+async function getGravadoraPosicoes() {
+  const api = await apiCall('getGravadoraPosicoes');
+  gsPosicoes = (api && api.data) ? api.data : [];
+  return gsPosicoes;
+}
+
+function _gsFindPosicao(machine, clamp, slot) {
+  return gsPosicoes.find(p =>
+    String(p.machine) === String(machine) &&
+    String(p.clamp) === String(clamp) &&
+    String(p.slot) === String(slot)
+  );
+}
+
+async function loadGravadoraSetupPage() {
+  await getGravadoraPosicoes();
+  gsSelecionado = null;
+  gsRenderClamps();
+  gsRenderSidePanel();
+  gsRenderInfoGerais();
+}
+
+function gsLoadMachine() {
+  gsMaquinaAtual = document.getElementById('gs-machine-select').value;
+  gsSelecionado = null;
+  gsRenderClamps();
+  gsRenderSidePanel();
+  gsRenderInfoGerais();
+}
+
+function _gsSlotsDoModo(modo) {
+  return modo === '4' ? 4 : 8;
+}
+
+function gsRenderClamps() {
+  const grid = document.getElementById('gs-clamps-grid');
+  if (!grid) return;
+  let html = '';
+  for (let clamp = 1; clamp <= 4; clamp++) {
+    // Detecta o modo salvo (se alguma posição desse clamp já tiver "mode")
+    const posicoesDoClamp = gsPosicoes.filter(p => String(p.machine) === gsMaquinaAtual && String(p.clamp) === String(clamp));
+    const modoSalvo = posicoesDoClamp.find(p => p.mode)?.mode;
+    if (modoSalvo) gsModoPorClamp[clamp] = modoSalvo;
+    const modo = gsModoPorClamp[clamp] || '8';
+    const totalSlots = _gsSlotsDoModo(modo);
+    const ocupadas = posicoesDoClamp.filter(p => p.status === 'Ocupado').length;
+
+    let slotsHtml = '';
+    for (let slot = 1; slot <= totalSlots; slot++) {
+      const slotStr = String(slot).padStart(2, '0');
+      const pos = _gsFindPosicao(gsMaquinaAtual, clamp, slotStr);
+      const status = pos ? pos.status : 'Livre';
+      const isSelecionado = gsSelecionado && gsSelecionado.clamp === clamp && gsSelecionado.slot === slotStr;
+      let cls = 'gs-livre', label = 'LIVRE';
+      if (status === 'Bloqueado') { cls = 'gs-bloqueado'; label = 'BLOQUEADO'; }
+      else if (status === 'Ocupado') { cls = 'gs-ocupado'; label = 'OCUPADO'; }
+      if (isSelecionado) { cls = 'gs-selecionado'; label = 'SELECIONADO'; }
+
+      slotsHtml += `
+        <div class="gs-slot ${cls}" onclick="gsSelecionarSlot(${clamp},'${slotStr}')">
+          ${status === 'Bloqueado' ? '<span class="gs-slot-lock">🔒</span>' : ''}
+          <div class="gs-slot-dot"></div>
+          <div class="gs-slot-num">${slotStr}</div>
+          <div class="gs-slot-label">${label}</div>
+        </div>`;
+    }
+
+    html += `
+      <div class="gs-clamp-card">
+        <div class="gs-clamp-head">
+          <span class="gs-clamp-title">CLAMP ${clamp}</span>
+          <span class="gs-clamp-status">ATIVO</span>
+        </div>
+        <div class="gs-slots-grid">${slotsHtml}</div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function gsSelecionarSlot(clamp, slot) {
+  const pos = _gsFindPosicao(gsMaquinaAtual, clamp, slot);
+  if (pos && pos.status === 'Bloqueado') { toast('🔒 Posição bloqueada', 'warn'); return; }
+  gsSelecionado = { clamp, slot };
+  gsRenderClamps();
+  gsRenderSidePanel();
+}
+
+function gsRenderSidePanel() {
+  const badge = document.getElementById('gs-selected-badge');
+  const block = document.getElementById('gs-details-block');
+  if (!gsSelecionado) {
+    badge.textContent = 'NENHUMA POSIÇÃO SELECIONADA · 未选择工位';
+    badge.classList.remove('gs-has-selection');
+    block.style.display = 'none';
+    setText('gs-d-total', '0');
+    setText('gs-d-last', '—');
+    return;
+  }
+  const { clamp, slot } = gsSelecionado;
+  badge.textContent = `CLAMP ${clamp} · POSIÇÃO ${slot}`;
+  badge.classList.add('gs-has-selection');
+
+  const pos = _gsFindPosicao(gsMaquinaAtual, clamp, slot);
+  if (pos && pos.qr_code) {
+    block.style.display = 'block';
+    document.getElementById('gs-valid-tag').textContent = '✓ VÁLIDO';
+    setText('gs-d-qr', pos.qr_code || '—');
+    setText('gs-d-product', pos.product || '—');
+    setText('gs-d-firmware', pos.firmware || '—');
+    setText('gs-d-version', pos.version || '—');
+    setText('gs-d-lote', pos.lote || '—');
+    setText('gs-d-created', pos.created_at || '—');
+    setText('gs-d-operator', pos.operator || '—');
+    setText('gs-d-obs', pos.observacao || '—');
+  } else {
+    block.style.display = 'none';
+  }
+  setText('gs-d-total', (pos && pos.total_programmed) ? pos.total_programmed : '0');
+  setText('gs-d-last', (pos && pos.last_programmed) ? pos.last_programmed : '—');
+}
+
+function gsRenderInfoGerais() {
+  const posicoesDaMaquina = gsPosicoes.filter(p => String(p.machine) === gsMaquinaAtual);
+  let totalSlots = 0;
+  for (let clamp = 1; clamp <= 4; clamp++) totalSlots += _gsSlotsDoModo(gsModoPorClamp[clamp] || '8');
+  const ocupadas = posicoesDaMaquina.filter(p => p.status === 'Ocupado').length;
+  const pct = totalSlots > 0 ? Math.round((ocupadas / totalSlots) * 100) : 0;
+
+  setText('gs-info-clamps', '4 / 4');
+  setText('gs-info-total', totalSlots);
+  setText('gs-info-ocupadas', ocupadas);
+  setText('gs-ring-pct', pct + '%');
+
+  const ring = document.getElementById('gs-ring-fill');
+  if (ring) {
+    const circunferencia = 163.4;
+    const offset = circunferencia - (circunferencia * pct / 100);
+    ring.style.strokeDashoffset = offset;
+  }
+}
+
+// ── Leitura de QR sem mouse: clique no botão → foco no campo oculto → ENTER ──
+function gsIniciarLeitura() {
+  if (!gsSelecionado) { toast('⚠️ Selecione uma posição primeiro · 请先选择工位', 'warn'); return; }
+  gsAguardandoLeitura = true;
+  const btn = document.querySelector('#page-gravadora-setup .gs-action-primary');
+  if (btn) { btn.classList.add('gs-listening'); btn.textContent = '⌗ AGUARDANDO LEITURA DO QR CODE...'; }
+  const input = document.getElementById('gs-qr-hidden-input');
+  input.value = '';
+  input.focus();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('gs-qr-hidden-input');
+  if (!input) return;
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' && gsAguardandoLeitura) {
+      e.preventDefault();
+      const qr = input.value.trim();
+      gsAguardandoLeitura = false;
+      const btn = document.querySelector('#page-gravadora-setup .gs-action-primary');
+      if (btn) { btn.classList.remove('gs-listening'); btn.textContent = '⌗ BIPAR QR CODE DESTA POSIÇÃO'; }
+      if (qr) await gsProcessarQrLido(qr);
+    }
+  });
+});
+
+async function gsProcessarQrLido(qrCode) {
+  if (!gsSelecionado) return;
+  const { clamp, slot } = gsSelecionado;
+
+  // Verifica se o QR já existe em outra posição (aviso local antes de mandar pro backend)
+  const jaExiste = gsPosicoes.find(p => p.qr_code === qrCode && !(String(p.machine) === gsMaquinaAtual && String(p.clamp) === String(clamp) && String(p.slot) === slot));
+  if (jaExiste) {
+    toast(`✗ Este QR já está cadastrado no Clamp ${jaExiste.clamp} - Posição ${jaExiste.slot} · 该二维码已在别处注册`, 'error');
+    return;
+  }
+
+  const posAtual = _gsFindPosicao(gsMaquinaAtual, clamp, slot);
+  if (posAtual && posAtual.qr_code && posAtual.qr_code !== qrCode) {
+    if (!confirm(`Esta posição já possui um QR cadastrado (${posAtual.qr_code}). Substituir por ${qrCode}?`)) return;
+  }
+
+  // Nesta primeira versão, os campos de produto/firmware/versão/lote vêm
+  // embutidos no próprio payload do QR, separados por "|" — ex:
+  // "QR123|FW_ABC|2.4.1|L240515-08". Se o leitor mandar só o código puro,
+  // os demais campos ficam em branco e podem ser preenchidos depois.
+  const partes = qrCode.split('|');
+  const payload = {
+    machine: gsMaquinaAtual, clamp, slot, mode: gsModoPorClamp[clamp] || '8',
+    qrCode: partes[0] || qrCode, firmware: partes[1] || '', product: partes[2] || '',
+    version: partes[3] || '', lote: partes[4] || '', operator: currentUser.name, observacao: '',
+  };
+
+  const result = await apiPost('saveGravadoraPosicao', payload);
+  if (result && result.status === 'ok') {
+    toast(`✓ Posição Clamp ${clamp} - ${slot} configurada · 工位已配置`, 'success');
+    await getGravadoraPosicoes();
+    gsRenderClamps();
+    gsRenderSidePanel();
+    gsRenderInfoGerais();
+    // Avança automaticamente para a próxima posição livre — fluxo sem mouse
+    gsAvancarProximaPosicaoLivre();
+  } else {
+    toast('✗ ' + (result?.error || 'Erro ao salvar posição'), 'error');
+  }
+}
+
+function gsAvancarProximaPosicaoLivre() {
+  const { clamp, slot } = gsSelecionado;
+  const totalSlots = _gsSlotsDoModo(gsModoPorClamp[clamp] || '8');
+  let proximoSlot = parseInt(slot) + 1;
+  if (proximoSlot <= totalSlots) {
+    gsSelecionado = { clamp, slot: String(proximoSlot).padStart(2, '0') };
+    gsRenderClamps();
+    gsRenderSidePanel();
+  }
+}
+
+async function gsLimparPosicaoAtual() {
+  if (!gsSelecionado) return;
+  const { clamp, slot } = gsSelecionado;
+  if (!confirm(`Limpar os dados da posição Clamp ${clamp} - ${slot}?`)) return;
+  const result = await apiPost('limparGravadoraPosicao', { machine: gsMaquinaAtual, clamp, slot });
+  if (result && result.status === 'ok') {
+    toast('✓ Posição limpa · 工位已清除', 'success');
+    await getGravadoraPosicoes();
+    gsRenderClamps();
+    gsRenderSidePanel();
+    gsRenderInfoGerais();
+  }
+}
+
+function gsLimparSelecao() {
+  gsSelecionado = null;
+  gsRenderClamps();
+  gsRenderSidePanel();
+}
+
+function gsSalvarConfiguracao() {
+  toast('✓ Configuração já é salva automaticamente a cada leitura · 配置已自动保存', 'info');
+}
 </script>
 </body>
 </html>
