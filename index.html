@@ -1304,6 +1304,10 @@
               <option value="Gravadora Firmware 3">Gravadora Firmware 3</option>
             </select>
           </div>
+          <div class="gs-mode-select">
+            <div class="gs-mode-label">OP ATUAL <span class="cn-nav">当前工单</span></div>
+            <input type="text" id="gs-op-atual" class="gs-machine-dropdown" placeholder="OP-XXXXX" oninput="gsAtualizarOp()" style="width:140px">
+          </div>
           <div class="gs-topbar-actions">
             <button class="btn-secondary" onclick="gsLimparSelecao()">⟲ LIMPAR SELEÇÃO</button>
             <button class="btn-primary" onclick="gsSalvarConfiguracao()">💾 SALVAR CONFIGURAÇÃO</button>
@@ -1328,6 +1332,7 @@
                 <div class="gs-detail-row"><span class="gs-dk">FIRMWARE</span><span class="gs-dv" id="gs-d-firmware">—</span></div>
                 <div class="gs-detail-row"><span class="gs-dk">VERSÃO</span><span class="gs-dv" id="gs-d-version">—</span></div>
                 <div class="gs-detail-row"><span class="gs-dk">LOTE</span><span class="gs-dv" id="gs-d-lote">—</span></div>
+                <div class="gs-detail-row"><span class="gs-dk">OP</span><span class="gs-dv" id="gs-d-op">—</span></div>
                 <div class="gs-detail-row"><span class="gs-dk">DATA CADASTRO</span><span class="gs-dv" id="gs-d-created">—</span></div>
                 <div class="gs-detail-row"><span class="gs-dk">OPERADOR</span><span class="gs-dv" id="gs-d-operator">—</span></div>
                 <div class="gs-detail-row"><span class="gs-dk">OBSERVAÇÃO</span><span class="gs-dv" id="gs-d-obs">—</span></div>
@@ -4655,6 +4660,11 @@ let gsMaquinaAtual = 'Gravadora Firmware 1';
 let gsSelecionado = null;      // {clamp, slot}
 let gsModoPorClamp = {1:'8', 2:'8', 3:'8', 4:'8'};
 let gsAguardandoLeitura = false;
+let gsOpAtual = '';
+
+function gsAtualizarOp() {
+  gsOpAtual = document.getElementById('gs-op-atual').value.trim();
+}
 
 async function getGravadoraPosicoes() {
   const api = await apiCall('getGravadoraPosicoes');
@@ -4778,6 +4788,7 @@ function gsRenderSidePanel() {
     setText('gs-d-firmware', pos.firmware || '—');
     setText('gs-d-version', pos.version || '—');
     setText('gs-d-lote', pos.lote || '—');
+    setText('gs-d-op', pos.op || '—');
     setText('gs-d-created', pos.created_at || '—');
     setText('gs-d-operator', pos.operator || '—');
     setText('gs-d-obs', pos.observacao || '—');
@@ -4890,7 +4901,8 @@ async function gsProcessarQrLido(qrCode) {
   const payload = {
     machine: gsMaquinaAtual, clamp, slot, mode: gsModoPorClamp[clamp] || '8',
     qrCode: partes[0] || qrCode, firmware: partes[1] || '', product: partes[2] || '',
-    version: partes[3] || '', lote: partes[4] || '', operator: currentUser.name, observacao: '',
+    version: partes[3] || '', lote: partes[4] || '', op: gsOpAtual,
+    operator: currentUser.name, observacao: '',
   };
 
   const result = await apiPost('saveGravadoraPosicao', payload);
@@ -4925,7 +4937,7 @@ async function gsLimparPosicaoAtual() {
   if (!gsSelecionado) return;
   const { clamp, slot } = gsSelecionado;
   if (!confirm(`Limpar os dados da posição Clamp ${clamp} - ${slot}?`)) return;
-  const result = await apiPost('limparGravadoraPosicao', { machine: gsMaquinaAtual, clamp, slot });
+  const result = await apiPost('limparGravadoraPosicao', { machine: gsMaquinaAtual, clamp, slot, operator: currentUser.name });
   if (result && result.status === 'ok') {
     toast('✓ Posição limpa · 工位已清除', 'success');
     await getGravadoraPosicoes();
