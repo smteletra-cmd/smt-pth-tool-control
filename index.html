@@ -1306,11 +1306,15 @@
           </div>
           <div class="gs-mode-select">
             <div class="gs-mode-label">OPERADOR ATUAL <span class="cn-nav">当前操作员</span></div>
-            <input type="text" id="gs-operador-atual" class="gs-machine-dropdown" placeholder="Nome do operador" oninput="gsAtualizarOperador()" style="width:160px">
+            <input type="text" id="gs-operador-atual" class="gs-machine-dropdown" placeholder="Nome do operador" oninput="gsAtualizarOperador()" onchange="gsSalvarSessao()" style="width:150px">
           </div>
           <div class="gs-mode-select">
             <div class="gs-mode-label">OP ATUAL <span class="cn-nav">当前工单</span></div>
-            <input type="text" id="gs-op-atual" class="gs-machine-dropdown" placeholder="OP-XXXXX" oninput="gsAtualizarOp()" style="width:140px">
+            <input type="text" id="gs-op-atual" class="gs-machine-dropdown" placeholder="OP-XXXXX" oninput="gsAtualizarOp()" onchange="gsSalvarSessao()" style="width:120px">
+          </div>
+          <div class="gs-mode-select">
+            <div class="gs-mode-label">QTD. PROGRAMADA <span class="cn-nav">计划数量</span></div>
+            <input type="number" id="gs-qtd-programada" class="gs-machine-dropdown" placeholder="0" min="0" oninput="gsAtualizarQtdProgramada()" onchange="gsSalvarSessao()" style="width:110px">
           </div>
           <div class="gs-topbar-actions">
             <button class="btn-secondary" onclick="gsLimparSelecao()">⟲ LIMPAR SELEÇÃO</button>
@@ -2426,6 +2430,7 @@ async function loadDashboard(){
   await getProducoesAtivas(); // ── MES LIGHT ──
   await getPulsosSemOP();     // ── MES LIGHT ──
   await getGravadoraPosicoes(); // ── GRAVADORA FIRMWARE ──
+  await getGravadoraSessoes();  // ── GRAVADORA FIRMWARE (sessão) ──
   const total=tools.length,disp=tools.filter(t=>t.status==='Disponível').length,
         uso=tools.filter(t=>t.status==='Em Uso').length,man=tools.filter(t=>t.status==='Manutenção').length,
         chkPnd=tools.filter(t=>t.status==='Checklist Pendente').length,
@@ -3539,6 +3544,16 @@ function renderGravadoraLineCard(lineName) {
   const ocupadas = posicoesDaMaquina.filter(p => p.status === 'Ocupado').length;
   const totalGravado = posicoesDaMaquina.reduce((s, p) => s + (parseInt(p.total_programmed) || 0), 0);
   const temAtividade = ocupadas > 0;
+  const sessao = _gsFindSessao(lineName);
+  const op = sessao ? (sessao.op || '') : '';
+  const operador = sessao ? (sessao.operator || '') : '';
+  const alvo = sessao ? (parseInt(sessao.target_qtd) || 0) : 0;
+
+  // "Desempenho" aqui é um indicador simplificado (produzido ÷ programado).
+  // Não é o OEE completo (que também precisa de disponibilidade/paradas e
+  // qualidade/refugo, dados que este módulo ainda não coleta) — é só a
+  // parcela de Performance, mas já dá uma noção rápida de progresso da OP.
+  const desempenhoPct = alvo > 0 ? Math.min(100, Math.round((totalGravado / alvo) * 100)) : null;
 
   return `
     <div class="line-card" style="cursor:pointer" onclick="gsAbrirDaLinha('${lineName}')">
@@ -3547,10 +3562,18 @@ function renderGravadoraLineCard(lineName) {
         <span class="prod-badge ${temAtividade ? 'producing' : 'idle'}">${temAtividade ? '🟢 Ativa' : '⚪ Sem Setup'}</span>
       </div>
       <div class="prod-card-body">
-        <div class="text-xs text-dim text-center">Total Gravado</div>
-        <div class="prod-count">${totalGravado.toLocaleString()}<span style="font-size:13px;color:var(--text-tertiary);font-weight:400"> chips</span></div>
+        <div class="prod-grid-info">
+          <span class="pgi-k">OP</span><span class="pgi-v">${op || '—'}</span>
+          <span class="pgi-k">Operador</span><span class="pgi-v">${operador || '—'}</span>
+        </div>
+        <div class="text-xs text-dim text-center mt-8">Produzido ${alvo > 0 ? '/ Programado' : ''}</div>
+        <div class="prod-count">${totalGravado.toLocaleString()}${alvo > 0 ? ` / ${alvo.toLocaleString()}` : ''}<span style="font-size:13px;color:var(--text-tertiary);font-weight:400"> chips</span></div>
+        ${alvo > 0 ? `
+        <div class="prod-bar-wrap"><div class="prod-bar-fill ${desempenhoPct >= 100 ? '' : desempenhoPct >= 70 ? '' : 'warn'}" style="width:${desempenhoPct}%"></div></div>
+        <div class="prod-bar-pct">${desempenhoPct}%</div>` : ''}
         <div class="prod-grid-info mt-8">
           <span class="pgi-k">Posições ocupadas</span><span class="pgi-v">${ocupadas}</span>
+          <span class="pgi-k" title="Produzido ÷ Programado. Não é o OEE completo — ainda não coleta paradas/refugo.">Desempenho*</span><span class="pgi-v">${desempenhoPct !== null ? desempenhoPct + '%' : '—'}</span>
         </div>
       </div>
       <div class="needs-op-banner" style="background:#f0fdf4;border-top-color:#a7f3d0;color:#15803d">
@@ -3636,6 +3659,7 @@ async function loadLines(type){
   await getProducoesAtivas(); // ── MES LIGHT ──
   await getPulsosSemOP();     // ── MES LIGHT ──
   await getGravadoraPosicoes(); // ── GRAVADORA FIRMWARE ──
+  await getGravadoraSessoes();  // ── GRAVADORA FIRMWARE (sessão) ──
   const lines = type==='smt' ? ['SMT-01','SMT-02','SMT-03','SMT-04'] : type==='pth' ? ['PTH-01','PTH-02','PTH-03','PTH-04'] : ['Gravadora Firmware 1','Gravadora Firmware 2','Gravadora Firmware 3'];
   const grid=document.getElementById(`${type}-lines-grid`);
   if(!grid) return;
@@ -4503,6 +4527,7 @@ async function _silentRefresh(){
     await getProducoesAtivas(); // ── MES LIGHT ──
     await getPulsosSemOP();     // ── MES LIGHT ──
     await getGravadoraPosicoes(); // ── GRAVADORA FIRMWARE ──
+  await getGravadoraSessoes();  // ── GRAVADORA FIRMWARE (sessão) ──
     if (currentPage === 'dashboard') { _srfDashLines(); }
     if (currentPage === 'smtlines')  { loadLines('smt'); }
     if (currentPage === 'pthlines')  { loadLines('pth'); }
@@ -4662,14 +4687,48 @@ function sincronizarQtd(input){const qtyPrincipal=document.getElementById('oper-
    Módulo isolado, não interfere no restante do sistema.
    ══════════════════════════════════════════════════════════════ */
 let gsPosicoes = [];           // cache local de todas as posições (todas as máquinas)
+let gsSessoes = [];             // cache local das sessões (OP/qtd/operador por máquina)
 let gsMaquinaAtual = 'Gravadora Firmware 1';
 let gsSelecionado = null;      // {clamp, slot}
 let gsModoPorClamp = {1:'8', 2:'8', 3:'8', 4:'8'};
 let gsAguardandoLeitura = false;
 let gsOpAtual = '';
+let gsOperadorAtual = '';
+let gsQtdProgramadaAtual = 0;
 
 function gsAtualizarOp() {
   gsOpAtual = document.getElementById('gs-op-atual').value.trim();
+}
+
+function gsAtualizarOperador() {
+  gsOperadorAtual = document.getElementById('gs-operador-atual').value.trim();
+}
+
+function gsAtualizarQtdProgramada() {
+  gsQtdProgramadaAtual = parseInt(document.getElementById('gs-qtd-programada').value) || 0;
+}
+
+// Salva a "sessão" (OP + operador + quantidade programada) desta máquina —
+// pensado exatamente para a troca de turno: o operador só troca o nome e
+// a OP no topo, sem precisar de login/logout, e isso já fica registrado
+// em cada posição bipada dali pra frente, além de aparecer no Dashboard.
+async function gsSalvarSessao() {
+  await apiPost('setGravadoraSessao', {
+    machine: gsMaquinaAtual, op: gsOpAtual, targetQtd: gsQtdProgramadaAtual,
+    operator: gsOperadorAtual || currentUser.name,
+  });
+  await getGravadoraSessoes();
+  gsRenderInfoGerais();
+}
+
+async function getGravadoraSessoes() {
+  const api = await apiCall('getGravadoraSessoes');
+  gsSessoes = (api && api.data) ? api.data : [];
+  return gsSessoes;
+}
+
+function _gsFindSessao(machine) {
+  return gsSessoes.find(s => String(s.machine) === String(machine));
 }
 
 async function getGravadoraPosicoes() {
@@ -4679,17 +4738,30 @@ async function getGravadoraPosicoes() {
 }
 
 function _gsFindPosicao(machine, clamp, slot) {
+  // Comparação por número (não por texto exato) — o Google Sheets às vezes
+  // converte "01" para o número 1 sozinho (mesmo comportamento que já
+  // corrigimos com as datas), então comparar texto puro falhava aqui.
   return gsPosicoes.find(p =>
     String(p.machine) === String(machine) &&
-    String(p.clamp) === String(clamp) &&
-    String(p.slot) === String(slot)
+    parseInt(p.clamp) === parseInt(clamp) &&
+    parseInt(p.slot) === parseInt(slot)
   );
 }
 
 async function loadGravadoraSetupPage() {
   await getGravadoraPosicoes();
+  await getGravadoraSessoes();
   const select = document.getElementById('gs-machine-select');
   if (select) select.value = gsMaquinaAtual;
+
+  const sessao = _gsFindSessao(gsMaquinaAtual);
+  gsOpAtual = sessao ? (sessao.op || '') : '';
+  gsOperadorAtual = sessao ? (sessao.operator || '') : (currentUser ? currentUser.name : '');
+  gsQtdProgramadaAtual = sessao ? (parseInt(sessao.target_qtd) || 0) : 0;
+  document.getElementById('gs-op-atual').value = gsOpAtual;
+  document.getElementById('gs-operador-atual').value = gsOperadorAtual;
+  document.getElementById('gs-qtd-programada').value = gsQtdProgramadaAtual || '';
+
   gsSelecionado = null;
   gsPararLeitura();
   gsRenderClamps();
@@ -4699,7 +4771,15 @@ async function loadGravadoraSetupPage() {
 
 function gsLoadMachine() {
   gsMaquinaAtual = document.getElementById('gs-machine-select').value;
+  const sessao = _gsFindSessao(gsMaquinaAtual);
+  gsOpAtual = sessao ? (sessao.op || '') : '';
+  gsOperadorAtual = sessao ? (sessao.operator || '') : (currentUser ? currentUser.name : '');
+  gsQtdProgramadaAtual = sessao ? (parseInt(sessao.target_qtd) || 0) : 0;
+  document.getElementById('gs-op-atual').value = gsOpAtual;
+  document.getElementById('gs-operador-atual').value = gsOperadorAtual;
+  document.getElementById('gs-qtd-programada').value = gsQtdProgramadaAtual || '';
   gsSelecionado = null;
+  gsPararLeitura();
   gsRenderClamps();
   gsRenderSidePanel();
   gsRenderInfoGerais();
@@ -4908,7 +4988,7 @@ async function gsProcessarQrLido(qrCode) {
     machine: gsMaquinaAtual, clamp, slot, mode: gsModoPorClamp[clamp] || '8',
     qrCode: partes[0] || qrCode, firmware: partes[1] || '', product: partes[2] || '',
     version: partes[3] || '', lote: partes[4] || '', op: gsOpAtual,
-    operator: currentUser.name, observacao: '',
+    operator: gsOperadorAtual || currentUser.name, observacao: '',
   };
 
   const result = await apiPost('saveGravadoraPosicao', payload);
@@ -4943,7 +5023,7 @@ async function gsLimparPosicaoAtual() {
   if (!gsSelecionado) return;
   const { clamp, slot } = gsSelecionado;
   if (!confirm(`Limpar os dados da posição Clamp ${clamp} - ${slot}?`)) return;
-  const result = await apiPost('limparGravadoraPosicao', { machine: gsMaquinaAtual, clamp, slot, operator: currentUser.name });
+  const result = await apiPost('limparGravadoraPosicao', { machine: gsMaquinaAtual, clamp, slot, operator: gsOperadorAtual || currentUser.name });
   if (result && result.status === 'ok') {
     toast('✓ Posição limpa · 工位已清除', 'success');
     await getGravadoraPosicoes();
