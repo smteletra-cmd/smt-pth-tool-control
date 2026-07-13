@@ -3059,6 +3059,20 @@ async function confirmOperation(){
   if(operationType==='retirada'&&currentScannedTool.status==='Checklist Pendente'){toast(`🔒 不可领用 · Impossível retirar — ${currentScannedTool.code} 待检!`,'error');return;}
   if(operationType==='retirada'&&currentScannedTool.status!=='Disponível'){toast(`⚠️ 工具不可用 (${currentScannedTool.status})`,'error');return;}
   if(!line&&operationType==='retirada'){toast('请选择生产线 · Selecione a linha!','warn');return;}
+
+  // ── Elimina a possibilidade de usar a máquina sem devolver a ferramenta
+  // anterior: se já existe OUTRA ferramenta "Em Uso" nesta mesma linha, o
+  // operador é obrigado a devolvê-la (com checklist) antes de poder bipar
+  // uma nova. Sem essa trava, a ferramenta antiga ficava presa como "Em Uso"
+  // pra sempre, sem nunca passar pelo checklist de devolução.
+  if(operationType==='retirada'){
+    const ferramentaPresa = toolsData.find(t => t.location === line && t.status === 'Em Uso' && t.code !== currentScannedTool.code);
+    if(ferramentaPresa){
+      toast(`🔒 Devolva primeiro a ferramenta ${ferramentaPresa.code} (${ferramentaPresa.name}) já em uso na ${line} antes de retirar outra · 请先归还该生产线上正在使用的工具`,'error');
+      return;
+    }
+  }
+
   if(operationType==='devolucao'){openDevolucaoChecklist(currentScannedTool);return;}
   let newCycles=currentScannedTool.cycles||0;
   if(operationType==='retirada'&&qty>0&&currentScannedTool.ppc>0){
@@ -5033,11 +5047,32 @@ async function gsLimparPosicaoAtual() {
   }
 }
 
-function gsLimparSelecao() {
-  gsSelecionado = null;
-  gsPararLeitura();
-  gsRenderClamps();
-  gsRenderSidePanel();
+// "Limpar Seleção" agora devolve TODAS as posições ocupadas desta máquina
+// de uma vez — não é mais só um "desmarcar" visual.
+async function gsLimparSelecao() {
+  const posicoesDaMaquina = gsPosicoes.filter(p => String(p.machine) === gsMaquinaAtual && p.status === 'Ocupado');
+  if (posicoesDaMaquina.length === 0) {
+    toast('ℹ️ Nenhuma posição ocupada nesta máquina para limpar · 无需清除', 'info');
+    gsSelecionado = null;
+    gsPararLeitura();
+    gsRenderClamps();
+    gsRenderSidePanel();
+    return;
+  }
+  if (!confirm(`Isso vai devolver e zerar TODAS as ${posicoesDaMaquina.length} posição(ões) ocupada(s) da ${gsMaquinaAtual}. Confirma?`)) return;
+
+  const result = await apiPost('limparTodasPosicoesGravadora', { machine: gsMaquinaAtual, operator: gsOperadorAtual || currentUser.name });
+  if (result && result.status === 'ok') {
+    toast(`✓ ${result.posicoesLimpas} posição(ões) devolvida(s) · 已全部清除`, 'success');
+    gsSelecionado = null;
+    gsPararLeitura();
+    await getGravadoraPosicoes();
+    gsRenderClamps();
+    gsRenderSidePanel();
+    gsRenderInfoGerais();
+  } else {
+    toast('✗ ' + (result?.error || 'Erro ao limpar posições'), 'error');
+  }
 }
 
 function gsSalvarConfiguracao() {
