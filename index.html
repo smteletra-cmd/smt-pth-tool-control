@@ -4598,12 +4598,22 @@ async function _silentRefresh(){
 
     let newTools=null;
     if(api&&api.data){
+      // Mesmo mapeamento completo usado pela função getTools() principal —
+      // faltava estoque_minimo/fornecedor/lead_time/preço aqui, e por isso
+      // a tabela de estoque mínimo esvaziava sozinha a cada atualização
+      // automática (o campo virava "undefined" e a comparação sempre dava
+      // "acima do mínimo", mesmo quando não estava).
       newTools=api.data.map(t=>({
-        code:t.codigo,name:t.nome,type:t.tipo,qty:t.quantidade,
+        code:t.codigo,name:t.nome,type:t.tipo,qty:parseInt(t.quantidade)||0,
         cycles:t.ciclos,maxCycles:t.max_ciclos,status:t.status,
         location:t.localizacao,checklist:t.checklist_template,product:t.produto,
         ppc:t.pecas_por_ciclo,lote:t.controle_lote==='Sim',
-        checklistPendente:t.checklist_pendente===true||t.checklist_pendente==='TRUE'
+        checklistPendente:t.checklist_pendente===true||t.checklist_pendente==='TRUE',
+        minStock:parseInt(t.estoque_minimo||t.min_stock||0),
+        supplier:t.fornecedor||'',
+        leadTime:parseInt(t.lead_time||t.leadTime||0),
+        price:parseFloat(t.preco||t.price||0),
+        purchaseStatus:t.status_compra||t.purchaseStatus||''
       }));
     }
     const newHash=_hashData(newTools||toolsData);
