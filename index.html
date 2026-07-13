@@ -2121,6 +2121,70 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     GRAVADORA — OP CONCLUÍDA: Limpar ou OP Smart?
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-gs-op-concluida">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title">✅ OP CONCLUÍDA <span class="cn">工单已完成</span></span>
+      <button class="modal-close" onclick="closeModal('modal-gs-op-concluida')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="text-xs text-dim mb-16" id="gs-op-concluida-resumo">
+        A quantidade programada foi atingida nesta máquina. O que deseja fazer?
+      </div>
+      <div class="flex-col gap-12">
+        <button class="btn-success full-width" style="padding:14px" onclick="gsEscolherOpSmart()">
+          🔄 OP SMART — nova OP, mantém os QRs bipados · 保留工位，切换新工单
+        </button>
+        <button class="btn-danger full-width" style="padding:14px" onclick="gsEscolherLimparTudo()">
+          🗑 LIMPAR TUDO — devolve todas as posições · 全部清除
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="gsAdiarAvisoOpConcluida()">LEMBRAR MAIS TARDE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     GRAVADORA — OP SMART (mantém QRs, só troca OP/quantidade)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-gs-op-smart">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🔄 OP SMART — GRAVADORA <span class="cn">快速切换工单</span></span>
+      <button class="modal-close" onclick="closeModal('modal-gs-op-smart')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="text-xs text-dim mb-16">
+        Mantém todos os QRs/produtos já bipados nas posições — só reinicia a contagem zerada para a nova OP. Não precisa bipar de novo.
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>MÁQUINA <span class="cn">机器</span></label>
+          <input type="text" id="gsops-maquina" readonly style="background:var(--table-head-bg)">
+        </div>
+        <div class="form-field">
+          <label>NOVA OP * <span class="cn">新工单号</span></label>
+          <input type="text" id="gsops-op" placeholder="451238" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label>QUANTIDADE PROGRAMADA * <span class="cn">计划数量</span></label>
+          <input type="number" id="gsops-qtd" min="1" placeholder="1000">
+        </div>
+      </div>
+      <div id="gsops-error" style="display:none;margin-top:10px;padding:10px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;color:var(--accent-danger);font-family:var(--font-cn);font-size:12px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" onclick="gsConfirmarOpSmart()">✓ CONFIRMAR NOVA OP · 确认切换</button>
+      <button class="btn-secondary" onclick="closeModal('modal-gs-op-smart')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -4546,6 +4610,7 @@ async function _silentRefresh(){
     if (currentPage === 'smtlines')  { loadLines('smt'); }
     if (currentPage === 'pthlines')  { loadLines('pth'); }
     if (currentPage === 'gravlines') { loadLines('grav'); }
+    if (currentPage === 'gravadora-setup') { gsRenderClamps(); gsRenderSidePanel(); gsRenderInfoGerais(); }
     await atualizarBadgeAprovacoes();
   }catch(e){console.warn('[AutoRefresh]',e);}
   _bgRefreshing=false;
@@ -4917,6 +4982,84 @@ function gsRenderInfoGerais() {
     const offset = circunferencia - (circunferencia * pct / 100);
     ring.style.strokeDashoffset = offset;
   }
+
+  gsVerificarConclusaoOP();
+}
+
+// ── Verifica se a OP atual bateu a meta (Produzido >= Programado) e, se
+// ainda não avisou nesta sessão de OP, abre a caixa "Limpar ou OP Smart".
+let gsUltimaOpAvisada = null;
+function gsVerificarConclusaoOP() {
+  const sessao = _gsFindSessao(gsMaquinaAtual);
+  if (!sessao || !parseInt(sessao.target_qtd)) return;
+  const alvo = parseInt(sessao.target_qtd) || 0;
+  if (alvo <= 0) return;
+
+  const posicoesDaMaquina = gsPosicoes.filter(p => String(p.machine) === gsMaquinaAtual && p.status === 'Ocupado');
+  const totalGravado = posicoesDaMaquina.reduce((s, p) => s + (parseInt(p.total_programmed) || 0), 0);
+  if (totalGravado < alvo) return;
+
+  const chaveOp = gsMaquinaAtual + '|' + (sessao.op || '');
+  if (gsUltimaOpAvisada === chaveOp) return; // já avisou pra essa OP, não repete
+
+  gsUltimaOpAvisada = chaveOp;
+  document.getElementById('gs-op-concluida-resumo').textContent =
+    `A OP ${sessao.op || '—'} atingiu ${totalGravado.toLocaleString()} / ${alvo.toLocaleString()} chips programados nesta máquina (${gsMaquinaAtual}). O que deseja fazer?`;
+  document.getElementById('modal-gs-op-concluida').classList.remove('hidden');
+}
+
+function gsAdiarAvisoOpConcluida() {
+  // Não faz nada além de fechar — na próxima verificação (poucos segundos
+  // depois, via polling) ele vai perguntar de novo, já que gsUltimaOpAvisada
+  // só é setado quando o operador realmente escolhe uma ação abaixo.
+  gsUltimaOpAvisada = null;
+  closeModal('modal-gs-op-concluida');
+}
+
+function gsEscolherLimparTudo() {
+  closeModal('modal-gs-op-concluida');
+  gsLimparSelecao();
+}
+
+function gsEscolherOpSmart() {
+  closeModal('modal-gs-op-concluida');
+  document.getElementById('gsops-maquina').value = gsMaquinaAtual;
+  document.getElementById('gsops-op').value = '';
+  document.getElementById('gsops-qtd').value = '';
+  document.getElementById('gsops-error').style.display = 'none';
+  document.getElementById('modal-gs-op-smart').classList.remove('hidden');
+}
+
+async function gsConfirmarOpSmart() {
+  const op = document.getElementById('gsops-op').value.trim();
+  const qtd = parseInt(document.getElementById('gsops-qtd').value) || 0;
+  const errEl = document.getElementById('gsops-error');
+  if (!op || qtd <= 0) {
+    errEl.textContent = '✗ Preencha a nova OP e a quantidade · 请填写新工单号和数量';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const result = await apiPost('trocarOpGravadora', {
+    machine: gsMaquinaAtual, op, targetQtd: qtd, operator: gsOperadorAtual || currentUser.name
+  });
+  if (result && result.status === 'ok') {
+    closeModal('modal-gs-op-smart');
+    toast(`✓ Nova OP ${op} — ${result.posicoesResetadas} posição(ões) reiniciada(s) · 工单已切换`, 'success');
+    gsOpAtual = op;
+    gsQtdProgramadaAtual = qtd;
+    document.getElementById('gs-op-atual').value = op;
+    document.getElementById('gs-qtd-programada').value = qtd;
+    await getGravadoraPosicoes();
+    await getGravadoraSessoes();
+    gsRenderClamps();
+    gsRenderSidePanel();
+    gsRenderInfoGerais();
+  } else {
+    errEl.textContent = '✗ ' + (result?.error || 'Erro ao trocar a OP');
+    errEl.style.display = 'block';
+  }
 }
 
 // ── Modo de operação por Clamp (8 ou 4 posições) ─────────────────────────────
@@ -5008,6 +5151,22 @@ async function gsProcessarQrLido(qrCode) {
   const result = await apiPost('saveGravadoraPosicao', payload);
   if (result && result.status === 'ok') {
     toast(`✓ Posição Clamp ${clamp} - ${slot} configurada · 工位已配置`, 'success');
+
+    // ── Pergunta se quer importar os ciclos órfãos detectados nesse Clamp
+    // (a máquina rodou antes de qualquer posição ser configurada). Só faz
+    // sentido perguntar aqui, no primeiro slot bipado — os próximos slots
+    // desse mesmo Clamp já não terão mais nada acumulado pra importar.
+    if (result.ciclosOrfaosDetectados > 0) {
+      if (confirm(`Detectamos ${result.ciclosOrfaosDetectados} ciclo(s) do Clamp ${clamp} antes desta posição ser configurada. Importar esses ciclos para esta posição (${slot})?`)) {
+        const resultImport = await apiPost('importarCiclosOrfaosGravadora', {
+          machine: gsMaquinaAtual, clamp, slot, operator: gsOperadorAtual || currentUser.name
+        });
+        if (resultImport && resultImport.status === 'ok') {
+          toast(`📦 ${resultImport.ciclosImportados} ciclo(s) importado(s) para esta posição · 已导入`, 'info');
+        }
+      }
+    }
+
     await getGravadoraPosicoes();
     gsRenderClamps();
     gsRenderSidePanel();
