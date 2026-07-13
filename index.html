@@ -2490,11 +2490,19 @@ function navigate(page){
 }
 
 async function loadDashboard(){
-  const tools=await getTools();
-  await getProducoesAtivas(); // ── MES LIGHT ──
-  await getPulsosSemOP();     // ── MES LIGHT ──
-  await getGravadoraPosicoes(); // ── GRAVADORA FIRMWARE ──
-  await getGravadoraSessoes();  // ── GRAVADORA FIRMWARE (sessão) ──
+  const minhaGeracao = ++_dataLoadGen;
+  const [tools] = await Promise.all([
+    getTools(),
+    getProducoesAtivas(),   // ── MES LIGHT ──
+    getPulsosSemOP(),       // ── MES LIGHT ──
+    getGravadoraPosicoes(), // ── GRAVADORA FIRMWARE ──
+    getGravadoraSessoes(),  // ── GRAVADORA FIRMWARE (sessão) ──
+  ]);
+  // Se um carregamento mais novo já começou enquanto esperávamos (ex: o
+  // usuário clicou "Atualizar" de novo, ou o polling automático disparou
+  // por cima), descarta este resultado mais antigo em vez de renderizar
+  // dados desatualizados por cima dos mais recentes.
+  if (minhaGeracao !== _dataLoadGen) return;
   const total=tools.length,disp=tools.filter(t=>t.status==='Disponível').length,
         uso=tools.filter(t=>t.status==='Em Uso').length,man=tools.filter(t=>t.status==='Manutenção').length,
         chkPnd=tools.filter(t=>t.status==='Checklist Pendente').length,
@@ -4561,11 +4569,33 @@ function toast(msg,type='info'){
 let _lastToolsHash='', _lastHistHash='', _bgRefreshing=false;
 function _hashData(obj){try{return JSON.stringify(obj);}catch(e){return '';}}
 
+// Contador de "geração" — cada carregamento completo (loadDashboard ou
+// _silentRefresh) recebe um número. Se um carregamento mais lento terminar
+// DEPOIS de um mais novo já ter começado, seus resultados são descartados
+// em vez de sobrescrever dados mais recentes (evita o "aparece e some").
+let _dataLoadGen = 0;
+
 async function _silentRefresh(){
   if(_bgRefreshing)return;
   _bgRefreshing=true;
+  const minhaGeracao = ++_dataLoadGen;
   try{
-    const api=await apiCall('getTools');
+    // ── As 6 chamadas ao backend são independentes entre si — rodar em
+    // paralelo em vez de uma esperar a outra derruba o tempo total de
+    // ~11s para ~2s (o tempo da mais lenta, não a soma de todas).
+    const [api, , , , ] = await Promise.all([
+      apiCall('getTools'),
+      getProducoesAtivas(),   // ── MES LIGHT ──
+      getPulsosSemOP(),       // ── MES LIGHT ──
+      getGravadoraPosicoes(), // ── GRAVADORA FIRMWARE ──
+      getGravadoraSessoes(),  // ── GRAVADORA FIRMWARE (sessão) ──
+    ]);
+
+    // Se, enquanto esperávamos essas 6 chamadas, um carregamento mais novo
+    // já começou (ex: usuário clicou "Atualizar" ou navegou de página),
+    // descarta este resultado em vez de aplicar por cima do mais recente.
+    if (minhaGeracao !== _dataLoadGen) { _bgRefreshing=false; return; }
+
     let newTools=null;
     if(api&&api.data){
       newTools=api.data.map(t=>({
@@ -4599,13 +4629,10 @@ async function _silentRefresh(){
     }
     if(currentPage==='dashboard'){
       const apiH=await apiCall('getHistory',{limit:8});
+      if (minhaGeracao !== _dataLoadGen) { _bgRefreshing=false; return; }
       const hHash=_hashData(apiH);
       if(hHash!==_lastHistHash){_lastHistHash=hHash;await renderRecentHistory();}
     }
-    await getProducoesAtivas(); // ── MES LIGHT ──
-    await getPulsosSemOP();     // ── MES LIGHT ──
-    await getGravadoraPosicoes(); // ── GRAVADORA FIRMWARE ──
-  await getGravadoraSessoes();  // ── GRAVADORA FIRMWARE (sessão) ──
     if (currentPage === 'dashboard') { _srfDashLines(); }
     if (currentPage === 'smtlines')  { loadLines('smt'); }
     if (currentPage === 'pthlines')  { loadLines('pth'); }
