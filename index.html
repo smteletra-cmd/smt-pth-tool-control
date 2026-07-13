@@ -4590,8 +4590,8 @@ async function _silentRefresh(){
       setText('kpi-disponivel',disp);setText('kpi-alertas',alertCount);setText('kpi-em-uso',uso);
       const nb1=document.getElementById('nav-badge-check');if(nb1)nb1.textContent=chkPnd>0?chkPnd:'';
       const nb2=document.getElementById('nav-badge-alertas');if(nb2)nb2.textContent=alertCount>0?alertCount:'';
-      if(currentPage==='dashboard'){setText('dash-total',toolsData.length);setText('dash-disp',disp);setText('dash-uso',uso);setText('dash-man',man);setText('dash-alert',alertCount);renderWearTable(toolsData);await renderRecentHistory();_srfDashLines();_srfAlertStrip();}
-      if(currentPage==='ferramentas')renderToolsTable(toolsData);
+      if(currentPage==='dashboard'){setText('dash-total',toolsData.length);setText('dash-disp',disp);setText('dash-uso',uso);setText('dash-man',man);setText('dash-alert',alertCount);renderWearTable(toolsData);renderEstoqueMinimoDash();await renderRecentHistory();_srfDashLines();_srfAlertStrip();}
+      if(currentPage==='ferramentas')filterTools();
       if(currentPage==='bipar')_srfBiparLists();
       if(currentPage==='checklist')_srfChecklistPending();
       if(currentPage==='smtlines')loadLines('smt');
